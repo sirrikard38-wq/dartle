@@ -1,0 +1,420 @@
+/* Black and white. Simple sans-serif type. All colours are tokens so the
+   look can be swapped later by editing :root only. */
+:root {
+  --bg: #000000;
+  --fg: #ffffff;
+  --ink: #111111;          /* text on white surfaces */
+  --muted: #a0a0a0;
+  --line: #2b2b2b;
+  --line-strong: #6a6a6a;
+  --white: #ffffff;
+  --offwhite: #e6e6e6;     /* undo button */
+  --board-off: #0c0c0c;    /* switched-off areas: near black, only the lines show */
+  --board-on-a: #8c8c8c;   /* active areas: mid grey, not white */
+  --board-on-b: #767676;
+  --board-line: #ffffff;   /* the "web" that divides the areas */
+  --pink: #f7c6d0;         /* a dart that is not in the best route */
+  --present: #b5b5b5;      /* right dart, wrong role */
+  --danger: #ff8a8a;       /* time is up / points lost */
+  --focus: #ffffff;
+  --tile: clamp(58px, 17vw, 72px);
+  --mode-h: 44px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Helvetica, Arial, sans-serif;
+  line-height: 1.35;
+}
+
+#app { min-height: 100%; display: flex; flex-direction: column; }
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- Header ---------- */
+.app-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 52px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.title {
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.22em;
+  text-align: center;
+}
+.header-spacer { display: block; }
+.header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
+.icon-btn {
+  min-width: 44px; min-height: 44px;
+  border: 0; background: none; border-radius: 6px;
+  font-size: 1.3rem; line-height: 1;
+}
+.icon-btn:hover { background: var(--line); }
+.score-pill {
+  align-self: center;
+  min-width: 2.2em; text-align: center; white-space: nowrap;
+  font-weight: 700; font-size: 0.85rem; line-height: 1;
+  padding: 7px 10px; margin-left: 4px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+}
+
+/* ---------- Layout ---------- */
+.screen { flex: 1; width: 100%; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; }
+/* Screens just fade up - no sliding. */
+.screen.enter { animation: screen-in 450ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+@keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
+
+.play-area {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 16px 8px;
+  text-align: center;
+}
+h1 { font-size: 1.6rem; margin: 20px 0 4px; }
+h2 { font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 16px 0 12px; }
+h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 22px 0 8px; color: var(--muted); }
+.tagline, .hint, .meta { color: var(--muted); font-size: 0.9rem; margin: 4px 0; }
+.label { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; margin: 14px 0 6px; }
+
+/* ---------- Welcome (shown every time the app opens) ---------- */
+.screen.welcome {
+  display: grid; place-items: center; min-height: 100vh;
+  padding: 24px 16px; text-align: center; cursor: pointer;
+}
+.welcome .intro, .welcome .form { grid-area: 1 / 1; }
+/* Everything fades in from nothing and fades out again - no sliding, no
+   movement, one easing curve. The byline keeps its original small, muted
+   look. */
+/* About 60% of the original 5.1 s: quick, but long enough to stay smooth. The
+   fades overlap slightly so one flows into the next. */
+.welcome .intro { animation: intro-out 600ms cubic-bezier(0.4, 0, 0.2, 1) 2100ms forwards; }
+.welcome .intro h1 {
+  margin: 0; font-size: clamp(3rem, 16vw, 5.5rem); letter-spacing: 0.2em; padding-left: 0.2em;
+}
+.welcome .intro p { margin: 10px 0 0; }
+.welcome .i1 { opacity: 0; animation: fade-in 750ms cubic-bezier(0.4, 0, 0.2, 1) 150ms forwards; }
+.welcome .i2 { opacity: 0; font-size: 0.9rem; color: var(--muted); animation: fade-in 700ms cubic-bezier(0.4, 0, 0.2, 1) 800ms forwards; }
+.welcome .form {
+  visibility: hidden; opacity: 0; cursor: default;
+  animation: form-in 700ms cubic-bezier(0.4, 0, 0.2, 1) 2450ms forwards;
+}
+.welcome .form h2 { font-size: 2rem; letter-spacing: 0.1em; margin: 0 0 20px; }
+.welcome.skip .intro { display: none; }
+.welcome.skip .form { animation: none; visibility: visible; opacity: 1; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes intro-out { to { opacity: 0; visibility: hidden; } }
+@keyframes form-in {
+  from { opacity: 0; visibility: visible; }
+  to   { opacity: 1; visibility: visible; }
+}
+
+.name-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.name-input {
+  width: min(70vw, 18em); height: 52px; padding: 0 14px;
+  background: #0d0d0d; color: var(--fg);
+  border: 2px solid var(--line-strong); border-radius: 8px;
+  font-size: 1.1rem; text-align: center;
+}
+.name-input::placeholder { color: var(--muted); }
+.name-input:focus { border-color: var(--fg); outline: none; }
+
+/* The Enter button is a stylised dart. */
+.dart-go {
+  display: grid; place-items: center;
+  width: 84px; height: 52px; padding: 0;
+  background: none; border: 0; color: var(--fg);
+  transition: transform 150ms ease;
+}
+.dart-go:hover { transform: translateX(5px); }
+.dart-go:active { transform: translateX(12px); }
+.dart-icon { width: 72px; height: 28px; }
+
+/* ---------- Menu ---------- */
+.greeting { color: var(--muted); margin: 28px 0 18px; }
+.menu-list { display: grid; gap: 12px; width: min(100%, 340px); }
+.menu-btn {
+  height: 60px; border: 2px solid var(--fg); border-radius: 8px;
+  background: transparent; font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.menu-btn:hover { background: #1a1a1a; }
+.menu-btn.primary { background: var(--white); color: var(--ink); font-weight: 700; }
+.menu-btn.primary:hover { background: var(--offwhite); }
+
+/* ---------- Target + tiles ---------- */
+.target {
+  margin: 4px 0 10px;
+  font-size: clamp(4.2rem, 22vw, 6.5rem);
+  font-weight: 800; line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+.target.small { font-size: 2.6rem; margin: 2px 0 10px; }
+
+.tile-row { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
+.tile {
+  position: relative;
+  width: calc(var(--tile) * 1.15); height: var(--tile);
+  display: grid; place-items: center;
+  border: 2px solid var(--line-strong);
+  font-size: 1.5rem; font-weight: 700;
+  text-transform: uppercase;
+  user-select: none;
+}
+.tile.active { border-color: var(--fg); }
+.tile.filled { animation: pop 120ms ease-out; }
+.tile-row.small .tile { width: 62px; height: 52px; font-size: 1.15rem; }
+.tile .mark { position: absolute; top: 1px; right: 4px; font-size: 0.7rem; opacity: 0.9; }
+
+/* Small darts in the game boxes: 1 in the first box, 2 in the second, 3 in the
+   third - always the same size. Empty boxes show them in the middle; once a
+   dart is entered they sit along the bottom under its name. */
+.tile.has-darts { padding-bottom: 26px; }
+.tile-darts {
+  position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
+  display: flex; align-items: flex-end; gap: 4px; pointer-events: none;
+  color: #c9c9c9;
+}
+.tile:not(.filled) .tile-darts { bottom: 50%; transform: translate(-50%, 50%); }
+.tile.filled .tile-darts { color: inherit; opacity: 0.8; }
+.dart-glyph { width: 10px; height: 24px; display: block; flex: none; }
+
+/* A dart you have entered: white if it belongs in the best route (the
+   default), light pink if not, grey if it is the right dart in the wrong
+   role. Marks (✓ • ×) back the colours up. */
+.tile.filled { background: var(--white); color: var(--ink); border-color: var(--white); }
+.tile.filled.live.absent  { background: var(--pink); border-color: var(--pink); }
+.tile.filled.live.present { background: var(--present); border-color: var(--present); }
+
+/* Result reveal: flips from blank to its final colour. */
+.tile.reveal { --final: var(--white); --final-fg: var(--ink); animation: flip 600ms ease forwards; animation-delay: calc(var(--i) * 300ms); }
+.tile.reveal.present { --final: var(--present); }
+.tile.reveal.absent  { --final: var(--pink); }
+.tile.filled.reveal { background: transparent; color: var(--fg); border-color: var(--line-strong); }
+
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes flip {
+  0%   { transform: rotateX(0); background: transparent; border-color: var(--line-strong); color: var(--fg); }
+  49%  { transform: rotateX(90deg); background: transparent; border-color: var(--line-strong); color: var(--fg); }
+  50%  { transform: rotateX(90deg); background: var(--final); border-color: var(--final); color: var(--final-fg); }
+  100% { transform: rotateX(0); background: var(--final); border-color: var(--final); color: var(--final-fg); }
+}
+.tile-row.shake { animation: shake 450ms; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); } 40%, 60% { transform: translateX(6px); }
+}
+
+.remaining {
+  display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 6px;
+  margin: 8px 0 0; font-variant-numeric: tabular-nums;
+}
+.remaining strong { font-size: 1.5rem; }
+.remaining .left-note { color: var(--muted); font-size: 0.85rem; }
+.remaining.over strong { color: var(--danger); }
+
+.timer { margin: 10px 0 2px; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.timer.over { color: var(--danger); }
+
+/* ---------- Dart input ---------- */
+.keyboard { padding: 8px 6px 14px; width: 100%; }
+.key-row { display: flex; justify-content: center; gap: 6px; margin: 0 auto 8px; touch-action: manipulation; }
+.key {
+  flex: 1 1 0; min-width: 0;
+  height: 54px; padding: 0;
+  border: 0; border-radius: 4px;
+  background: var(--white); color: var(--ink);
+  font-weight: 700; font-size: 1rem;
+  text-transform: uppercase;
+}
+.key:active:not(:disabled) { filter: brightness(0.85); }
+.key:disabled { opacity: 0.35; }
+.key.wide { flex: 1.6 1 0; font-size: 0.8rem; }
+/* Undo is plain text - no box around it. */
+.key.undo { background: transparent; color: var(--fg); border-radius: 0; box-shadow: none; }
+.key.undo { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.undo-icon { width: 16px; height: 16px; flex: none; }
+.key.undo:hover:not(:disabled) { text-decoration: underline; }
+.key.undo:active:not(:disabled) { filter: none; opacity: 0.7; }
+
+/* Single / Double / Treble: the chosen one is white, the others are dark. */
+.key.mode {
+  height: var(--mode-h); font-size: 0.8rem; letter-spacing: 0.04em;
+  background: #1c1c1c; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.key.mode.selected { background: var(--white); color: var(--ink); box-shadow: none; }
+
+.board-view .key.undo {
+  flex: 0 0 calc((100% - 12px) / 3);
+  height: var(--mode-h); font-size: 0.8rem; letter-spacing: 0.04em;
+}
+.board-view .key.undo:disabled { opacity: 0.4; }
+.view-toggle { display: block; margin: 0 auto; font-size: 0.8rem; }
+/* Give up sits at the end of the screen, just above How to play. */
+.give-up { display: flex; justify-content: center; margin: 6px 0 0; }
+.text-btn { border: 0; background: none; color: var(--muted); text-decoration: underline; min-height: 44px; padding: 0 12px; }
+
+/* ---------- Dartboard ---------- */
+.board-wrap { display: flex; justify-content: center; margin: 4px 0 10px; }
+.dartboard {
+  display: block;
+  width: min(92vw, 380px, 48vh);
+  min-width: 250px;
+  height: auto; aspect-ratio: 1;
+  touch-action: manipulation;
+  user-select: none;
+}
+.dartboard .num { fill: #e6e6e6; font-size: 22px; font-weight: 700; pointer-events: none; }
+.dartboard .frame { fill: none; stroke: var(--board-line); stroke-opacity: 0.7; stroke-width: 2; pointer-events: none; }
+
+/* Dark board: areas that are switched off are near black and only the white
+   dividing lines (the "web") show. Active areas are mid grey. */
+.dartboard .zone { stroke: var(--board-line); stroke-width: 1; }
+.dartboard .zone.on.tone-a { fill: var(--board-on-a); }
+.dartboard .zone.on.tone-b { fill: var(--board-on-b); }
+.dartboard .zone.off { fill: var(--board-off); }                    /* switched off */
+.dartboard .bull-outer.on { fill: var(--board-on-a); }
+.dartboard .bull-inner.on { fill: #5f5f5f; }
+.dartboard .zone { pointer-events: none; }
+
+/* Real rings are only 8 mm wide, too thin for a finger, so each number is
+   pressed anywhere in its wedge through an invisible area on top. */
+/* Nothing is drawn on hover or press - no box around the pressed number. Only
+   keyboard users get a focus outline. */
+.dartboard .hit { fill: rgba(255, 255, 255, 0); stroke: none; pointer-events: all; cursor: pointer; outline: none; }
+.dartboard .hit:focus { outline: none; }
+.dartboard .hit:focus-visible { stroke: #fff; stroke-width: 2; }
+
+/* Checkout choice hints, shown BEFORE you choose: the equally best darts are
+   lit in light grey and every other area is dimmed, so only the best ways
+   stand out. The white dividing lines stay at full strength. A best dart on a
+   ring you have not toggled is lit in a darker grey: toggle that ring to tap
+   it. Must stay after the ring rules above so it wins. */
+.dartboard .zone.on.dim { fill-opacity: 0.4; }
+.dartboard .zone.on.lit { fill: #d6d6d6; fill-opacity: 1; stroke-width: 1.5; }
+.dartboard .zone.off.lit { fill: #808080; }
+
+/* Comparing boards (result screen): no filled areas at all, only the white
+   lines that divide them, so just the marks stand out. */
+.dartboard.lines .zone,
+.dartboard.lines .zone.on,
+.dartboard.lines .zone.off,
+.dartboard.lines .zone.on.tone-a,
+.dartboard.lines .zone.on.tone-b { fill: transparent; }
+.dartboard.lines .mark {
+  fill: rgba(255, 255, 255, 0.5); stroke: #fff; stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+}
+
+/* Where a dart landed: a see-through circle. */
+.dartboard .mark { fill: rgba(255, 255, 255, 0.28); stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.5; pointer-events: none; }
+.dartboard .mark.newest { transform-box: fill-box; transform-origin: center; animation: drop 220ms ease-out; }
+@keyframes drop { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: scale(1); } }
+
+/* ---------- Game modes ---------- */
+.mode-list { display: grid; gap: 14px; width: min(100%, 380px); margin-top: 8px; }
+.mode-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 20px 16px; text-align: center;
+  border: 2px solid var(--fg); border-radius: 10px; background: transparent;
+}
+.mode-card:hover { background: #1a1a1a; }
+.mode-card strong { font-size: 1.2rem; letter-spacing: 0.04em; }
+.mode-card span { color: var(--muted); font-size: 0.9rem; }
+
+.equal-routes { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 0; font-size: 0.85rem; }
+.equal-routes span { color: var(--muted); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ---------- Result ---------- */
+.headline { font-size: 1.5rem; font-weight: 700; margin: 12px 0 0; }
+.message { margin: 8px 0; max-width: 34ch; }
+/* The two result boards: small and side by side. */
+.result-boards { display: flex; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 12px; margin: 12px 0 6px; width: 100%; }
+.board-figure { margin: 0; flex: 0 1 200px; min-width: 0; }
+/* Each board has its route boxes directly under it, small enough to fit. */
+.board-figure .tile-row { margin: 4px 0 0; gap: 4px; }
+.board-figure .tile-row.small .tile { width: 50px; height: 42px; font-size: 0.95rem; }
+.board-figure .tile .mark { font-size: 0.6rem; top: 0; right: 3px; }
+.board-figure .dartboard { width: 100%; min-width: 0; }
+.board-figure figcaption { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 6px 0 4px; }
+.big-stats { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0 6px; }
+.big-stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+.big-stat strong { font-size: 1.9rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.big-stat.negative strong { color: var(--danger); }
+/* POINTS: the session score, with this attempt's +/- right beside it. */
+.points-row { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.points-row strong.neg, .points-row .delta.neg { color: var(--danger); }
+.points-row .delta { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.big-stat span { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted); }
+.breakdown, .more { margin: 8px 0; text-align: left; font-size: 0.9rem; max-width: 36ch; }
+summary { cursor: pointer; color: var(--muted); }
+.cta {
+  margin: 18px 0 10px; min-width: 200px; height: 54px;
+  border: 0; border-radius: 28px;
+  background: var(--white); color: var(--ink);
+  font-size: 1.05rem; font-weight: 700;
+}
+.how-to { margin: 6px auto 28px; padding: 0 16px; max-width: 460px; font-size: 0.9rem; text-align: left; }
+.how-to summary { text-align: center; padding: 8px 0; }
+.how-section h4 { margin: 14px 0 2px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.how-section p { margin: 0; }
+
+/* ---------- Stats / leaderboard ---------- */
+.bars { width: 100%; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.bar-row > span { width: 1em; }
+.bar { background: var(--white); color: var(--ink); text-align: right; padding: 2px 8px; font-weight: 700; min-width: 2em; }
+.weak-list, .rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
+.weak-list li, .rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.weak-list strong { font-size: 1.2rem; }
+.weak-list span { color: var(--muted); }
+.rank-list { counter-reset: rank; }
+.rank-list li::before { counter-increment: rank; content: counter(rank); width: 2em; color: var(--muted); text-align: left; }
+.rank-list .name { flex: 1; text-align: left; }
+.rank-list li.me { font-weight: 700; background: #1a1a1a; }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
+.chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 20px; background: transparent; }
+.chip.selected { background: var(--white); color: var(--ink); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 8px 0; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-weight: 700; }
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.data-table caption { text-align: left; color: var(--muted); padding: 8px 0 4px; }
+.data-table th, .data-table td { padding: 6px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+.data-table th[scope="row"], .data-table thead th:first-child { text-align: left; }
+.big-stat strong { color: var(--fg); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+  background: var(--white); color: var(--ink);
+  padding: 12px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
+  opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 10; max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; }
+
+@media (max-height: 640px) {
+  .target { font-size: 3.4rem; margin-bottom: 4px; }
+  .key { height: 46px; }
+  :root { --mode-h: 38px; }
+  .key-row { margin-bottom: 5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome .intro { display: none; }
+  .welcome .form { animation: none; visibility: visible; opacity: 1; }
+  .screen.enter, .tile.filled, .tile-row.shake, .dartboard .mark.newest { animation: none; }
+  .tile.reveal { animation-duration: 1ms; animation-delay: 0ms; }
+}
