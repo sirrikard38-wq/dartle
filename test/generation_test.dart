@@ -84,11 +84,121 @@ void main() {
     for (var i = 0; i < 5000; i++) {
       final c = gen.next();
       expect(c.dartCount, engine.minimumDarts(c.target), reason: '${c.target}');
-      expect(optimal.isOptimal(c.target, c.optimalRoute), isTrue);
+      expect(optimal.isOptimal(c.target, c.optimalRoute, dartsLeft: c.dartsLeft), isTrue);
     }
-    // And a longer-than-minimum route is never "optimal".
+    // And a longer-than-minimum route is never "optimal" - unless all three
+    // darts are free on 51 to 70 (single, single, double, see below).
     expect(optimal.isOptimal(67, CheckoutRoute.parse('S17 S10 D20')), isFalse);
     expect(optimal.optimalRoutes(67).every((r) => r.length == 2), isTrue);
+    expect(optimal.isOptimal(67, CheckoutRoute.parse('S17 S10 D20'), dartsLeft: 2), isFalse);
+  });
+
+  group('three boxes, some already thrown', () {
+    test('a one-dart number always has two darts already thrown', () {
+      final random = Random(5);
+      for (var i = 0; i < 200; i++) {
+        expect(Visit.dartsLeft(1, random), 1);
+      }
+    });
+
+    test('a three-dart number always has all three darts free', () {
+      final random = Random(5);
+      for (var i = 0; i < 200; i++) {
+        expect(Visit.dartsLeft(3, random), 3);
+      }
+    });
+
+    test('a two-dart number is half the time on two darts, half on all three', () {
+      final random = Random(11);
+      final counts = {2: 0, 3: 0};
+      for (var i = 0; i < 10000; i++) {
+        counts.update(Visit.dartsLeft(2, random), (n) => n + 1);
+      }
+      expect(counts[2]! + counts[3]!, 10000);
+      expect(counts[2], inInclusiveRange(4700, 5300));
+    });
+
+    test('the generator deals the darts and always leaves a legal answer', () {
+      final gen = ChallengeGenerator(catalog, random: Random(9));
+      final seen = <String>{};
+      for (var i = 0; i < 4000; i++) {
+        final c = gen.next();
+        expect(c.dartsLeft, inInclusiveRange(c.dartCount, 3), reason: '${c.target}');
+        expect(c.alreadyThrown, 3 - c.dartsLeft);
+        expect(c.optimalRoute.total, c.target);
+        expect(c.optimalRoute.length, lessThanOrEqualTo(c.dartsLeft));
+        seen.add('${c.dartCount}->${c.dartsLeft}');
+      }
+      expect(seen, {'1->1', '2->2', '2->3', '3->3'});
+    });
+
+    test('without dealing there are no thrown darts (Checkout practice)', () {
+      final gen = ChallengeGenerator(catalog, random: Random(9));
+      for (var i = 0; i < 500; i++) {
+        final c = gen.next(null, false);
+        expect(c.dartsLeft, c.dartCount);
+      }
+    });
+  });
+
+  group('51 to 70: bull-safe with two darts, single single double with three', () {
+    test('first dart already thrown: the bull-safe treble finish, as before', () {
+      expect(optimal.optimalRoutes(67, dartsLeft: 2).map((r) => r.notation), ['T17 D8']);
+      expect(optimal.optimalRoute(61, dartsLeft: 2)!.notation, 'T11 D14');
+      expect(optimal.isOptimal(60, CheckoutRoute.parse('T10 D15'), dartsLeft: 2), isTrue);
+    });
+
+    test('all three free: every optimal route is single, single, double', () {
+      for (var target = 51; target <= 70; target++) {
+        final routes = optimal.optimalRoutes(target, dartsLeft: 3);
+        expect(routes, isNotEmpty, reason: '$target');
+        for (final r in routes) {
+          expect(SingleSingleDouble.isSingleSingleDouble(r), isTrue, reason: '$target $r');
+          expect(engine.isLegalRoute(target, r), isTrue, reason: '$target $r');
+        }
+      }
+    });
+
+    test('all three free: single single double beats treble double', () {
+      for (final text in ['S14 S13 D20', 'S20 S7 D20', 'S19 S16 D16']) {
+        expect(optimal.isOptimal(67, CheckoutRoute.parse(text), dartsLeft: 3), isTrue,
+            reason: text);
+      }
+      // A single, single, double that does not add up is not optimal.
+      expect(optimal.isOptimal(67, CheckoutRoute.parse('S10 S9 D16'), dartsLeft: 3), isFalse);
+      expect(optimal.isOptimal(67, CheckoutRoute.parse('T17 D8'), dartsLeft: 3), isFalse);
+      expect(optimal.isOptimal(60, CheckoutRoute.parse('T10 D15'), dartsLeft: 3), isFalse);
+      // The order of the two singles does not matter.
+      expect(optimal.isOptimal(67, CheckoutRoute.parse('S13 S14 D20'), dartsLeft: 3), isTrue);
+      // The finisher does.
+      expect(optimal.isOptimal(67, CheckoutRoute.parse('S14 D20 S13'), dartsLeft: 3), isFalse);
+    });
+
+    test('the example shown is a double that is easy to follow up, with an even pair', () {
+      expect(optimal.optimalRoute(60, dartsLeft: 3)!.notation, 'S10 S10 D20');
+      expect(optimal.optimalRoute(70, dartsLeft: 3)!.notation, 'S15 S15 D20');
+    });
+
+    test('outside 51 to 70 a spare dart changes nothing', () {
+      for (final target in [50, 71, 72, 85, 100, 110]) {
+        expect(optimal.optimalRoutes(target, dartsLeft: 3).map((r) => r.notation),
+            optimal.optimalRoutes(target).map((r) => r.notation),
+            reason: '$target');
+      }
+      expect(optimal.optimalRoutes(120, dartsLeft: 3).map((r) => r.notation),
+          ['T20 S20 D20']);
+    });
+
+    test('a dealt challenge carries the matching reference route', () {
+      final base = catalog.forTarget(67)!;
+      final two = catalog.dealt(base, 2);
+      expect(two.optimalRoute.notation, 'T17 D8');
+      expect(two.alreadyThrown, 1);
+      final three = catalog.dealt(base, 3);
+      expect(SingleSingleDouble.isSingleSingleDouble(three.optimalRoute), isTrue);
+      expect(three.alreadyThrown, 0);
+      expect(three.dartCount, 2, reason: 'the fewest darts is still two');
+    });
   });
 
   test('generator avoids immediate and recent repeats', () {

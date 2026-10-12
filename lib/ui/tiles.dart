@@ -36,6 +36,9 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 /// * [activeIndex] outlines the box that will receive the next dart.
 /// * [showDarts] puts small darts in each box: one in the first box, two in
 ///   the second, three in the third (the box's dart number).
+/// * [blurred] blurs out that many boxes from the left: darts already thrown.
+///   They cannot be used, so [darts] (and [states] and [activeIndex]) start at
+///   the first box after them.
 web.HTMLElement tileRow(
   List<DartThrow> darts, {
   required int slots,
@@ -45,20 +48,26 @@ web.HTMLElement tileRow(
   String? label,
   bool live = false,
   bool showDarts = false,
+  int blurred = 0,
 }) {
+  final free = slots - blurred;
   return el('div', cls: 'tile-row${small ? ' small' : ''}', attrs: {
     'role': 'group',
-    'aria-label': label ?? 'Your checkout, $slots ${slots == 1 ? 'dart' : 'darts'}',
+    'aria-label': label ??
+        'Your checkout, $free ${free == 1 ? 'dart' : 'darts'} left',
   }, children: [
     for (var i = 0; i < slots; i++)
-      _tile(
-        i < darts.length ? darts[i] : null,
-        index: i,
-        state: states != null && i < states.length ? states[i] : null,
-        active: i == activeIndex,
-        live: live,
-        showDarts: showDarts,
-      ),
+      if (i < blurred)
+        _tile(null, index: i, active: false, live: live, showDarts: showDarts, blurred: true)
+      else
+        _tile(
+          i - blurred < darts.length ? darts[i - blurred] : null,
+          index: i,
+          state: states != null && i - blurred < states.length ? states[i - blurred] : null,
+          active: i - blurred == activeIndex,
+          live: live,
+          showDarts: showDarts,
+        ),
   ]);
 }
 
@@ -67,22 +76,26 @@ web.HTMLElement _tile(DartThrow? dart,
     TileState? state,
     required bool active,
     required bool live,
-    required bool showDarts}) {
+    required bool showDarts,
+    bool blurred = false}) {
   // `live` colours a dart the moment it is entered (no flip, no replay on each
   // re-render); `reveal` is the animated end-of-attempt flip.
   final classes = [
     'tile',
     if (dart != null) 'filled m-${dart.multiplier.name}',
     if (active) 'active',
+    if (blurred) 'blurred',
     if (showDarts) 'has-darts',
     if (state != null) '${live ? 'live' : 'reveal'} ${state.name}',
   ].join(' ');
 
-  final description = dart == null
-      ? 'empty'
-      : state == null
-          ? dart.spokenName
-          : '${dart.spokenName}, ${_stateWords[state]}';
+  final description = blurred
+      ? 'already thrown'
+      : dart == null
+          ? 'empty'
+          : state == null
+              ? dart.spokenName
+              : '${dart.spokenName}, ${_stateWords[state]}';
 
   return el('div', cls: classes, attrs: {
     'aria-label': 'Dart ${index + 1}: $description',

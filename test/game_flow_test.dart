@@ -227,9 +227,9 @@ void main() {
     expect(game.entered, isEmpty);
   });
 
-  test('boxes fill left to right, cap at dart count, undo and clear work', () {
+  test('boxes fill left to right, cap at the free darts, undo and clear work', () {
     game.startGame(DifficultyLevel.medium);
-    final n = game.challenge!.dartCount;
+    final n = game.challenge!.dartsLeft;
     for (var i = 0; i < n + 2; i++) {
       game.selectDart(DartThrow.parse('S1'));
     }
@@ -239,6 +239,134 @@ void main() {
     expect(game.entered, hasLength(n - 1));
     game.clear();
     expect(game.entered, isEmpty);
+  });
+
+  group('three boxes, some already thrown', () {
+    /// Starts checkouts until one is dealt that [wanted] accepts.
+    void dealUntil(bool Function(Challenge c) wanted) {
+      for (var i = 0; i < 5000; i++) {
+        game.startGame();
+        if (wanted(game.challenge!)) return;
+      }
+      fail('no checkout like that was dealt');
+    }
+
+    test('every checkout has three boxes: free ones plus the blurred ones', () {
+      for (var i = 0; i < 60; i++) {
+        game.startGame();
+        final c = game.challenge!;
+        expect(c.dartsLeft + c.alreadyThrown, Visit.darts);
+        expect(c.dartsLeft, greaterThanOrEqualTo(c.dartCount));
+      }
+    });
+
+    test('a checkout can finish with fewer darts than are free', () async {
+      // A two-dart number dealt with all three darts free.
+      dealUntil((c) =>
+          c.dartCount == 2 && c.dartsLeft == 3 && !SingleSingleDouble.covers(c.target));
+      final route = game.challenge!.optimalRoute; // two darts, e.g. T20 D20
+      expect(route.length, 2);
+      game.selectDart(route.darts[0]);
+      expect(game.isHandFull, isFalse);
+      game.selectDart(route.darts[1]);
+      expect(game.isHandFull, isTrue, reason: 'checked out on the second of three darts');
+      await game.submit();
+      expect(game.lastResult!.isCorrect && game.lastResult!.isOptimal, isTrue);
+      expect(game.phase, GamePhase.result);
+    });
+
+    test('with all three free on 51 to 70, treble-double is correct but not optimal', () async {
+      dealUntil((c) =>
+          SingleSingleDouble.covers(c.target) && c.dartCount == 2 && c.dartsLeft == 3);
+      final target = game.challenge!.target;
+      expect(SingleSingleDouble.isSingleSingleDouble(game.challenge!.optimalRoute), isTrue);
+      // The classic bull-safe finish, which is two darts, checks the number out ...
+      final twoDart = optimalService.optimalRoute(target, dartsLeft: 2)!;
+      for (final d in twoDart.darts) {
+        game.selectDart(d);
+      }
+      await game.submit();
+      expect(game.lastResult!.isCorrect, isTrue);
+      // ... but with all three free, single, single, double is the better route.
+      expect(game.lastResult!.isOptimal, isFalse);
+      expect(SingleSingleDouble.isSingleSingleDouble(game.lastResult!.optimalRoutes.first),
+          isTrue);
+    });
+
+    test('with the first dart already thrown on 51 to 70, the bull-safe finish is optimal', () async {
+      dealUntil((c) => c.target >= 55 && c.target <= 70 && c.dartsLeft == 2);
+      expect(game.challenge!.alreadyThrown, 1);
+      expect(game.challenge!.optimalRoute.notation,
+          BullSafeFinish.twoDartFinish(game.challenge!.target)!.notation);
+      for (final d in game.challenge!.optimalRoute.darts) {
+        game.selectDart(d);
+      }
+      await game.submit();
+      expect(game.lastResult!.isCorrect && game.lastResult!.isOptimal, isTrue);
+    });
+  });
+
+  group('Same checkout (Checkout practice)', () {
+    test('replays the number just finished, from the start', () async {
+      game.startGame(null, GameMode.choice);
+      final target = game.challenge!.target;
+      game.selectDart(DartThrow.parse('S1'));
+      await game.giveUp();
+      expect(game.phase, GamePhase.result);
+
+      game.sameCheckout();
+      expect(game.phase, GamePhase.playing);
+      expect(game.challenge!.target, target);
+      expect(game.round!.target, target);
+      expect(game.round!.remaining, target);
+      expect(game.round!.dartsLeft, 3);
+      expect(game.entered, isEmpty);
+      expect(game.lastResult, isNull);
+    });
+
+    test('after a checkout, and it can be played again and again', () async {
+      game.startGame(null, GameMode.choice);
+      final target = game.challenge!.target;
+      for (var i = 0; i < 3; i++) {
+        while (!game.round!.isFinished) {
+          final best = advisor.optimalDarts(game.round!.remaining).toList()
+            ..sort((a, b) => b.score.compareTo(a.score));
+          game.selectDart(best.first);
+        }
+        await game.submit();
+        expect(game.lastResult!.isCorrect, isTrue);
+        game.sameCheckout();
+        expect(game.challenge!.target, target);
+      }
+      expect(game.history, hasLength(3));
+    });
+
+    test('is for Checkout practice only, and only on the result screen', () async {
+      // Calculator: ignored.
+      game.startGame();
+      await game.giveUp();
+      final calcTarget = game.challenge!.target;
+      game.sameCheckout();
+      expect(game.phase, GamePhase.result);
+      expect(game.challenge!.target, calcTarget);
+
+      // Practice, but still playing: ignored.
+      game.startGame(null, GameMode.choice);
+      final target = game.challenge!.target;
+      game.selectDart(DartThrow.parse('S1'));
+      game.sameCheckout();
+      expect(game.phase, GamePhase.playing);
+      expect(game.entered, hasLength(1));
+      expect(game.challenge!.target, target);
+    });
+
+    test('Next checkout still moves on to a different number', () async {
+      game.startGame(null, GameMode.choice);
+      final target = game.challenge!.target;
+      await game.giveUp();
+      game.nextCheckout();
+      expect(game.challenge!.target, isNot(target));
+    });
   });
 
   test('submit is ignored until every box is filled', () async {

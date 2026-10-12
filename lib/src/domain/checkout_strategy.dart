@@ -36,7 +36,7 @@ class CheckoutStrategy {
     final byLength = a.length.compareTo(b.length);
     if (byLength != 0) return byLength;
 
-    final byFinisher = _finisherRank(a).compareTo(_finisherRank(b));
+    final byFinisher = finisherRank(a).compareTo(finisherRank(b));
     if (byFinisher != 0) return byFinisher;
 
     final byTrebles = b.trebleCount.compareTo(a.trebleCount);
@@ -48,7 +48,8 @@ class CheckoutStrategy {
     return a.notation.compareTo(b.notation);
   }
 
-  int _finisherRank(CheckoutRoute route) {
+  /// How well the route's finishing double ranks (0 is best).
+  int finisherRank(CheckoutRoute route) {
     final finisher = route.finishingDart!;
     if (finisher.isBull) return preferredFinishers.length; // after all doubles
     final index = preferredFinishers.indexOf(finisher.number);

@@ -60,12 +60,16 @@ class CheckoutValidator {
           isOptimal: false,
         );
 
-    if (route.length != challenge.dartCount) {
+    // Up to the free darts of the visit; a checkout may use fewer of them.
+    if (route.isEmpty || route.length > challenge.dartsLeft) {
+      final left = challenge.dartsLeft;
       return fail(
         AttemptOutcome.wrongDartCount,
-        'This checkout needs exactly ${challenge.dartCount} '
-        '${challenge.dartCount == 1 ? 'dart' : 'darts'}, '
-        'but you entered ${route.length}.',
+        left == challenge.dartCount
+            ? 'This checkout needs exactly $left '
+                '${left == 1 ? 'dart' : 'darts'}, but you entered ${route.length}.'
+            : 'You have $left darts for this checkout, '
+                'but you entered ${route.length}.',
       );
     }
 
@@ -91,7 +95,7 @@ class CheckoutValidator {
       outcome: AttemptOutcome.correct,
       playerRoute: route,
       message: '${route.arithmetic}. Correct!',
-      isOptimal: _optimal.isOptimal(target, route),
+      isOptimal: _optimal.isOptimal(target, route, dartsLeft: challenge.dartsLeft),
     );
   }
 }

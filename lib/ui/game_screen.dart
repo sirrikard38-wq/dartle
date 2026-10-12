@@ -92,10 +92,13 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
       el('p', cls: 'meta', text: 'Finish on a double or Bull.'),
       el('p', cls: 'target', text: '${challenge.target}', attrs: {
         'aria-label': 'Checkout ${challenge.target}, '
-            '${challenge.dartCount} ${challenge.dartCount == 1 ? 'dart' : 'darts'}',
+            '${challenge.dartsLeft} ${challenge.dartsLeft == 1 ? 'dart' : 'darts'} left',
       }),
+      // Always three boxes. Darts already thrown are blurred out: only the
+      // free boxes can be used.
       tileRow(game.entered,
-          slots: challenge.dartCount,
+          slots: Visit.darts,
+          blurred: challenge.alreadyThrown,
           activeIndex: game.entered.length,
           live: true,
           showDarts: true,

@@ -32,13 +32,18 @@ web.HTMLElement buildHowToPlay(GameController game) {
           'dart: with T20 lit, any press on the 20 is worth T20. Other numbers '
           'count as the exact area you press, so there are no Single, Double or '
           'Treble buttons here. You must finish on a double or Bull; going '
-          'below zero or leaving 1 is a bust.')
+          'below zero or leaving 1 is a bust. When a round is over, Same checkout '
+          'plays the same number again, to try the same route or a different one, '
+          'and Next checkout moves on to a new number.')
     else
       section('The basics',
-          'You get a number and one box per dart. Pick Single, Double or Treble, '
-          'then tap a number. The last dart is always a double or Bull. Your '
-          'answer is checked the moment the last box is filled. Every box must be '
-          'used.'),
+          'You get a number and always three boxes. A box that is blurred out is a '
+          'dart you have already thrown, so it cannot be used. A number that can '
+          'be done in one dart has its first two boxes blurred. A number that needs '
+          'two darts has either just the first box blurred, or all three free. '
+          'Pick Single, Double or Treble, then tap a number. The last free box is '
+          'always a double or Bull. Your answer is checked the moment the number is '
+          'checked out, or when the last free box is filled.'),
     section('Order',
         'The darts before the finisher are a combination: T20 T19 D8 is the same '
         'as T19 T20 D8. Only the last dart has a fixed place.'),
@@ -48,7 +53,11 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'treble and hit the single 17 instead, you have exactly 50 left, which is '
         'Bull. So even a near miss still leaves a finish. 61 works the same way: '
         'T11, then D14, and a missed T11 leaves Bull. For bigger numbers, the '
-        'first dart takes you into that range (121: T20 first leaves 61).'),
+        'first dart takes you into that range (121: T20 first leaves 61). If '
+        'all three darts are free on 51 to 70, there is no need for a treble: '
+        'single, single, double is better than any treble and double. For 67 '
+        'that is S14, S13, D20, and any single, single, double that adds up '
+        'counts.'),
     section('The board',
         'Pick Single, Double or Treble and the matching rings of the board turn '
         'grey; everything else goes dark. The board is drawn to real '

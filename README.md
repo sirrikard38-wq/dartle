@@ -1,7 +1,8 @@
 # Dartle — Darts Checkout Trainer
 
-Wordle-style trainer for 501 checkouts. A number appears, empty boxes show how
-many darts the checkout takes, and you fill them with S/D/T/Bull buttons.
+Wordle-style trainer for 501 checkouts. A number appears with three boxes (a
+visit); boxes that are blurred out are darts already thrown, and you fill the
+free ones with S/D/T/Bull buttons.
 Pure Dart, compiled to JS; the only runtime dependency is `package:web`.
 
 ## Run
@@ -20,9 +21,17 @@ dart run tool/serve.dart       # http://localhost:8080
 - No misses/busts are modelled.
 - Checkoutable totals: 2–170 except 159, 162, 163, 165, 166, 168, 169.
   Computed by exhaustive search, never hand-listed.
-- A challenge's dart count = length of its optimal route = the minimum darts.
-  So 140/150/160/167/170 are always 3 darts; the generator cannot produce an
-  impossible target/dart-count pair because it only draws from the catalog.
+- A challenge's dart count = the minimum darts it needs. So 140/150/160/167/170
+  are always 3 darts; the generator cannot produce an impossible
+  target/dart-count pair because it only draws from the catalog.
+- Checkout calculator always shows three boxes (`Visit`). A 1-dart number has
+  its first two boxes blurred (already thrown); a 2-dart number has either just
+  the first box blurred or all three free (50/50); a 3-dart number has all three
+  free. A checkout may use fewer darts than are free and is judged the moment
+  the number is checked out.
+- On 51–70 with all three darts free, **single, single, double** is optimal
+  (better than any treble-double: `SingleSingleDouble`). With the first dart
+  blurred, the bull-safe treble finish (55–70) stays optimal.
 - **Optimal** = the canonical chart route (`canonical_checkouts.dart`) plus a
   few approved alternates. Fallback for any uncovered number is
   `CheckoutStrategy` (fewer darts → preferred finisher → trebles → big first

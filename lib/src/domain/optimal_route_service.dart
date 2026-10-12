@@ -3,6 +3,7 @@ import 'canonical_checkouts.dart';
 import 'checkout_engine.dart';
 import 'checkout_route.dart';
 import 'checkout_strategy.dart';
+import 'single_single_double.dart';
 
 /// Answers "what is the optimal way to check out N (in D darts)?".
 ///
@@ -19,7 +20,10 @@ import 'checkout_strategy.dart';
 ///  * [chartOnlyCheckouts] (120) always keep their classic chart route.
 ///
 /// Only the minimum number of darts is ever optimal: a number that can be
-/// finished in 2 darts is never played (or accepted as optimal) in 3.
+/// finished in 2 darts is never played (or accepted as optimal) in 3 - with one
+/// exception. On 51 to 70, when all three darts are free, single, single,
+/// double is better than any treble-double route and is the optimal one. See
+/// [SingleSingleDouble].
 ///
 /// A chart entry that is illegal under the engine is ignored, never taught.
 class OptimalRouteService {
@@ -40,17 +44,29 @@ class OptimalRouteService {
   final Map<int, List<String>> _alternates;
   final Set<int> _chartOnly;
   final Map<int, List<CheckoutRoute>> _cache = {};
+  final Map<int, List<CheckoutRoute>> _spareDartCache = {};
 
   /// The primary optimal route, or null when [target] is not checkoutable.
-  CheckoutRoute? optimalRoute(int target) {
-    final routes = optimalRoutes(target);
+  CheckoutRoute? optimalRoute(int target, {int? dartsLeft}) {
+    final routes = optimalRoutes(target, dartsLeft: dartsLeft);
     return routes.isEmpty ? null : routes.first;
   }
 
   /// All optimal routes (primary first) for [target]; empty if impossible.
-  List<CheckoutRoute> optimalRoutes(int target) {
+  ///
+  /// [dartsLeft] is how many darts the player can still throw. Left out, it is
+  /// the fewest darts the number needs. With a spare dart (all three free on
+  /// 51 to 70) the optimal routes are the single, single, double ones.
+  List<CheckoutRoute> optimalRoutes(int target, {int? dartsLeft}) {
     final minimum = _engine.minimumDarts(target);
     if (minimum == null) return const [];
+    if (_hasSingleSingleDouble(target, minimum, dartsLeft)) {
+      return _spareDartCache.putIfAbsent(target, () {
+        final routes = SingleSingleDouble.from(_engine.legalRoutes(target, darts: 3));
+        return List.unmodifiable(
+            routes.isEmpty ? _compute(target, minimum) : routes);
+      });
+    }
     return _cache.putIfAbsent(
       target,
       () => List.unmodifiable(_compute(target, minimum)),
@@ -59,9 +75,17 @@ class OptimalRouteService {
 
   /// Whether [route] is one of the optimal routes for [target]. Order of the
   /// non-finishing darts is irrelevant. A route longer than the minimum is
-  /// never optimal.
-  bool isOptimal(int target, CheckoutRoute route) =>
-      optimalRoutes(target).any(route.isEquivalentTo);
+  /// never optimal - except single, single, double on 51 to 70 when all three
+  /// darts are free ([dartsLeft] 3).
+  bool isOptimal(int target, CheckoutRoute route, {int? dartsLeft}) =>
+      optimalRoutes(target, dartsLeft: dartsLeft).any(route.isEquivalentTo);
+
+  bool _hasSingleSingleDouble(int target, int minimum, int? dartsLeft) =>
+      dartsLeft != null &&
+      dartsLeft > minimum &&
+      minimum == 2 &&
+      SingleSingleDouble.covers(target) &&
+      !_chartOnly.contains(target);
 
   List<CheckoutRoute> _compute(int target, int minimum) {
     final routes = <CheckoutRoute>[];

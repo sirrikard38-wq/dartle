@@ -154,7 +154,7 @@ class GameController {
   List<CheckoutRoute> get currentOptimalRoutes {
     final challenge = _challenge;
     if (challenge == null) return const [];
-    return _optimal.optimalRoutes(challenge.target);
+    return _optimal.optimalRoutes(challenge.target, dartsLeft: challenge.dartsLeft);
   }
 
   /// The countdown starts here (30s by default).
@@ -164,12 +164,18 @@ class GameController {
   /// time is up, e.g. 30s limit and 38.33s elapsed shows -8.33s.
   Duration get remaining => timeLimit - elapsed;
 
-  /// Calculator: every box is filled. Choice: the round is over (checked out,
-  /// bust, or out of darts). Either way the answer is ready to be judged.
+  /// Calculator: every free box is filled, or the number is already checked
+  /// out (it may take fewer darts than are free). Choice: the round is over
+  /// (checked out, bust, or out of darts). Either way the answer is ready to
+  /// be judged.
   bool get isHandFull {
     final round = _round;
     if (round != null) return round.isFinished;
-    return _challenge != null && _entered.length >= _challenge!.dartCount;
+    final challenge = _challenge;
+    if (challenge == null) return false;
+    if (_entered.length >= challenge.dartsLeft) return true;
+    final route = CheckoutRoute(_entered);
+    return !route.isEmpty && route.total == challenge.target && route.endsOnDouble;
   }
 
   bool get canUndo => _phase == GamePhase.playing && _entered.isNotEmpty;
@@ -309,6 +315,13 @@ class GameController {
     _nextChallenge();
   }
 
+  /// Checkout practice: plays the number just finished (checked out, busted or
+  /// skipped) again from the start, to try the same or a different route.
+  void sameCheckout() {
+    if (_phase != GamePhase.result || _mode != GameMode.choice) return;
+    _begin(_challenge!);
+  }
+
   void quitToMenu() {
     _timer.stop();
     _phase = GamePhase.menu;
@@ -353,7 +366,7 @@ class GameController {
       elapsed: elapsed,
       optimalRoutes: round != null
           ? _advisor.optimalRoutes(challenge.target)
-          : _optimal.optimalRoutes(challenge.target),
+          : _optimal.optimalRoutes(challenge.target, dartsLeft: challenge.dartsLeft),
       round: round,
     );
     _sessionPoints += score.total;
@@ -391,10 +404,16 @@ class GameController {
   }
 
   void _nextChallenge() {
-    _challenge = _generator.next(_difficulty);
+    // Only Checkout calculator has darts that are already thrown; practice
+    // always has all three.
+    _begin(_generator.next(_difficulty, _mode == GameMode.calculator));
+  }
+
+  void _begin(Challenge challenge) {
+    _challenge = challenge;
     _entered.clear();
     _round = _mode == GameMode.choice
-        ? ChoiceRound(_challenge!.target, _advisor)
+        ? ChoiceRound(challenge.target, _advisor)
         : null;
     _result = null;
     _timer = _timerFactory()..start();

@@ -20,8 +20,10 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   final round = result.round;
   final entered = result.playerRoute.darts;
   final gaveUp = result.validation.outcome == AttemptOutcome.gaveUp;
-  // Calculator: one box per dart of the optimal route. Choice: three darts.
-  final slots = round?.maxDarts ?? result.challenge.dartCount;
+  // Always three boxes. Calculator: the darts already thrown are blurred out,
+  // as they were while playing. Choice: all three are free.
+  final slots = round?.maxDarts ?? Visit.darts;
+  final blurred = round != null ? 0 : result.challenge.alreadyThrown;
 
   final String headline;
   if (result.isCorrect && result.isOptimal) {
@@ -69,7 +71,11 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
             ),
             el('figcaption', text: 'Your darts'),
             tileRow(entered,
-                slots: slots, small: true, states: states, label: 'Your darts'),
+                slots: slots,
+                blurred: blurred,
+                small: true,
+                states: states,
+                label: 'Your darts'),
           ]),
         // Not optimal (or missed): the best route, marked and boxed the same way.
         if (!result.isOptimal)
@@ -143,5 +149,11 @@ List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
         cls: 'cta',
         focusKey: 'next',
         onPressed: (_) => game.nextCheckout()),
+    // Checkout practice: play the same number again, to try another route.
+    if (result.isChoice)
+      button('Same checkout',
+          cls: 'cta secondary',
+          focusKey: 'same',
+          onPressed: (_) => game.sameCheckout()),
   ];
 }

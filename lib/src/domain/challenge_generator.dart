@@ -19,7 +19,11 @@ class ChallengeGenerator {
 
   /// Next challenge. With no [level], every checkoutable number has an equal
   /// chance; with a level, only that difficulty band is drawn from.
-  Challenge next([DifficultyLevel? level]) {
+  ///
+  /// With [dealDarts] (Checkout calculator) the visit's three darts are dealt:
+  /// some may already be thrown, see [Visit.dartsLeft]. Without it the
+  /// challenge has no spare or used darts.
+  Challenge next([DifficultyLevel? level, bool dealDarts = true]) {
     final pool = level == null ? _catalog.all : _catalog.forLevel(level);
     if (pool.isEmpty) {
       throw StateError('No checkouts available for ${level?.name ?? 'any level'}');
@@ -32,7 +36,8 @@ class ChallengeGenerator {
         pool.where((c) => !recent.contains(c.target)).toList(growable: false);
     final choice = candidates[_random.nextInt(candidates.length)];
     _recent.add(choice.target);
-    return choice;
+    if (!dealDarts) return choice;
+    return _catalog.dealt(choice, Visit.dartsLeft(choice.dartCount, _random));
   }
 
   /// Forget history, e.g. when the player changes difficulty.

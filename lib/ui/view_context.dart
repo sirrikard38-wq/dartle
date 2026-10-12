@@ -79,7 +79,7 @@ class ViewContext {
     final challenge = game.challenge;
     return challenge != null &&
         game.mode == GameMode.calculator &&
-        game.entered.length == challenge.dartCount - 1;
+        game.entered.length == challenge.dartsLeft - 1;
   }
 
   /// The multiplier the input applies right now. The finishing dart is always
