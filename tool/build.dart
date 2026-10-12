@@ -3,9 +3,14 @@ import 'dart:io';
 
 Future<void> main() async {
   final out = Directory('build')..createSync(recursive: true);
-  for (final name in ['index.html', 'styles.css']) {
-    File('web/$name').copySync('${out.path}/$name');
-  }
+  File('web/styles.css').copySync('${out.path}/styles.css');
+  // GitHub Pages lets browsers keep files for 10 minutes. A build stamp on the
+  // script and stylesheet addresses makes every deploy load fresh copies.
+  final stamp = DateTime.now().millisecondsSinceEpoch;
+  File('${out.path}/index.html').writeAsStringSync(File('web/index.html')
+      .readAsStringSync()
+      .replaceAll('href="styles.css"', 'href="styles.css?v=$stamp"')
+      .replaceAll('src="main.dart.js"', 'src="main.dart.js?v=$stamp"'));
   // Optional user-supplied sounds (e.g. web/audio/optimal.mp3).
   final audio = Directory('web/audio');
   if (audio.existsSync()) {
