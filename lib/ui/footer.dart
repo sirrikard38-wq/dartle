@@ -5,7 +5,7 @@ import 'dom.dart';
 import 'install.dart';
 import 'modal.dart';
 
-/// The grey row at the very end of every screen: install, Instagram, email.
+/// The row of links at the very end of every screen: install, Instagram, email.
 web.HTMLElement buildFooter() {
   return el('footer', cls: 'app-footer', children: [
     // Nothing to install once the app is on the home screen (or is the .apk).
