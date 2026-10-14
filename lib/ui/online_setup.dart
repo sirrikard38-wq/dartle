@@ -25,10 +25,13 @@ class BrowserJsonHttp implements JsonHttp {
 }
 
 /// Reads `online.json` next to the page. Null (no online leaderboard, scores
-/// stay on this device) when the file is missing, empty or unfinished.
+/// stay on this device) when the file is missing, empty or unfinished. It is
+/// always checked with the server, so a change to the file shows up at once and
+/// not after the browser's saved copy expires.
 Future<OnlineConfig?> loadOnlineConfig() async {
   try {
-    final response = await web.window.fetch('online.json'.toJS).toDart;
+    final response =
+        await web.window.fetch('online.json'.toJS, web.RequestInit(cache: 'no-cache')).toDart;
     if (!response.ok) return null;
     final text = (await response.text().toDart).toDart;
     return OnlineConfig.tryParse(text);

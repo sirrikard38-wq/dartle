@@ -164,6 +164,15 @@ void main() {
       expect(sw, contains("request.mode === 'navigate'"));
     });
 
+    test('online.json is never stuck on a saved copy: network first, revalidated', () {
+      expect(sw, contains("endsWith('/online.json')"));
+      expect(sw, contains("cache: 'no-cache'"));
+      // It is not part of the precached shell (that would freeze it per build).
+      expect(sw, isNot(contains("'online.json',")));
+      final page = File('lib/ui/online_setup.dart').readAsStringSync();
+      expect(page, contains("RequestInit(cache: 'no-cache')"));
+    });
+
     test('everything it precaches really exists', () {
       for (final line in RegExp(r"^\s+'([^'$]+)',$", multiLine: true)
           .allMatches(sw)

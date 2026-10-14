@@ -57,6 +57,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // The leaderboard settings: always ask the server (the browser may hold a
+  // copy up to 10 minutes old, and a saved copy would stick for the whole
+  // build), and use the saved copy only when there is no connection.
+  if (new URL(request.url).pathname.endsWith('/online.json')) {
+    event.respondWith(
+      fetch(request, { cache: 'no-cache' })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
   // Everything else: the saved copy, else the network (and save it).
   event.respondWith(
     caches.match(request).then(
