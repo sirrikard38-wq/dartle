@@ -5,10 +5,19 @@ import 'package:test/test.dart';
 
 void main() {
   group('Phrases', () {
-    test('there are exactly 1000 insults and 1000 encouragements', () {
+    test('there are exactly 1000 insults', () {
       expect(Phrases.insults, hasLength(1000));
-      expect(Phrases.encouragements, hasLength(1000));
       expect(Phrases.count, 1000);
+    });
+
+    test('a right "No checkout" says one of five short lines', () {
+      expect(Phrases.encouragements, [
+        'You a lion',
+        'You a tiger',
+        'You a monkey',
+        'You a cucumber',
+        'You a pizza',
+      ]);
     });
 
     test('every line is unique and not blank', () {
@@ -16,8 +25,8 @@ void main() {
         expect(list.toSet(), hasLength(list.length));
         expect(list.every((line) => line.trim().isNotEmpty), isTrue);
         expect(list.every((line) => line == line.trim()), isTrue);
-        expect(list.every((line) => line.endsWith('!') || line.endsWith('.')), isTrue);
       }
+      expect(Phrases.insults.every((line) => line.endsWith('!') || line.endsWith('.')), isTrue);
     });
 
     test('the lists never change between calls (or runs)', () {
@@ -29,9 +38,6 @@ void main() {
       expect(Phrases.insults, containsAll([
         'You look like a pickle!', 'Stinky head!', 'You look like a monkey!',
         'You are a triangle!',
-      ]));
-      expect(Phrases.encouragements, containsAll([
-        'Go tiger!', 'Normal.', 'No pigeon is out of your reach.',
       ]));
     });
 
@@ -61,6 +67,12 @@ void main() {
         seen.add(insult);
       }
       expect(seen.length, greaterThan(150));
+    });
+
+    test('all five praise lines come up', () {
+      final random = Random(2);
+      final seen = {for (var i = 0; i < 200; i++) Phrases.randomEncouragement(random)};
+      expect(seen, Phrases.encouragements.toSet());
     });
 
     test('it stays silly, not nasty: no slurs and nothing about bodies or backgrounds', () {

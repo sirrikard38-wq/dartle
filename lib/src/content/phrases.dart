@@ -1,26 +1,32 @@
 import 'dart:math';
 
 /// The silly lines of the app: 1000 goofy school-kid insults (for a number that
-/// cannot be checked out) and 1000 encouragements (for a right "No checkout").
+/// cannot be checked out) and five short praise lines (for a right "No
+/// checkout").
 ///
-/// They are built from word banks and sentence frames, then shuffled with a
-/// fixed seed, so the lists are always the same, every line is unique, and no
-/// line is repeated until you have seen a lot of them. Mild swearing only; no
+/// The insults are built from word banks and sentence frames, then shuffled
+/// with a fixed seed, so the list is always the same, every line is unique, and
+/// no line is repeated until you have seen a lot of them. Mild swearing only; no
 /// slurs, and nothing aimed at a real person's body or background.
 abstract final class Phrases {
-  /// How many lines each list has.
+  /// How many insults there are.
   static const int count = 1000;
 
   static List<String>? _insults;
-  static List<String>? _encouragements;
 
   static List<String> get insults =>
       _insults ??= _build(_insultCandidates(), seed: 7, always: _alwaysInsults);
 
-  static List<String> get encouragements => _encouragements ??=
-      _build(_encouragementCandidates(), seed: 11, always: _alwaysEncouragements);
+  /// What a right "No checkout" says, one of these at random.
+  static const List<String> encouragements = [
+    'You a lion',
+    'You a tiger',
+    'You a monkey',
+    'You a cucumber',
+    'You a pizza',
+  ];
 
-  /// The examples from the brief are always in the lists.
+  /// The examples from the brief are always in the list.
   static const List<String> _alwaysInsults = [
     'You look like a pickle!',
     'Stinky head!',
@@ -28,18 +34,12 @@ abstract final class Phrases {
     'You are a triangle!',
   ];
 
-  static const List<String> _alwaysEncouragements = [
-    'Go tiger!',
-    'Normal.',
-    'No pigeon is out of your reach.',
-  ];
-
   /// A random insult.
   static String randomInsult(Random random) => insults[random.nextInt(count)];
 
-  /// A random encouragement.
+  /// A random praise line for a right "No checkout".
   static String randomEncouragement(Random random) =>
-      encouragements[random.nextInt(count)];
+      encouragements[random.nextInt(encouragements.length)];
 
   /// Unique lines, shuffled the same way every time, cut to [count]. The
   /// [always] lines are in every time.
@@ -125,67 +125,6 @@ abstract final class Phrases {
       yield 'What the hell, $noun head!';
       yield 'Bloody $noun!';
       yield 'Damn, you absolute $noun!';
-    }
-  }
-
-  // --------------------------------------------------------- encouragements
-
-  static const List<String> _animals = [
-    'tiger', 'panther', 'eagle', 'dolphin', 'falcon', 'cheetah', 'lion',
-    'wolf', 'badger', 'otter', 'hawk', 'shark', 'bear', 'fox', 'lynx', 'stallion',
-    'gorilla', 'rhino', 'owl', 'cobra', 'gazelle', 'bison', 'moose', 'puma',
-    'kingfisher', 'pelican', 'hummingbird', 'octopus', 'kangaroo', 'koala',
-    'penguin', 'llama', 'hedgehog', 'capybara', 'walrus', 'ferret', 'beaver',
-    'raccoon', 'giraffe', 'zebra',
-  ];
-
-  static const List<String> _praise = [
-    'mighty', 'magnificent', 'brilliant', 'legendary', 'glorious', 'splendid',
-    'fabulous', 'majestic', 'heroic', 'dazzling', 'unstoppable', 'radiant',
-    'fearless', 'supreme', 'dashing', 'marvellous', 'spectacular', 'peerless',
-    'gleaming', 'epic', 'golden', 'electric', 'cosmic', 'turbo', 'galactic',
-  ];
-
-  static const List<String> _things = [
-    'pigeon', 'balloon', 'kite', 'cloud', 'comet', 'biscuit', 'sandwich',
-    'high shelf', 'treetop', 'lighthouse', 'moon', 'rainbow', 'bus', 'sunbeam',
-    'apple', 'banana', 'doughnut', 'skyscraper', 'mountain', 'butterfly',
-    'seagull', 'frisbee', 'firework', 'trampoline', 'satellite',
-  ];
-
-  static const List<String> _skills = [
-    'think', 'throw', 'shine', 'glide', 'dance', 'aim', 'plan', 'play',
-    'count', 'sparkle',
-  ];
-
-  static Iterable<String> _encouragementCandidates() sync* {
-    yield 'Normal.';
-    yield 'Perfectly normal.';
-    yield 'Very normal. Very good.';
-    yield 'Totally normal behaviour. Carry on.';
-    for (final animal in _animals) {
-      yield 'Go $animal!';
-      yield 'Absolute $animal energy!';
-      yield 'Hell yes, $animal!';
-      for (final praise in _praise) {
-        yield 'You are ${_a(praise)} $praise $animal!';
-      }
-      for (final skill in _skills) {
-        yield 'You $skill like ${_a(animal)} $animal!';
-      }
-    }
-    for (final thing in _things) {
-      yield 'No $thing is out of your reach.';
-      yield 'You could out-throw ${_a(thing)} $thing.';
-      for (final praise in _praise) {
-        yield 'Pure $praise $thing energy!';
-      }
-    }
-    for (final praise in _praise) {
-      yield 'Bloody $praise!';
-      yield 'Damn, that was $praise!';
-      yield 'Well that is just $praise.';
-      yield 'Stay $praise, my friend.';
     }
   }
 }
