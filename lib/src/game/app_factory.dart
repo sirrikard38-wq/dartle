@@ -28,5 +28,6 @@ GameController createGameController(StorageService storage, {Random? random}) {
     history: HistoryRepository(storage),
     leaderboard: LeaderboardService(LocalLeaderboardRepository(storage)),
     storage: storage,
+    random: random,
   );
 }

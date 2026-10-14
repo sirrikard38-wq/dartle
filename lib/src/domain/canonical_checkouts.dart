@@ -51,14 +51,6 @@ const Map<int, String> canonicalCheckouts = {
   167: 'T20 T19 Bull', 170: 'T20 T20 Bull',
 };
 
-/// Targets that keep their classic chart route and skip the bull-safe rule
-/// (see `BullSafeFinish`). 120 stays the familiar T20 S20 D20.
+/// Targets that keep only their classic chart route and skip the other rules
+/// (see `OptimalRouteService`). 120 stays the familiar T20 S20 D20.
 const Set<int> chartOnlyCheckouts = {120};
-
-/// Additional routes that are equally acceptable as "optimal" for a target.
-/// Kept deliberately small: only genuinely standard alternatives belong here.
-const Map<int, List<String>> alternateOptimalCheckouts = {
-  72: ['T16 D12'],
-  125: ['T20 T15 D10'],
-  135: ['Bull T15 D20'],
-};

@@ -35,60 +35,53 @@ void main() {
       expect(best, containsAll([d('T20'), d('T11'), d('T19'), d('T14')]));
     });
 
-    test('the bull-safe routes stay optimal even with low trebles (55 -> T5 D20)', () {
-      expect(advisor.optimalDarts(55), contains(d('T5')));
-      // Trebles come first: a treble works on 55 (T15 D5), so the single S15 is not lit.
-      expect(advisor.optimalDarts(55), contains(d('T15')));
-      expect(advisor.optimalDarts(55), isNot(contains(d('S15'))));
+    test('the bull-safe routes stay optimal even with low trebles (55 -> T5 D20, S5 Bull)', () {
+      expect(advisor.optimalDarts(55), {d('T5'), d('S5')});
     });
 
-    group('priority: trebles first, singles only if needed, doubles only if popular', () {
-      /// The darts of the standard (chart / bull-safe) routes: "popular and optimal".
-      Set<DartThrow> standardSetup(int target) => {
-            for (final r in optimal.optimalRoutes(target))
-              ...(r.length == 1 ? r.darts : r.setupDarts),
-          };
-
-      test('when a treble can do the job, no extra singles are lit', () {
-        for (final target in engine.checkoutableTargets) {
-          if (engine.minimumDarts(target) == 1) continue;
-          final lit = advisor.optimalDarts(target);
-          if (!lit.any((x) => x.isTreble)) continue;
-          for (final single in lit.where((x) => x.multiplier == Multiplier.single)) {
-            expect(standardSetup(target), contains(single),
-                reason: '$single lit on $target next to a treble, but it is not a standard dart');
-          }
-        }
+    group('priority: fewest darts, bull-safe, then the most singles', () {
+      test('57 with the first box used: the treble and the single of 7 are lit', () {
+        expect(advisor.optimalDarts(57), {d('T7'), d('S7')});
+        // ... and the same after a first dart of a longer round.
+        expect(advisor.optimalRoutes(57).map((r) => r.notation), ['T7 D18', 'S7 Bull']);
       });
 
-      test('singles are lit when no treble can do it (e.g. 41)', () {
-        final lit = advisor.optimalDarts(41);
-        expect(lit.any((x) => x.isTreble), isFalse);
+      test('57 with the last box used: the singles that leave a double are lit, not T7', () {
+        final lit = advisor.optimalDarts(57, bullSafe: false);
+        expect(lit, containsAll([d('S17'), d('S19'), d('25'), d('S7')]));
+        expect(lit, isNot(contains(d('T7'))));
         expect(lit.every((x) => x.multiplier == Multiplier.single), isTrue);
-        expect(lit, isNotEmpty);
       });
 
-      test('a double or the Bull is only a lit setup dart when the standard route uses it', () {
-        for (final target in engine.checkoutableTargets) {
-          if (engine.minimumDarts(target) == 1) continue;
-          for (final x in advisor.optimalDarts(target)) {
-            if (x.multiplier == Multiplier.double) {
-              expect(standardSetup(target), contains(x),
-                  reason: '$x lit as a setup dart on $target');
-            }
-          }
-        }
-        // The Bull is standard on 82 (Bull D16) ...
-        expect(advisor.optimalDarts(82), contains(d('Bull')));
-        // ... but not a first dart on 100 or 150, where only the trebles are lit.
+      test('singles come first: 35 lights singles only, never T5', () {
+        final lit = advisor.optimalDarts(35);
+        expect(lit, isNotEmpty);
+        expect(lit.every((x) => x.multiplier == Multiplier.single), isTrue);
+        expect(lit, isNot(contains(d('T5'))));
+        expect(lit, containsAll([d('S15'), d('S3'), d('S17')]));
+      });
+
+      test('no treble can do it with a single: trebles of 15 and up are lit (85, 150)', () {
         expect(advisor.optimalDarts(100), {d('T20')});
         expect(advisor.optimalDarts(150), {d('T18'), d('T19'), d('T20')});
       });
 
-      test('121 lights trebles only', () {
+      test('a double or the Bull is only a lit setup dart on a chart route (82)', () {
+        expect(advisor.optimalDarts(82), contains(d('Bull')));
+        for (final target in engine.checkoutableTargets) {
+          if (engine.minimumDarts(target) == 1) continue;
+          for (final x in advisor.optimalDarts(target)) {
+            if (x.multiplier == Multiplier.double) {
+              expect(optimal.optimalRoutes(target).any((r) => r.setupDarts.contains(x)), isTrue,
+                  reason: '$x lit as a setup dart on $target');
+            }
+          }
+        }
+      });
+
+      test('121 lights the trebles and the singles that leave a finish', () {
         final lit = advisor.optimalDarts(121);
-        expect(lit.every((x) => x.isTreble), isTrue);
-        expect(lit, containsAll([d('T20'), d('T11'), d('T19'), d('T14')]));
+        expect(lit, containsAll([d('T20'), d('T11'), d('T19'), d('T14'), d('S11'), d('S14')]));
       });
     });
 
@@ -281,6 +274,71 @@ void main() {
         expect(r.isOptimal, isTrue, reason: '$target');
         expect(r.steps.length, engine.minimumDarts(target), reason: '$target');
       }
+    });
+  });
+
+  group('ChoiceRound with crossed-out boxes', () {
+    test('the free boxes are the darts: first box used leaves two', () {
+      final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed);
+      expect(r.maxDarts, 2);
+      expect(r.dartsLeft, 2);
+      expect(r.bullSafe, isTrue);
+      expect(r.optimalDarts, {d('T7'), d('S7')});
+      r.throwDart(d('S7')); // leaves exactly 50
+      expect(r.remaining, 50);
+      r.throwDart(d('Bull'));
+      expect(r.isCheckedOut, isTrue);
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('the treble of 7 works too: T7 then D18', () {
+      final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
+        ..throwDart(d('T7'))
+        ..throwDart(d('D18'));
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('last box used: the ordinary way - singles first, T7 is not optimal', () {
+      final r = ChoiceRound(57, advisor, layout: BoxLayout.rightUsed);
+      expect(r.maxDarts, 2);
+      expect(r.bullSafe, isFalse);
+      expect(r.optimalDarts, containsAll([d('S17'), d('S19'), d('25'), d('S7')]));
+      expect(r.optimalDarts, isNot(contains(d('T7'))));
+      r.throwDart(d('S17')); // 40 left: the bull-safe rule applies from here on
+      expect(r.bullSafe, isTrue);
+      r.throwDart(d('D20'));
+      expect(r.isOptimal, isTrue);
+
+      final other = ChoiceRound(57, advisor, layout: BoxLayout.rightUsed)
+        ..throwDart(d('T7'))
+        ..throwDart(d('D18'));
+      expect(other.isCheckedOut, isTrue);
+      expect(other.isOptimal, isFalse, reason: 'it checks out, but a single was better');
+    });
+
+    test('a one-dart number has one free box', () {
+      final r = ChoiceRound(40, advisor, layout: BoxLayout.leftTwoUsed);
+      expect(r.maxDarts, 1);
+      expect(r.optimalDarts, {d('D20')});
+      r.throwDart(d('D20'));
+      expect(r.isCheckedOut && r.isOptimal, isTrue);
+    });
+
+    test('with fewer free boxes you run out of darts sooner', () {
+      final r = ChoiceRound(85, advisor, layout: BoxLayout.leftUsed)
+        ..throwDart(d('S1'))
+        ..throwDart(d('S1'));
+      expect(r.status, RoundStatus.outOfDarts);
+    });
+
+    test('119 with three free: after T19 the bull-safe pair is lit', () {
+      final r = ChoiceRound(119, advisor)..throwDart(d('T19'));
+      expect(r.remaining, 62);
+      expect(r.bullSafe, isTrue);
+      expect(r.optimalDarts, {d('T12'), d('S12')});
+      r.throwDart(d('S12'));
+      r.throwDart(d('Bull'));
+      expect(r.isOptimal, isTrue);
     });
   });
 }

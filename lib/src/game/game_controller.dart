@@ -1,5 +1,9 @@
+import 'dart:math';
+
+import '../content/phrases.dart';
 import '../domain/challenge.dart';
 import '../domain/challenge_generator.dart';
+import '../domain/checkout_engine.dart';
 import '../domain/checkout_route.dart';
 import '../domain/checkout_validator.dart';
 import '../domain/choice_advisor.dart';
@@ -16,7 +20,13 @@ import '../storage/storage_service.dart';
 import '../timing/attempt_timer.dart';
 import 'game_mode.dart';
 
-enum GamePhase { menu, playing, result }
+/// menu: away from a checkout. entering: Checkout input is waiting for a
+/// number. impossible: the number entered has no checkout. playing / result:
+/// a checkout is on screen / has just been answered.
+enum GamePhase { menu, entering, impossible, playing, result }
+
+/// What happened to a number typed into Checkout input.
+enum NumberEntry { accepted, impossible, outOfRange }
 
 /// Everything the result screen needs to display.
 class AttemptResult {
@@ -27,6 +37,8 @@ class AttemptResult {
     required this.elapsed,
     required this.optimalRoutes,
     this.round,
+    this.isReplay = false,
+    this.encouragement,
   });
 
   final Challenge challenge;
@@ -34,19 +46,27 @@ class AttemptResult {
   final ScoreBreakdown score;
   final Duration elapsed;
 
-  /// Primary optimal route first, then every equally optimal alternative
-  /// (the chart/bull-safe routes in Checkout calculator; all fewest-darts
-  /// routes of sensible aims in Checkout practice).
+  /// Primary optimal route first, then every equally optimal alternative.
+  /// Empty for a number with no checkout.
   final List<CheckoutRoute> optimalRoutes;
 
-  /// The darts chosen, with their ratings. Only set in Checkout practice.
+  /// The darts chosen, with their ratings. Only set in the practice modes.
   final ChoiceRound? round;
 
-  bool get isChoice => round != null;
+  /// A replay: no clock, no score, nothing saved.
+  final bool isReplay;
+
+  /// For a right "No checkout": one of the 1000 encouragements.
+  final String? encouragement;
+
+  bool get isPractice => round != null;
 
   bool get isCorrect => validation.isCorrect;
   bool get isOptimal => validation.isOptimal;
   CheckoutRoute get playerRoute => validation.playerRoute;
+
+  /// A right "No checkout" press: the empty-board "Good job" screen.
+  bool get isNoCheckoutAnswer => validation.outcome == AttemptOutcome.noCheckoutCorrect;
 }
 
 /// Orchestrates one play session: menu -> playing -> result -> next.
@@ -64,6 +84,7 @@ class GameController {
     required StorageService storage,
     AttemptTimer Function()? timerFactory,
     DateTime Function()? now,
+    Random? random,
   })  : _generator = generator,
         _validator = validator,
         _optimal = optimal,
@@ -75,10 +96,14 @@ class GameController {
         _storage = storage,
         _timerFactory = timerFactory ?? AttemptTimer.new,
         _now = now ?? DateTime.now,
+        _random = random ?? Random(),
         _timer = (timerFactory ?? AttemptTimer.new)();
 
   static const String playerNameKey = 'dartle.player.v1';
   static const String defaultPlayerName = 'Player';
+
+  /// Undo can be used this many times per session in Checkout calculator.
+  static const int maxUndos = 3;
 
   final ChallengeGenerator _generator;
   final CheckoutValidator _validator;
@@ -91,6 +116,7 @@ class GameController {
   final StorageService _storage;
   final AttemptTimer Function() _timerFactory;
   final DateTime Function() _now;
+  final Random _random;
 
   final List<void Function()> _listeners = [];
   final List<DartThrow> _entered = [];
@@ -98,9 +124,6 @@ class GameController {
   AttemptTimer _timer;
 
   GamePhase _phase = GamePhase.menu;
-
-  /// True while a give-up is being saved before returning to the menu.
-  bool _leaving = false;
   GameMode _mode = GameMode.calculator;
   ChoiceRound? _round;
 
@@ -111,6 +134,15 @@ class GameController {
   int _sessionId = 0;
   int _sessionPoints = 0;
   int _sessionStreak = 0;
+  int _undosLeft = maxUndos;
+
+  /// True while a checkout is being replayed: no clock, no score, no saving.
+  bool _replay = false;
+
+  /// Checkout input: the number that has no checkout, and the insult for it.
+  int? _impossibleNumber;
+  String? _insult;
+
   String _playerName = defaultPlayerName;
   bool _needsPlayerName = true;
 
@@ -120,7 +152,7 @@ class GameController {
   GamePhase get phase => _phase;
   GameMode get mode => _mode;
 
-  /// The current Checkout practice round; null in Checkout calculator.
+  /// The current practice round; null in Checkout calculator.
   ChoiceRound? get round => _round;
   DifficultyLevel? get difficulty => _difficulty;
   Challenge? get challenge => _challenge;
@@ -128,11 +160,18 @@ class GameController {
   String get playerName => _playerName;
   int get sessionPoints => _sessionPoints;
   int get sessionStreak => _sessionStreak;
+  bool get isReplay => _replay;
+
+  /// Checkout input: the number with no checkout, and the insult shown for it.
+  int? get impossibleNumber => _impossibleNumber;
+  String? get insult => _insult;
+
+  /// Only Checkout calculator is saved, so this is only its attempts.
   List<AttemptRecord> get history => List.unmodifiable(_history);
   StatisticsService get statistics => _statistics;
   StatsSummary get summary => _statistics.summarize(_history);
 
-  /// Darts entered so far, left to right.
+  /// Darts entered so far, left to right (one per free box).
   List<DartThrow> get entered => List.unmodifiable(_entered);
 
   /// Live while playing, frozen on the result screen.
@@ -140,21 +179,21 @@ class GameController {
 
   ScoringConfig get scoringConfig => _scoring.config;
 
-  /// Checkout practice: the equally best darts to throw next, for the number
-  /// still to be checked out. Empty in Checkout calculator or once the round
-  /// is over.
-  Set<DartThrow> get choiceHints {
-    final round = _round;
-    if (round == null || round.isFinished) return const {};
-    return _advisor.optimalDarts(round.remaining);
-  }
+  /// How many undos are left this session; null when undo is not limited
+  /// (the practice modes and replays).
+  int? get undosLeft => _mode.isChallenge && !_replay ? _undosLeft : null;
 
-  /// Optimal routes for the checkout on screen, used to colour each dart as
-  /// it is entered. Empty when no checkout is showing.
+  /// Practice: the equally best darts to throw next, for the number still to
+  /// be checked out. Empty in Checkout calculator or once the round is over.
+  Set<DartThrow> get choiceHints => _round?.optimalDarts ?? const {};
+
+  /// Optimal routes for the checkout on screen. Empty when no checkout is
+  /// showing (or the number has none).
   List<CheckoutRoute> get currentOptimalRoutes {
     final challenge = _challenge;
     if (challenge == null) return const [];
-    return _optimal.optimalRoutes(challenge.target, dartsLeft: challenge.dartsLeft);
+    return _optimal.optimalRoutes(challenge.target,
+        twoDartBullSafe: challenge.layout.bullSafe);
   }
 
   /// The countdown starts here (30s by default).
@@ -164,21 +203,20 @@ class GameController {
   /// time is up, e.g. 30s limit and 38.33s elapsed shows -8.33s.
   Duration get remaining => timeLimit - elapsed;
 
-  /// Calculator: every free box is filled, or the number is already checked
-  /// out (it may take fewer darts than are free). Choice: the round is over
+  /// Calculator: every free box is filled. Practice: the round is over
   /// (checked out, bust, or out of darts). Either way the answer is ready to
   /// be judged.
   bool get isHandFull {
     final round = _round;
     if (round != null) return round.isFinished;
     final challenge = _challenge;
-    if (challenge == null) return false;
-    if (_entered.length >= challenge.dartsLeft) return true;
-    final route = CheckoutRoute(_entered);
-    return !route.isEmpty && route.total == challenge.target && route.endsOnDouble;
+    return challenge != null && _entered.length >= challenge.dartsLeft;
   }
 
-  bool get canUndo => _phase == GamePhase.playing && _entered.isNotEmpty;
+  bool get canUndo =>
+      _phase == GamePhase.playing &&
+      _entered.isNotEmpty &&
+      (undosLeft == null || undosLeft! > 0);
 
   Future<List<LeaderboardEntry>> leaderboard(LeaderboardSort sort) =>
       _leaderboard.ranked(sort);
@@ -186,7 +224,11 @@ class GameController {
   void addListener(void Function() listener) => _listeners.add(listener);
 
   Future<void> init() async {
-    _history = await _historyRepo.load();
+    // Only Checkout calculator is saved; older history may hold practice
+    // attempts, which no longer count.
+    _history = (await _historyRepo.load())
+        .where((r) => r.mode == GameMode.calculator)
+        .toList();
     final saved = await _storage.read(playerNameKey);
     _needsPlayerName = saved == null || saved.trim().isEmpty;
     _playerName = _needsPlayerName ? defaultPlayerName : saved!;
@@ -208,44 +250,78 @@ class GameController {
     _notify();
   }
 
-  /// Begins a new session in [mode] and shows the first checkout. With no
-  /// [level] every checkout number is equally likely.
+  /// Begins a new session in [mode]. Checkout calculator and practice show the
+  /// first checkout; Checkout input waits for a number. With no [level] every
+  /// checkout number is equally likely.
   void startGame([DifficultyLevel? level, GameMode mode = GameMode.calculator]) {
     _mode = mode;
     _difficulty = level;
     _sessionId = _now().millisecondsSinceEpoch;
     _sessionPoints = 0;
     _sessionStreak = 0;
+    _undosLeft = maxUndos; // a fresh session: undo can be used 3 more times
+    _replay = false;
     _generator.reset();
-    _nextChallenge();
+    if (mode == GameMode.input) {
+      _waitForNumber();
+    } else {
+      _nextChallenge();
+    }
+  }
+
+  /// Checkout input: the player entered [number]. A number that can be checked
+  /// out starts the game on it; one that cannot shows the "impossible" screen;
+  /// anything outside 2 to 170 is refused.
+  NumberEntry enterNumber(int number) {
+    if (_phase != GamePhase.entering) return NumberEntry.outOfRange;
+    if (number < CheckoutEngine.minCheckout || number > CheckoutEngine.maxCheckout) {
+      return NumberEntry.outOfRange;
+    }
+    final challenge = _generator.forNumber(number);
+    if (challenge == null) {
+      _impossibleNumber = number;
+      _insult = Phrases.randomInsult(_random);
+      _phase = GamePhase.impossible;
+      _notify();
+      return NumberEntry.impossible;
+    }
+    _replay = false;
+    _begin(challenge);
+    return NumberEntry.accepted;
   }
 
   /// Fills the next free box. Ignored when the hand is full or not playing.
   void selectDart(DartThrow dart) {
-    if (_phase != GamePhase.playing || isHandFull || _leaving) return;
+    if (_phase != GamePhase.playing || isHandFull) return;
     _entered.add(dart);
     _round?.throwDart(dart);
     _notify();
   }
 
+  /// Takes back the last dart. In Checkout calculator this uses one of the 3
+  /// undos of the session.
   void undo() {
     if (!canUndo) return;
+    if (undosLeft != null) _undosLeft--;
     _entered.removeLast();
     _round?.undo();
     _notify();
   }
 
+  /// Takes back every dart. Not available where undo is limited, or it would
+  /// be a way round the limit.
   void clear() {
-    if (_phase != GamePhase.playing || _entered.isEmpty) return;
+    if (_phase != GamePhase.playing || _entered.isEmpty || undosLeft != null) return;
     _entered.clear();
     _round?.reset();
     _notify();
   }
 
   /// Judges the answer, scores, records and moves to the result screen.
-  /// Calculator: needs every box filled. Choice: needs the round to be over.
+  /// Calculator: needs every free box filled. Practice: needs the round to be
+  /// over.
   Future<void> submit() async {
-    if (_phase != GamePhase.playing || !isHandFull || _leaving) return;
+    if (_phase != GamePhase.playing || !isHandFull) return;
     final challenge = _challenge!;
     final elapsed = _timer.stop();
     final round = _round;
@@ -255,22 +331,28 @@ class GameController {
     await _finish(challenge, validation, elapsed);
   }
 
-  /// Turns a finished Checkout practice round into a verdict.
+  /// Checkout calculator: the player says this number has no checkout.
+  Future<void> pressNoCheckout() async {
+    if (_phase != GamePhase.playing || !_mode.isChallenge) return;
+    final challenge = _challenge!;
+    final elapsed = _timer.stop();
+    await _finish(challenge, _validator.validateNoCheckout(challenge), elapsed);
+  }
+
+  /// Turns a finished practice round into a verdict.
   ValidationResult _judgeChoice(ChoiceRound round) {
     final route = CheckoutRoute(_entered);
     final steps = round.steps;
     switch (round.status) {
       case RoundStatus.checkedOut:
-        final fewest = _advisor.optimalRoutes(round.target).first.length;
         final sum = steps.map((s) => s.dart.score).join(' + ');
         return ValidationResult(
           outcome: AttemptOutcome.correct,
           playerRoute: route,
           isOptimal: round.isOptimal,
           message: round.isOptimal
-              ? '$sum = ${round.target}. Checked out in the fewest darts.'
-              : '$sum = ${round.target}. Checked out, but it can be done in '
-                  '$fewest ${fewest == 1 ? 'dart' : 'darts'}.',
+              ? '$sum = ${round.target}. Checked out in an optimal way.'
+              : '$sum = ${round.target}. Checked out, but not in an optimal way.',
         );
       case RoundStatus.bust:
         final last = steps.last;
@@ -292,42 +374,35 @@ class GameController {
     }
   }
 
-  /// Abandons the attempt; recorded as a failure so stats stay honest.
-  ///
-  /// With [toMenu] the run ends instead of showing the result: the attempt is
-  /// saved and the leaderboard updated first, then the game returns to the menu
-  /// phase so the caller can open the leaderboard with an up-to-date row.
-  Future<void> giveUp({bool toMenu = false}) async {
-    if (_phase != GamePhase.playing || _leaving) return;
-    final challenge = _challenge!;
-    final elapsed = _timer.stop();
-    final validation = ValidationResult(
-      outcome: AttemptOutcome.gaveUp,
-      playerRoute: CheckoutRoute(_entered),
-      message: 'You skipped this checkout.',
-      isOptimal: false,
-    );
-    await _finish(challenge, validation, elapsed, showResult: !toMenu);
-  }
-
+  /// Continues: the next number (Checkout input: back to typing a number).
   void nextCheckout() {
-    if (_phase != GamePhase.result) return;
-    _nextChallenge();
+    if (_phase != GamePhase.result && _phase != GamePhase.impossible) return;
+    _replay = false;
+    if (_mode == GameMode.input) {
+      _waitForNumber();
+    } else {
+      _nextChallenge();
+    }
   }
 
-  /// Checkout practice: plays the number just finished (checked out, busted or
-  /// skipped) again from the start, to try the same or a different route.
-  void sameCheckout() {
-    if (_phase != GamePhase.result || _mode != GameMode.choice) return;
+  /// Plays the number just finished again from the start. A replay has no
+  /// clock, no points and is not saved; Next checkout then carries on normally.
+  void replayCheckout() {
+    if (_phase != GamePhase.result || _challenge == null) return;
+    _replay = true;
     _begin(_challenge!);
   }
 
+  /// Leaving mid-checkout records nothing.
   void quitToMenu() {
     _timer.stop();
     _phase = GamePhase.menu;
     _challenge = null;
     _round = null;
     _result = null;
+    _replay = false;
+    _impossibleNumber = null;
+    _insult = null;
     _entered.clear();
     _notify();
   }
@@ -341,81 +416,89 @@ class GameController {
   Future<void> _finish(
     Challenge challenge,
     ValidationResult validation,
-    Duration elapsed, {
-    bool showResult = true,
-  }) async {
-    if (!showResult) _leaving = true; // no more input while it is being saved
+    Duration elapsed,
+  ) async {
     final round = _round;
-    // Choice counts the darts actually thrown; calculator the boxes shown.
-    final dartsUsed = round != null ? _entered.length : challenge.dartCount;
-    // Checkout practice is not scored: no points won or lost, ever.
-    final score = !_mode.hasScore
-        ? ScoreBreakdown.zero
-        : _scoring.score(
+    final replay = _replay;
+    final scored = _mode.hasScore && !replay;
+    final recorded = _mode.isRecorded && !replay;
+
+    final score = scored
+        ? _scoring.score(
             correct: validation.isCorrect,
-            complexity: challenge.complexity,
-            darts: dartsUsed < 1 ? 1 : dartsUsed,
-            optimal: validation.isOptimal,
-            elapsed: elapsed,
-            timed: _mode.isTimed,
-          );
+            timeLeft: timeLimit - elapsed,
+            streakBefore: _sessionStreak,
+          )
+        : ScoreBreakdown.none;
     _result = AttemptResult(
       challenge: challenge,
       validation: validation,
       score: score,
       elapsed: elapsed,
-      optimalRoutes: round != null
-          ? _advisor.optimalRoutes(challenge.target)
-          : _optimal.optimalRoutes(challenge.target, dartsLeft: challenge.dartsLeft),
+      optimalRoutes: challenge.hasCheckout ? currentOptimalRoutes : const [],
       round: round,
+      isReplay: replay,
+      encouragement: validation.outcome == AttemptOutcome.noCheckoutCorrect
+          ? Phrases.randomEncouragement(_random)
+          : null,
     );
-    _sessionPoints += score.total;
-    _sessionStreak = validation.isCorrect ? _sessionStreak + 1 : 0;
-    _history = [
-      ..._history,
-      AttemptRecord(
-        sessionId: _sessionId,
-        timestampMs: _now().millisecondsSinceEpoch,
-        target: challenge.target,
-        dartCount: round != null ? _entered.length : challenge.dartCount,
-        difficulty: challenge.difficulty,
-        mode: _mode,
-        correct: validation.isCorrect,
-        optimal: validation.isOptimal,
-        timeMs: elapsed.inMilliseconds,
-        points: score.total,
-        playerRoute: validation.playerRoute.notation,
-        optimalRoute: challenge.optimalRoute.notation,
-      ),
-    ];
-    if (showResult) {
-      _phase = GamePhase.result;
-      _notify();
+    if (scored) {
+      _sessionPoints += score.total;
+      _sessionStreak = score.streakAfter;
+    }
+    if (recorded) {
+      _history = [
+        ..._history,
+        AttemptRecord(
+          sessionId: _sessionId,
+          timestampMs: _now().millisecondsSinceEpoch,
+          target: challenge.target,
+          dartCount: challenge.dartCount,
+          difficulty: challenge.difficulty,
+          mode: _mode,
+          correct: validation.isCorrect,
+          optimal: validation.isOptimal,
+          timeMs: elapsed.inMilliseconds,
+          points: score.total,
+          playerRoute: validation.playerRoute.notation,
+          optimalRoute: challenge.optimalRoute.notation,
+        ),
+      ];
+    }
+    _phase = GamePhase.result;
+    _notify();
+    if (recorded) {
       await _historyRepo.save(_history);
       await _leaderboard.submit(_playerName, summary);
-      return;
     }
-    // Leaving without a result screen: save first, so whatever is opened next
-    // (the leaderboard) already has this attempt in it.
-    await _historyRepo.save(_history);
-    await _leaderboard.submit(_playerName, summary);
-    _leaving = false;
-    quitToMenu();
+  }
+
+  void _waitForNumber() {
+    _challenge = null;
+    _round = null;
+    _result = null;
+    _impossibleNumber = null;
+    _insult = null;
+    _entered.clear();
+    _timer.stop();
+    _phase = GamePhase.entering;
+    _notify();
   }
 
   void _nextChallenge() {
-    // Only Checkout calculator has darts that are already thrown; practice
-    // always has all three.
-    _begin(_generator.next(_difficulty, _mode == GameMode.calculator));
+    final deal = _mode == GameMode.calculator ? Deal.calculator : Deal.practice;
+    _begin(_generator.next(_difficulty, deal));
   }
 
   void _begin(Challenge challenge) {
     _challenge = challenge;
     _entered.clear();
-    _round = _mode == GameMode.choice
-        ? ChoiceRound(challenge.target, _advisor)
+    _round = _mode.isPractice
+        ? ChoiceRound(challenge.target, _advisor, layout: challenge.layout)
         : null;
     _result = null;
+    _impossibleNumber = null;
+    _insult = null;
     _timer = _timerFactory()..start();
     _phase = GamePhase.playing;
     _notify();

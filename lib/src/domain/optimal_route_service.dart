@@ -1,112 +1,115 @@
+import 'better_doubles.dart';
 import 'bull_safe_finish.dart';
 import 'canonical_checkouts.dart';
 import 'checkout_engine.dart';
 import 'checkout_route.dart';
 import 'checkout_strategy.dart';
-import 'single_single_double.dart';
+import 'dart_throw.dart';
+import 'natural_aim.dart';
 
-/// Answers "what is the optimal way to check out N (in D darts)?".
+/// Answers "what is the optimal way to check out N?".
 ///
-/// Optimal sets, in priority order (first entry is the one shown as "the"
-/// answer; every entry is accepted as optimal, in any order of the setup darts):
+/// Optimal routes, in order of priority (the first entry is the one shown as
+/// "the" answer; every entry is accepted as optimal, in any order of the setup
+/// darts):
 ///
-///  * Minimum-dart, 2 darts, target 55..70: the bull-safe finish only
-///    (67 -> T17 D8). See [BullSafeFinish].
-///  * Minimum-dart, 3 darts: every bull-safe route (first treble, then the
-///    bull-safe finish; 121 has four), then the canonical chart route and its
-///    approved alternates.
-///  * Everything else at minimum darts: the canonical chart route (+ alternates),
-///    falling back to [CheckoutStrategy].
-///  * [chartOnlyCheckouts] (120) always keep their classic chart route.
+///  1. **Fewest darts.** A number that can be finished in 2 darts is never
+///     played (or accepted as optimal) in 3.
+///  2. **Bull-safe**, where it applies: with two darts left on 51 to 70 (the
+///     first box used), and for three-dart numbers whose first treble leaves
+///     51 to 70. The treble of the number whose single leaves 50, then the
+///     double - or that single, then the Bull. All of them are equal
+///     (57: T7 D18, S7 Bull; 119: T19 T12 D13, T19 S12 Bull). See
+///     [BullSafeFinish]. A three-dart number also accepts its chart route.
+///  3. **More singles.** It is far easier to hit a single than a double or a
+///     treble, so the routes with the most single setup darts win (the outer
+///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9 - never T5 D10.
+///  4. **Setup doubles last, then fewer triples.** Only sensible aims are
+///     used (singles and T15-T20, see [NaturalAim]).
 ///
-/// Only the minimum number of darts is ever optimal: a number that can be
-/// finished in 2 darts is never played (or accepted as optimal) in 3 - with one
-/// exception. On 51 to 70, when all three darts are free, single, single,
-/// double is better than any treble-double route and is the optimal one. See
-/// [SingleSingleDouble].
+/// With two darts on 51 to 70 and the *last* box used, rule 2 does not apply
+/// and the ordinary rules do: 57 is S17 D20, 65 is S25 D20.
 ///
-/// A chart entry that is illegal under the engine is ignored, never taught.
+/// [chartOnlyCheckouts] (120) always keep their classic chart route. A chart
+/// route is shown first when it is one of the optimal routes. A chart entry
+/// that is illegal under the engine is ignored, never taught.
 class OptimalRouteService {
   OptimalRouteService(
     this._engine, {
     CheckoutStrategy strategy = const CheckoutStrategy(),
     Map<int, String> canonical = canonicalCheckouts,
-    Map<int, List<String>> alternates = alternateOptimalCheckouts,
     Set<int> chartOnly = chartOnlyCheckouts,
   })  : _strategy = strategy,
         _canonical = canonical,
-        _alternates = alternates,
         _chartOnly = chartOnly;
 
   final CheckoutEngine _engine;
   final CheckoutStrategy _strategy;
   final Map<int, String> _canonical;
-  final Map<int, List<String>> _alternates;
   final Set<int> _chartOnly;
   final Map<int, List<CheckoutRoute>> _cache = {};
-  final Map<int, List<CheckoutRoute>> _spareDartCache = {};
 
   /// The primary optimal route, or null when [target] is not checkoutable.
-  CheckoutRoute? optimalRoute(int target, {int? dartsLeft}) {
-    final routes = optimalRoutes(target, dartsLeft: dartsLeft);
+  CheckoutRoute? optimalRoute(int target, {bool twoDartBullSafe = true}) {
+    final routes = optimalRoutes(target, twoDartBullSafe: twoDartBullSafe);
     return routes.isEmpty ? null : routes.first;
   }
 
   /// All optimal routes (primary first) for [target]; empty if impossible.
   ///
-  /// [dartsLeft] is how many darts the player can still throw. Left out, it is
-  /// the fewest darts the number needs. With a spare dart (all three free on
-  /// 51 to 70) the optimal routes are the single, single, double ones.
-  List<CheckoutRoute> optimalRoutes(int target, {int? dartsLeft}) {
+  /// [twoDartBullSafe] false is the "last box used" case: a two-dart number
+  /// over 50 is then played the ordinary way, not the bull-safe way.
+  List<CheckoutRoute> optimalRoutes(int target, {bool twoDartBullSafe = true}) {
     final minimum = _engine.minimumDarts(target);
     if (minimum == null) return const [];
-    if (_hasSingleSingleDouble(target, minimum, dartsLeft)) {
-      return _spareDartCache.putIfAbsent(target, () {
-        final routes = SingleSingleDouble.from(_engine.legalRoutes(target, darts: 3));
-        return List.unmodifiable(
-            routes.isEmpty ? _compute(target, minimum) : routes);
-      });
-    }
     return _cache.putIfAbsent(
-      target,
-      () => List.unmodifiable(_compute(target, minimum)),
+      target * 2 + (twoDartBullSafe ? 1 : 0),
+      () => List.unmodifiable(_compute(target, minimum, twoDartBullSafe)),
     );
   }
 
   /// Whether [route] is one of the optimal routes for [target]. Order of the
   /// non-finishing darts is irrelevant. A route longer than the minimum is
-  /// never optimal - except single, single, double on 51 to 70 when all three
-  /// darts are free ([dartsLeft] 3).
-  bool isOptimal(int target, CheckoutRoute route, {int? dartsLeft}) =>
-      optimalRoutes(target, dartsLeft: dartsLeft).any(route.isEquivalentTo);
+  /// never optimal.
+  bool isOptimal(int target, CheckoutRoute route, {bool twoDartBullSafe = true}) =>
+      optimalRoutes(target, twoDartBullSafe: twoDartBullSafe).any(route.isEquivalentTo);
 
-  bool _hasSingleSingleDouble(int target, int minimum, int? dartsLeft) =>
-      dartsLeft != null &&
-      dartsLeft > minimum &&
-      minimum == 2 &&
-      SingleSingleDouble.covers(target) &&
-      !_chartOnly.contains(target);
+  /// How many of the setup darts are singles (the outer bull counts).
+  static int singles(CheckoutRoute route) =>
+      route.setupDarts.where((d) => d.multiplier == Multiplier.single).length;
 
-  List<CheckoutRoute> _compute(int target, int minimum) {
+  List<CheckoutRoute> _compute(int target, int minimum, bool bullSafe) {
     final routes = <CheckoutRoute>[];
-    void add(CheckoutRoute? route) {
-      if (route == null) return;
-      if (!_engine.isLegalRoute(target, route) || route.length != minimum) return;
-      if (!routes.any(route.isEquivalentTo)) routes.add(route);
+    bool add(CheckoutRoute? route) {
+      if (route == null) return false;
+      if (!_engine.isLegalRoute(target, route) || route.length != minimum) return false;
+      if (routes.any(route.isEquivalentTo)) return false;
+      routes.add(route);
+      return true;
     }
 
-    final bullSafe = !_chartOnly.contains(target);
-    if (bullSafe && minimum == 2) {
-      add(BullSafeFinish.twoDartFinish(target));
-    } else if (bullSafe && minimum == 3) {
-      BullSafeFinish.threeDartRoutes(target).forEach(add);
-    }
-    // The chart only decides when the bull-safe rule does not cover it
-    // (2 darts), and is an accepted extra for 3 darts and 1 dart.
-    if (minimum != 2 || routes.isEmpty) {
-      add(_chartRoute(target));
-      for (final text in _alternates[target] ?? const <String>[]) {
-        add(CheckoutRoute.parse(text));
+    final chart = _chartRoute(target);
+    if (_chartOnly.contains(target)) {
+      add(chart);
+    } else if (minimum == 1) {
+      _engine.legalRoutes(target, darts: 1).forEach(add);
+    } else {
+      final safe = switch (minimum) {
+        2 when bullSafe => BullSafeFinish.twoDartRoutes(target),
+        3 => BullSafeFinish.threeDartRoutes(target),
+        _ => const <CheckoutRoute>[],
+      };
+      if (safe.isNotEmpty) {
+        safe.forEach(add);
+        if (minimum == 3) add(chart); // the chart route is accepted too
+      } else {
+        final tier = _tierRoutes(target, minimum);
+        // The chart route comes first when it is as good as the best (it has
+        // as many singles); a chart route with fewer singles is not optimal.
+        if (chart != null && tier.isNotEmpty && singles(chart) >= singles(tier.first)) {
+          add(chart);
+        }
+        tier.forEach(add);
       }
     }
 
@@ -114,6 +117,31 @@ class OptimalRouteService {
       add(_strategy.best(_engine.legalRoutes(target, darts: minimum)));
     }
     return routes;
+  }
+
+  /// Rule 3 and 4: the routes of [minimum] darts with the most singles, made of
+  /// sensible aims, best-looking first.
+  List<CheckoutRoute> _tierRoutes(int target, int minimum) {
+    final legal = _engine.legalRoutes(target, darts: minimum);
+    final natural = legal.where((r) => r.setupDarts.every(NaturalAim.isNatural)).toList();
+    final pool = natural.isEmpty ? legal : natural;
+    if (pool.isEmpty) return const [];
+    final best = pool.map(singles).reduce((a, b) => a > b ? a : b);
+    return pool.where((r) => singles(r) == best).toList()..sort(_compare);
+  }
+
+  /// Best-looking first: a finish on a better double, then the double the
+  /// strategy prefers, then fewer triples, then the bigger first dart.
+  int _compare(CheckoutRoute a, CheckoutRoute b) {
+    final byBetter = (BetterDoubles.leavesBetterDouble(a) ? 0 : 1)
+        .compareTo(BetterDoubles.leavesBetterDouble(b) ? 0 : 1);
+    if (byBetter != 0) return byBetter;
+    final byFinisher = _strategy.finisherRank(a).compareTo(_strategy.finisherRank(b));
+    if (byFinisher != 0) return byFinisher;
+    final byTrebles = a.trebleCount.compareTo(b.trebleCount);
+    if (byTrebles != 0) return byTrebles;
+    final byFirst = b.darts.first.score.compareTo(a.darts.first.score);
+    return byFirst != 0 ? byFirst : a.notation.compareTo(b.notation);
   }
 
   CheckoutRoute? _chartRoute(int target) {

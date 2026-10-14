@@ -1,135 +1,125 @@
-/// Tunable numbers for scoring. Swap or edit without touching the formula.
+/// Tunable numbers for scoring.
 ///
-/// Points are deliberately small whole numbers: +2 for an easy number close to
-/// zero up to +6 for a hard one, plus at most +1 optimal and +1 speed (so +8 is
-/// a perfect hard checkout). A miss costs what the checkout was worth.
+/// Points come from a streak: a correct checkout with time left on the clock
+/// scores as many points as checkouts you have got in a row.
 class ScoringConfig {
-  const ScoringConfig({
-    this.minBasePoints = 2,
-    this.maxBasePoints = 6,
-    this.optimalBonus = 1,
-    this.maxSpeedBonus = 1,
-    this.fastSecondsPerDart = 2.0,
-    this.slowSecondsPerDart = 10.0,
-    this.timeLimit = const Duration(seconds: 30),
-    this.overtimeSecondsPerPoint = 5,
-  });
-
-  /// Worth of the easiest checkout (complexity 0, e.g. D20).
-  final int minBasePoints;
-
-  /// Worth of the hardest checkouts; base points never exceed this.
-  final int maxBasePoints;
-
-  /// Extra points for matching an optimal route.
-  final int optimalBonus;
-
-  /// Speed bonus at its maximum.
-  final int maxSpeedBonus;
-
-  /// At or below this time per dart the full speed bonus is earned.
-  final double fastSecondsPerDart;
-
-  /// At or above this time per dart no speed bonus is earned.
-  final double slowSecondsPerDart;
+  const ScoringConfig({this.timeLimit = const Duration(seconds: 30)});
 
   /// The clock counts down from this; past zero it goes negative.
   final Duration timeLimit;
-
-  /// Every started block of this many seconds over the limit costs 1 point.
-  final int overtimeSecondsPerPoint;
 }
 
-/// Itemised score so the UI can show exactly where points came from.
+/// What an answer did to the score.
+enum ScoreKind {
+  /// Correct with time left: scores the streak length.
+  counted,
+
+  /// Correct, but the clock had run out: no points, the streak is kept.
+  late,
+
+  /// Wrong: no points, the streak starts again from 0.
+  miss,
+
+  /// Nothing was scored (a replay).
+  none,
+}
+
+/// The score for one answer, with everything needed to explain it.
 class ScoreBreakdown {
   const ScoreBreakdown({
-    this.base = 0,
-    this.optimalBonus = 0,
-    this.speedBonus = 0,
-    this.timePenalty = 0,
-    this.mistakePenalty = 0,
+    required this.kind,
+    this.points = 0,
+    this.streakBefore = 0,
+    this.streakAfter = 0,
+    this.timeLeft = Duration.zero,
   });
 
-  static const ScoreBreakdown zero = ScoreBreakdown();
+  static const ScoreBreakdown none = ScoreBreakdown(kind: ScoreKind.none);
 
-  final int base;
-  final int optimalBonus;
-  final int speedBonus;
+  final ScoreKind kind;
 
-  /// Points lost for finishing after the clock ran out (positive, subtracted).
-  final int timePenalty;
+  /// Points won (never negative).
+  final int points;
+  final int streakBefore;
+  final int streakAfter;
 
-  /// Points lost for a wrong or skipped checkout (positive, subtracted).
-  final int mistakePenalty;
+  /// The clock when the answer was given; negative once time was up.
+  final Duration timeLeft;
 
-  bool get isMistake => mistakePenalty > 0;
+  /// The amount added to the session score.
+  int get total => points;
 
-  /// The real amount won or lost. A mistake is negative, and so is a correct
-  /// checkout that is so late the overtime penalty is bigger than what it
-  /// earned - it is no longer rounded up to zero.
-  int get total {
-    if (isMistake) return -mistakePenalty;
-    return base + optimalBonus + speedBonus - timePenalty;
+  bool get isMistake => kind == ScoreKind.miss;
+
+  /// Why the answer scored what it did, one plain sentence per line.
+  List<String> explain() {
+    final seconds = (timeLeft.inMilliseconds / 1000).toStringAsFixed(2);
+    switch (kind) {
+      case ScoreKind.counted:
+        return [
+          'Time left: ${seconds}s. That is more than 0, so this checkout counts.',
+          'It is checkout number $streakAfter in a row, so it scores '
+              '$points ${points == 1 ? 'point' : 'points'}.',
+          'Keep going: the next one in a row is worth ${streakAfter + 1}. '
+              'A miss starts the count again from 0.',
+        ];
+      case ScoreKind.late:
+        return [
+          'Time left: ${seconds}s. The clock had run out, so no points this time.',
+          'Your streak of $streakBefore is kept, but it did not grow.',
+          'Finish with time left (above 0) to score again.',
+        ];
+      case ScoreKind.miss:
+        return [
+          'That was not right, so no points.',
+          streakBefore == 0
+              ? 'Your streak is 0. Get one right to start it.'
+              : 'Your streak of $streakBefore starts again from 0.',
+        ];
+      case ScoreKind.none:
+        return ['A replay does not score and has no clock.'];
+    }
   }
 }
 
-/// Base + Optimal + Speed - Overtime, or a penalty for a mistake.
-/// No UI or DOM knowledge.
+/// Streak scoring. No UI or DOM knowledge.
+///
+///  * A correct answer with time left (above 0) scores the streak length: the
+///    1st in a row is 1 point, the 2nd is 2, ... the 10th is 10.
+///  * A correct answer after the clock ran out scores 0 and keeps the streak.
+///  * A wrong answer scores 0 and resets the streak.
 class ScoringService {
   const ScoringService([this.config = const ScoringConfig()]);
 
   final ScoringConfig config;
 
-  /// What a checkout of this [complexity] is worth: easy numbers are worth the
-  /// minimum, the hardest routes the maximum.
-  int basePoints(int complexity) {
-    final points = config.minBasePoints + complexity;
-    if (points > config.maxBasePoints) return config.maxBasePoints;
-    return points < config.minBasePoints ? config.minBasePoints : points;
-  }
-
-  /// With [timed] false (Checkout practice) there is no clock: no speed bonus and
-  /// no overtime penalty, just the checkout and the optimal bonus.
   ScoreBreakdown score({
     required bool correct,
-    required int complexity,
-    required int darts,
-    required bool optimal,
-    required Duration elapsed,
-    bool timed = true,
+    required Duration timeLeft,
+    required int streakBefore,
   }) {
-    final base = basePoints(complexity);
-    // A wrong or skipped answer costs what the checkout was worth.
-    if (!correct) return ScoreBreakdown(mistakePenalty: base);
+    if (!correct) {
+      return ScoreBreakdown(
+        kind: ScoreKind.miss,
+        streakBefore: streakBefore,
+        timeLeft: timeLeft,
+      );
+    }
+    if (timeLeft > Duration.zero) {
+      final streak = streakBefore + 1;
+      return ScoreBreakdown(
+        kind: ScoreKind.counted,
+        points: streak,
+        streakBefore: streakBefore,
+        streakAfter: streak,
+        timeLeft: timeLeft,
+      );
+    }
     return ScoreBreakdown(
-      base: base,
-      optimalBonus: optimal ? config.optimalBonus : 0,
-      speedBonus: timed ? speedBonus(base: base, darts: darts, elapsed: elapsed) : 0,
-      timePenalty: timed ? timePenalty(elapsed) : 0,
+      kind: ScoreKind.late,
+      streakBefore: streakBefore,
+      streakAfter: streakBefore,
+      timeLeft: timeLeft,
     );
-  }
-
-  /// Points lost for going past the time limit; 0 while time remains.
-  int timePenalty(Duration elapsed) {
-    final over = elapsed - config.timeLimit;
-    if (over <= Duration.zero) return 0;
-    final block = config.overtimeSecondsPerPoint * Duration.millisecondsPerSecond;
-    return (over.inMilliseconds / block).ceil();
-  }
-
-  /// Bonus for answering quickly. Must be non-negative, never exceed
-  /// `maxSpeedBonus`, and never increase as [elapsed] grows.
-  int speedBonus({
-    required int base,
-    required int darts,
-    required Duration elapsed,
-  }) {
-    // TODO(human): choose the speed-bonus curve (the default below is linear).
-    final seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
-    final perDart = seconds / darts;
-    final span = config.slowSecondsPerDart - config.fastSecondsPerDart;
-    final fraction =
-        ((config.slowSecondsPerDart - perDart) / span).clamp(0.0, 1.0);
-    return (config.maxSpeedBonus * fraction).round();
   }
 }

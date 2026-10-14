@@ -86,7 +86,9 @@ class StatisticsService {
           pointsByDifficulty[r.difficulty]! + r.points;
       sessionPoints[r.sessionId] = (sessionPoints[r.sessionId] ?? 0) + r.points;
       if (r.points > bestSingle) bestSingle = r.points;
-      if (r.correct) {
+      // A right "No checkout" uses no darts (dart count 0), so it is not in the
+      // by-darts bars.
+      if (r.correct && r.dartCount > 0) {
         successesByDarts[r.dartCount] = (successesByDarts[r.dartCount] ?? 0) + 1;
       }
     }

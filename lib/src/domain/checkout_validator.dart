@@ -11,8 +11,14 @@ enum AttemptOutcome {
   wrongTotal,
   invalidFinish,
 
-  /// Player abandoned the attempt.
-  gaveUp,
+  /// "No checkout" was pressed on a number that really has no checkout.
+  noCheckoutCorrect,
+
+  /// "No checkout" was pressed on a number that can be checked out.
+  noCheckoutWrong,
+
+  /// Darts were entered for a number that has no checkout.
+  noCheckoutMissed,
 
   /// Checkout practice: went below zero, left 1, or hit zero without a double.
   bust,
@@ -35,10 +41,12 @@ class ValidationResult {
   /// Human explanation, e.g. "60 + 10 = 70. Incorrect - checkout does not equal 72."
   final String message;
 
-  /// True only for a correct checkout that matches an optimal route.
+  /// True only for a correct checkout that matches an optimal route (and for
+  /// a right "No checkout": using no darts is the best there is).
   final bool isOptimal;
 
-  bool get isCorrect => outcome == AttemptOutcome.correct;
+  bool get isCorrect =>
+      outcome == AttemptOutcome.correct || outcome == AttemptOutcome.noCheckoutCorrect;
 }
 
 /// Pure rule checking. Contains no scoring or UI concerns.
@@ -47,6 +55,26 @@ class CheckoutValidator {
 
   final CheckoutEngine _engine;
   final OptimalRouteService _optimal;
+
+  /// The player pressed "No checkout".
+  ValidationResult validateNoCheckout(Challenge challenge) {
+    final route = CheckoutRoute(const []);
+    if (!challenge.hasCheckout) {
+      return ValidationResult(
+        outcome: AttemptOutcome.noCheckoutCorrect,
+        playerRoute: route,
+        message: '${challenge.target} cannot be checked out. Good job!',
+        isOptimal: true,
+      );
+    }
+    return ValidationResult(
+      outcome: AttemptOutcome.noCheckoutWrong,
+      playerRoute: route,
+      message: '${challenge.target} can be checked out: '
+          '${challenge.optimalRoute.notation}.',
+      isOptimal: false,
+    );
+  }
 
   ValidationResult validate(Challenge challenge, List<DartThrow> darts) {
     final route = CheckoutRoute(darts);
@@ -60,16 +88,20 @@ class CheckoutValidator {
           isOptimal: false,
         );
 
-    // Up to the free darts of the visit; a checkout may use fewer of them.
+    if (!challenge.hasCheckout) {
+      return fail(
+        AttemptOutcome.noCheckoutMissed,
+        '$target cannot be checked out - the answer was "No checkout".',
+      );
+    }
+
+    // Up to the free darts of the visit.
     if (route.isEmpty || route.length > challenge.dartsLeft) {
       final left = challenge.dartsLeft;
       return fail(
         AttemptOutcome.wrongDartCount,
-        left == challenge.dartCount
-            ? 'This checkout needs exactly $left '
-                '${left == 1 ? 'dart' : 'darts'}, but you entered ${route.length}.'
-            : 'You have $left darts for this checkout, '
-                'but you entered ${route.length}.',
+        'This checkout needs exactly $left '
+        '${left == 1 ? 'dart' : 'darts'}, but you entered ${route.length}.',
       );
     }
 
@@ -95,7 +127,8 @@ class CheckoutValidator {
       outcome: AttemptOutcome.correct,
       playerRoute: route,
       message: '${route.arithmetic}. Correct!',
-      isOptimal: _optimal.isOptimal(target, route, dartsLeft: challenge.dartsLeft),
+      isOptimal: _optimal.isOptimal(target, route,
+          twoDartBullSafe: challenge.layout.bullSafe),
     );
   }
 }

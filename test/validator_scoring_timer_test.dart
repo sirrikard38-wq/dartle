@@ -19,8 +19,14 @@ void main() {
       expect(r.message, contains('60 + 12 = 72'));
     });
 
-    test('72 = T18 + D9 is correct but not optimal', () {
+    test('72 = T18 + D9 is correct and equally optimal (a treble of 15 or more)', () {
       final r = validator.validate(c72, darts('T18 D9'));
+      expect(r.isCorrect, isTrue);
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('72 = T14 + D15 is correct but not optimal (T14 is a silly aim)', () {
+      final r = validator.validate(c72, darts('T14 D15'));
       expect(r.isCorrect, isTrue);
       expect(r.isOptimal, isFalse);
     });
@@ -54,13 +60,30 @@ void main() {
           AttemptOutcome.wrongDartCount);
     });
 
-    test('two boxes for 67: only the bull-safe T17 D8 is optimal', () {
+    test('67 with the first box used: the bull-safe T17 D8 and S17 Bull are optimal', () {
       final c = catalog.forTarget(67)!;
       expect(c.dartCount, 2);
+      expect(c.layout, BoxLayout.leftUsed);
       expect(validator.validate(c, darts('T17 D8')).isOptimal, isTrue);
+      expect(validator.validate(c, darts('S17 Bull')).isOptimal, isTrue);
       final other = validator.validate(c, darts('T19 D5')); // 57 + 10 = 67
       expect(other.isCorrect, isTrue);
       expect(other.isOptimal, isFalse);
+    });
+
+    test('57 with the last box used: single and a double is optimal, T7 D18 is not', () {
+      final c = catalog.dealt(catalog.forTarget(57)!, BoxLayout.rightUsed);
+      expect(c.dartsLeft, 2);
+      for (final text in ['S17 D20', 'S19 D19', '25 D16', 'S7 Bull']) {
+        expect(validator.validate(c, darts(text)).isOptimal, isTrue, reason: text);
+      }
+      final trebleRoute = validator.validate(c, darts('T7 D18'));
+      expect(trebleRoute.isCorrect, isTrue);
+      expect(trebleRoute.isOptimal, isFalse);
+      // With the first box used it is the other way round.
+      final left = catalog.dealt(catalog.forTarget(57)!, BoxLayout.leftUsed);
+      expect(validator.validate(left, darts('T7 D18')).isOptimal, isTrue);
+      expect(validator.validate(left, darts('S17 D20')).isOptimal, isFalse);
     });
 
     test('170 accepts only T20 T20 Bull', () {
@@ -69,166 +92,102 @@ void main() {
       expect(validator.validate(c, darts('T20 T20 D20')).outcome,
           AttemptOutcome.wrongTotal);
     });
+
+    group('No checkout', () {
+      final impossible = catalog.impossible.first; // 159
+
+      test('the right answer on a number with no checkout', () {
+        expect(impossible.hasCheckout, isFalse);
+        final r = validator.validateNoCheckout(impossible);
+        expect(r.outcome, AttemptOutcome.noCheckoutCorrect);
+        expect(r.isCorrect, isTrue);
+        expect(r.isOptimal, isTrue, reason: 'using no darts is the best there is');
+      });
+
+      test('pressed on a number that can be checked out: a miss', () {
+        final r = validator.validateNoCheckout(catalog.forTarget(72)!);
+        expect(r.outcome, AttemptOutcome.noCheckoutWrong);
+        expect(r.isCorrect, isFalse);
+        expect(r.message, contains('T20 D6'));
+      });
+
+      test('darts entered on a number with no checkout are wrong', () {
+        final r = validator.validate(impossible, darts('T20 T20 D20'));
+        expect(r.outcome, AttemptOutcome.noCheckoutMissed);
+        expect(r.isCorrect, isFalse);
+      });
+    });
   });
 
-  group('ScoringService', () {
+  group('ScoringService (streak points)', () {
     const scoring = ScoringService();
-    const slow = Duration(seconds: 60);
-    const fast = Duration(milliseconds: 500);
-    // Inside the 30s limit but too slow for any speed bonus.
-    const inTime = Duration(seconds: 25);
+    const inTime = Duration(seconds: 12);
+    const late = Duration(seconds: -3);
 
-    ScoreBreakdown score({
-      bool correct = true,
-      int complexity = 2,
-      int darts = 2,
-      bool optimal = false,
-      Duration elapsed = inTime,
-    }) =>
-        scoring.score(
-          correct: correct,
-          complexity: complexity,
-          darts: darts,
-          optimal: optimal,
-          elapsed: elapsed,
-        );
+    ScoreBreakdown score({bool correct = true, Duration timeLeft = inTime, int streak = 0}) =>
+        scoring.score(correct: correct, timeLeft: timeLeft, streakBefore: streak);
 
-    test('base points are small whole numbers: +2 easy up to +6 hard', () {
-      expect(scoring.basePoints(0), 2); // e.g. D20
-      expect(scoring.basePoints(1), 3);
-      expect(scoring.basePoints(2), 4);
-      expect(scoring.basePoints(4), 6);
-      expect(scoring.basePoints(6), 6); // e.g. 170
-      expect(scoring.basePoints(40), 6, reason: 'capped at the maximum');
-      expect(scoring.basePoints(-3), 2, reason: 'never below the minimum');
-    });
-
-    test('totals stay in a single-digit range, never hundreds', () {
-      final perfectHard = score(complexity: 6, darts: 3, optimal: true, elapsed: fast);
-      expect(perfectHard.total, 8); // 6 + 1 optimal + 1 speed
-      final easySlow = score(complexity: 0, darts: 1, elapsed: inTime);
-      expect(easySlow.total, 2);
-      for (var c = 0; c <= 8; c++) {
-        final best = score(complexity: c, darts: 3, optimal: true, elapsed: fast).total;
-        expect(best, inInclusiveRange(2, 8), reason: 'complexity $c');
+    test('a correct checkout with time left scores the streak length', () {
+      for (var streak = 0; streak < 10; streak++) {
+        final s = score(streak: streak);
+        expect(s.kind, ScoreKind.counted);
+        expect(s.points, streak + 1, reason: 'checkout number ${streak + 1} in a row');
+        expect(s.streakAfter, streak + 1);
       }
     });
 
-    test('harder checkouts are worth more', () {
-      final points = [for (var c = 0; c <= 6; c++) score(complexity: c).total];
-      for (var i = 1; i < points.length; i++) {
-        expect(points[i], greaterThanOrEqualTo(points[i - 1]));
+    test('ten in a row: 1 + 2 + ... + 10', () {
+      var streak = 0;
+      var total = 0;
+      for (var i = 0; i < 10; i++) {
+        final s = score(streak: streak);
+        total += s.total;
+        streak = s.streakAfter;
       }
-      expect(points.last, greaterThan(points.first));
+      expect(streak, 10);
+      expect(total, 55);
+      expect(score(streak: 9).points, 10);
     });
 
-    test('a wrong or skipped checkout loses what it was worth', () {
-      expect(score(correct: false, complexity: 0).total, -2);
-      expect(score(correct: false, complexity: 4).total, -6);
-      expect(score(correct: false, complexity: 6).total, -6);
-      expect(score(correct: false).isMistake, isTrue);
-      // Speed or an optimal flag cannot rescue a miss.
-      expect(score(correct: false, optimal: true, elapsed: fast).total,
-          score(correct: false).total);
+    test('a miss scores nothing, costs nothing and resets the streak', () {
+      final s = score(correct: false, streak: 7);
+      expect(s.kind, ScoreKind.miss);
+      expect(s.isMistake, isTrue);
+      expect(s.total, 0);
+      expect(s.streakAfter, 0);
+      expect(s.streakBefore, 7);
     });
 
-    test('a hard miss costs more than an easy miss', () {
-      expect(score(correct: false, complexity: 5).total,
-          lessThan(score(correct: false, complexity: 0).total));
+    test('correct but after the clock ran out: no points, the streak is kept', () {
+      final s = score(timeLeft: late, streak: 4);
+      expect(s.kind, ScoreKind.late);
+      expect(s.total, 0);
+      expect(s.streakAfter, 4, reason: 'kept, but it did not grow');
     });
 
-    test('optimal route earns a bonus', () {
-      expect(score(optimal: false).optimalBonus, 0);
-      expect(score(optimal: true).optimalBonus, scoring.config.optimalBonus);
-      expect(score(optimal: true).total, greaterThan(score(optimal: false).total));
+    test('exactly zero time left is too late; any time left counts', () {
+      expect(score(timeLeft: Duration.zero, streak: 2).kind, ScoreKind.late);
+      expect(score(timeLeft: const Duration(milliseconds: 1), streak: 2).total, 3);
     });
 
-    test('speed bonus is bounded and never increases with time', () {
-      final bonuses = [
-        for (var ms = 0; ms <= 60000; ms += 500)
-          score(elapsed: Duration(milliseconds: ms)).speedBonus
-      ];
-      for (var i = 1; i < bonuses.length; i++) {
-        expect(bonuses[i], lessThanOrEqualTo(bonuses[i - 1]));
+    test('the score never goes down', () {
+      for (final correct in [true, false]) {
+        for (final left in [inTime, late, Duration.zero]) {
+          expect(score(correct: correct, timeLeft: left, streak: 5).total, greaterThanOrEqualTo(0));
+        }
       }
-      expect(bonuses.every((b) => b >= 0), isTrue);
-      expect(bonuses.first, lessThanOrEqualTo(scoring.config.maxSpeedBonus));
-      expect(score(elapsed: fast).speedBonus, greaterThan(0));
-      expect(score(elapsed: slow).speedBonus, 0);
     });
 
-    test('total is the sum of all parts', () {
-      final s = score(complexity: 6, darts: 3, optimal: true, elapsed: fast);
-      expect(s.total, s.base + s.optimalBonus + s.speedBonus);
-      expect(s.timePenalty, 0);
-      expect(s.mistakePenalty, 0);
+    test('every kind explains itself in plain sentences', () {
+      expect(score(streak: 5).explain().join(' '), contains('6 points'));
+      expect(score(streak: 0).explain().join(' '), contains('1 point.'));
+      expect(score(timeLeft: late, streak: 4).explain().join(' '), contains('streak of 4 is kept'));
+      expect(score(correct: false, streak: 3).explain().join(' '), contains('starts again from 0'));
+      expect(ScoreBreakdown.none.explain().join(' '), contains('replay'));
     });
 
-    test('no penalty inside the 30s limit, including exactly at it', () {
-      expect(score(elapsed: const Duration(seconds: 29)).timePenalty, 0);
-      expect(score(elapsed: const Duration(seconds: 30)).timePenalty, 0);
-    });
-
-    test('overtime costs 1 point per started 5 seconds', () {
-      expect(scoring.timePenalty(const Duration(milliseconds: 30001)), 1);
-      expect(scoring.timePenalty(const Duration(seconds: 35)), 1);
-      expect(scoring.timePenalty(const Duration(milliseconds: 35001)), 2);
-      // 38.33s elapsed = clock showing -8.33s => 8.33s over => 2 points.
-      final s = score(elapsed: const Duration(milliseconds: 38330), complexity: 6, darts: 3);
-      expect(s.timePenalty, 2);
-      expect(s.total, s.base + s.optimalBonus + s.speedBonus - s.timePenalty);
-      expect(score(elapsed: const Duration(seconds: 70)).timePenalty, 8);
-    });
-
-    test('a correct checkout that is very late shows the real loss, not zero', () {
-      // 107.5s elapsed = 77.5s over = 16 blocks of 5s (the screen showed -22 at 107.50s over).
-      final s = score(complexity: 0, darts: 1, elapsed: const Duration(minutes: 10));
-      expect(s.timePenalty, greaterThan(s.base));
-      expect(s.total, s.base + s.optimalBonus + s.speedBonus - s.timePenalty);
-      expect(s.total, lessThan(0));
-    });
-
-    test('the amount shown is the true net of earnings and overtime', () {
-      // 107.5s over the 30s limit costs ceil(107.5 / 5) = 22 points.
-      final late = scoring.timePenalty(const Duration(milliseconds: 137500));
-      expect(late, 22);
-      final s = score(complexity: 2, darts: 2, optimal: true, elapsed: const Duration(milliseconds: 137500));
-      // base 4 + optimal 1 + speed 0 - 22
-      expect(s.total, 4 + 1 + 0 - 22);
-      expect(s.total, -17);
-    });
-
-    test('untimed (Checkout practice): no speed bonus and no overtime penalty', () {
-      final slowAndLate = scoring.score(
-        correct: true,
-        complexity: 2,
-        darts: 2,
-        optimal: true,
-        elapsed: const Duration(minutes: 5),
-        timed: false,
-      );
-      expect(slowAndLate.timePenalty, 0);
-      expect(slowAndLate.speedBonus, 0);
-      expect(slowAndLate.total, scoring.basePoints(2) + scoring.config.optimalBonus);
-
-      // However fast, an untimed answer earns no speed bonus either.
-      final instant = scoring.score(
-        correct: true, complexity: 2, darts: 2, optimal: false,
-        elapsed: Duration.zero, timed: false,
-      );
-      expect(instant.speedBonus, 0);
-      expect(instant.total, scoring.basePoints(2));
-      // The same answer WITH a clock does get the bonus.
-      final timedInstant = scoring.score(
-        correct: true, complexity: 2, darts: 2, optimal: false, elapsed: Duration.zero,
-      );
-      expect(timedInstant.speedBonus, greaterThan(0));
-    });
-
-    test('a miss is a flat loss: overtime does not stack on top', () {
-      final s = score(correct: false, complexity: 3, elapsed: const Duration(minutes: 1));
-      expect(s.total, -5);
-      expect(s.timePenalty, 0);
+    test('the clock still counts down from 30 seconds', () {
+      expect(scoring.config.timeLimit, const Duration(seconds: 30));
     });
   });
 
