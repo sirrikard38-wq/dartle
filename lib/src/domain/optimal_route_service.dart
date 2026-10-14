@@ -6,6 +6,7 @@ import 'checkout_route.dart';
 import 'checkout_strategy.dart';
 import 'dart_throw.dart';
 import 'natural_aim.dart';
+import 'single_leave.dart';
 import 'site_routes.dart';
 
 /// Answers "what is the optimal way to check out N?".
@@ -21,7 +22,9 @@ import 'site_routes.dart';
 ///     number whose single leaves 50, then the double - or that single, then
 ///     the Bull. All of them are equal (57: T7 D18, S7 Bull; 119: T19 T12 D13,
 ///     T19 S12 Bull). See [BullSafeFinish]. A three-dart number also accepts
-///     its standard routes.
+///     its standard routes. A two-dart number from 41 to 60 also accepts a
+///     single that leaves a better double (57: S17 D20; 60: S20 D20), see
+///     [SingleLeave].
 ///  3. **More singles.** It is far easier to hit a single than a double or a
 ///     treble, so the routes with the most single setup darts win (the outer
 ///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9 - never T5 D10.
@@ -108,6 +111,8 @@ class OptimalRouteService {
       };
       if (safe.isNotEmpty) {
         safe.forEach(add);
+        // 41-60 in two darts: a single that leaves a better double is as good.
+        if (minimum == 2) SingleLeave.twoDartRoutes(target).forEach(add);
         // A three-dart number also accepts its standard routes.
         if (minimum == 3) standard.forEach(add);
       } else {

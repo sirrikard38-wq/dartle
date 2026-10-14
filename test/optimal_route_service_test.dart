@@ -119,24 +119,23 @@ void main() {
     });
   });
 
-  group('two darts over 50 up to 70: always bull-safe', () {
+  group('two darts over 50 up to 70: bull-safe', () {
     test('the triple of the number whose single leaves Bull, or that single and Bull', () {
-      expect(notations(57), {'T7 D18', 'S7 Bull'});
+      // Over 60 these are the only optimal routes.
       expect(notations(65), {'T15 D10', 'S15 Bull'});
       expect(notations(70), {'T20 D5', 'S20 Bull'});
-      // 51..54 have no triple route, only the single and the Bull.
-      expect(notations(52), {'S2 Bull'});
-      expect(notations(51), {'S1 Bull'});
       expect(optimal.optimalRoute(67)!.notation, 'T17 D8'); // primary
+      // From 51 to 60 they are optimal too (see the next group), and still first.
+      expect(notations(57), containsAll(['T7 D18', 'S7 Bull']));
+      expect(notations(52), contains('S2 Bull')); // 51..54 have no triple route
+      expect(notations(51), contains('S1 Bull'));
     });
 
-    test('a single and a double is not optimal there, even though it checks out', () {
-      for (final text in ['S17 D20', 'S19 D19', '25 D16']) {
-        expect(engine.isLegalRoute(57, r(text)), isTrue, reason: text);
-        expect(optimal.isOptimal(57, r(text)), isFalse, reason: text);
+    test('over 60 a single and a double is not optimal, even though it checks out', () {
+      for (final (target, text) in [(65, '25 D20'), (61, '25 D18'), (63, '25 D19')]) {
+        expect(engine.isLegalRoute(target, r(text)), isTrue, reason: text);
+        expect(optimal.isOptimal(target, r(text)), isFalse, reason: text);
       }
-      expect(optimal.isOptimal(65, r('25 D20')), isFalse);
-      expect(optimal.isOptimal(52, r('S12 D20')), isFalse);
     });
 
     test('every 2-dart target from 55 to 70 teaches the bull-safe route first', () {
@@ -147,12 +146,75 @@ void main() {
       }
     });
 
-    test('every 2-dart target from 51 to 70 has only the bull-safe routes', () {
-      for (var t = 51; t <= 70; t++) {
+    test('every 2-dart target from 61 to 70 has only the bull-safe routes', () {
+      for (var t = 61; t <= 70; t++) {
         expect(engine.minimumDarts(t), 2, reason: '$t');
         expect(notations(t), {for (final x in BullSafeFinish.twoDartRoutes(t)) x.notation},
             reason: '$t');
       }
+    });
+
+    test('every 2-dart target from 51 to 60 has the bull-safe routes first', () {
+      for (var t = 51; t <= 60; t++) {
+        final safe = BullSafeFinish.twoDartRoutes(t).map((x) => x.notation).toList();
+        final all = optimal.optimalRoutes(t).map((x) => x.notation).toList();
+        expect(all.take(safe.length), safe, reason: '$t');
+      }
+    });
+  });
+
+  group('two darts from 41 to 60: a single that leaves a better double is optimal too', () {
+    test('57: S17 D20 and S25 D16 next to the bull-safe T7 D18 and S7 Bull', () {
+      expect(optimal.optimalRoutes(57).map((x) => x.notation),
+          ['T7 D18', 'S7 Bull', 'S17 D20', '25 D16']);
+    });
+
+    test('60 is S20 D20 as well as T10 D15 and S10 Bull', () {
+      expect(notations(60), {'T10 D15', 'S10 Bull', 'S20 D20'});
+    });
+
+    test('51 to 54 have no treble route, so the singles and the Bull are all there is', () {
+      expect(notations(51), {'S1 Bull', 'S11 D20', 'S15 D18', 'S19 D16'});
+      expect(notations(52), {'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16'});
+    });
+
+    test('the double has to be one of the better doubles: S19 D19 is not optimal', () {
+      expect(engine.isLegalRoute(57, r('S19 D19')), isTrue);
+      expect(optimal.isOptimal(57, r('S19 D19')), isFalse);
+      expect(engine.isLegalRoute(58, r('S20 D19')), isTrue);
+      expect(optimal.isOptimal(58, r('S20 D19')), isFalse);
+    });
+
+    test('every such route is legal and optimal, from 41 to 60', () {
+      for (var t = SingleLeave.minTarget; t <= SingleLeave.maxTarget; t++) {
+        expect(engine.minimumDarts(t), t == 50 ? 1 : 2, reason: '$t');
+        final routes = SingleLeave.twoDartRoutes(t);
+        if (t != 50) expect(routes, isNotEmpty, reason: '$t');
+        for (final route in routes) {
+          expect(engine.isLegalRoute(t, route), isTrue, reason: '$t ${route.notation}');
+          expect(BetterDoubles.leavesBetterDouble(route), isTrue, reason: route.notation);
+          expect(route.darts.first.multiplier, Multiplier.single, reason: route.notation);
+          if (t != 50) expect(optimal.isOptimal(t, route), isTrue, reason: '$t ${route.notation}');
+        }
+      }
+    });
+
+    test('50 is still only the Bull: one dart is fewer than two', () {
+      expect(notations(50), {'Bull'});
+      expect(optimal.isOptimal(50, r('S10 D20')), isFalse);
+    });
+
+    test('40 and below, and 61 and above, are outside the rule', () {
+      expect(SingleLeave.covers(40), isFalse);
+      expect(SingleLeave.covers(41), isTrue);
+      expect(SingleLeave.covers(60), isTrue);
+      expect(SingleLeave.covers(61), isFalse);
+      expect(SingleLeave.twoDartRoutes(40), isEmpty);
+      expect(SingleLeave.twoDartRoutes(61), isEmpty);
+    });
+
+    test('the routes are listed on the biggest double first', () {
+      expect(SingleLeave.twoDartRoutes(57).map((x) => x.notation), ['S17 D20', '25 D16']);
     });
   });
 
@@ -318,10 +380,10 @@ void main() {
     });
 
     test('when the player entered an optimal route, the primary can be an extra', () {
-      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull
+      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull, S17 D20, 25 D16
       final entered = routes[1];
       final extras = BetterDoubles.extras(routes, exclude: [entered]);
-      expect(extras.map((x) => x.notation), ['T7 D18']);
+      expect(extras.map((x) => x.notation), ['T7 D18', 'S17 D20', '25 D16']);
     });
 
     test('extras of a number with one optimal route is empty', () {

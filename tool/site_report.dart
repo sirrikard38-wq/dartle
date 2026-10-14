@@ -13,7 +13,8 @@ String _why(CheckoutEngine engine, OptimalRouteService optimal, int n, CheckoutR
   }
   if (fewest == 2 && BullSafeFinish.covers(n)) {
     final bullSafe = BullSafeFinish.twoDartRoutes(n).map((x) => x.notation).join(' / ');
-    return 'two darts on 51 to 70: only the bull-safe $bullSafe';
+    final single = SingleLeave.covers(n) ? ' or a single that leaves a better double' : '';
+    return 'two darts on 51 to 70: only the bull-safe $bullSafe$single';
   }
   final best = optimal.optimalRoutes(n).first;
   if (OptimalRouteService.singles(r) < OptimalRouteService.singles(best)) {
@@ -80,7 +81,8 @@ void main() {
         'to the chart routes, wherever they have the fewest darts and as many '
         'singles as the best routes (for three-dart numbers whenever they have the '
         'fewest darts). Two-dart numbers from 51 to 70 are only ever the '
-        'bull-safe routes.')
+        'bull-safe routes, plus (from 51 to 60) a single that leaves a better '
+        'double.')
     ..writeln()
     ..writeln('## Numbers where no first-choice route of the site is optimal here')
     ..writeln()

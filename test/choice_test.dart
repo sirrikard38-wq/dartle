@@ -36,15 +36,21 @@ void main() {
     });
 
     test('the bull-safe routes stay optimal even with low trebles (55 -> T5 D20, S5 Bull)', () {
-      expect(advisor.optimalDarts(55), {d('T5'), d('S5')});
+      // 55 also has the singles that leave a better double: S15 D20, S19 D18.
+      expect(advisor.optimalDarts(55), {d('T5'), d('S5'), d('S15'), d('S19')});
     });
 
     group('priority: fewest darts, bull-safe, then the most singles', () {
-      test('57: the triple and the single of 7 are lit, and nothing else', () {
-        expect(advisor.optimalDarts(57), {d('T7'), d('S7')});
-        expect(advisor.optimalRoutes(57).map((r) => r.notation), ['T7 D18', 'S7 Bull']);
-        // The singles that leave a double (S17 D20) are not lit on 51 to 70.
-        expect(advisor.optimalDarts(57), isNot(contains(d('S17'))));
+      test('57: the bull-safe darts and the singles that leave a better double are lit', () {
+        expect(advisor.optimalDarts(57), {d('T7'), d('S7'), d('S17'), d('S25')});
+        expect(advisor.optimalRoutes(57).map((r) => r.notation),
+            ['T7 D18', 'S7 Bull', 'S17 D20', '25 D16']);
+        // S19 D19 checks 57 out, but D19 is not a better double: S19 is not lit.
+        expect(advisor.optimalDarts(57), isNot(contains(d('S19'))));
+      });
+
+      test('over 60 only the bull-safe darts are lit (65)', () {
+        expect(advisor.optimalDarts(65), {d('T15'), d('S15')});
       });
 
       test('singles come first: 35 lights singles only, never T5', () {
@@ -276,7 +282,7 @@ void main() {
       final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed);
       expect(r.maxDarts, 2);
       expect(r.dartsLeft, 2);
-      expect(r.optimalDarts, {d('T7'), d('S7')});
+      expect(r.optimalDarts, {d('T7'), d('S7'), d('S17'), d('S25')});
       r.throwDart(d('S7')); // leaves exactly 50
       expect(r.remaining, 50);
       r.throwDart(d('Bull'));
@@ -291,10 +297,19 @@ void main() {
       expect(r.isOptimal, isTrue);
     });
 
-    test('S17 then D20 checks 57 out, but it is not optimal: the bull-safe route is', () {
+    test('S17 then D20 checks 57 out and is optimal: a single that leaves a better double', () {
       final other = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
         ..throwDart(d('S17'))
         ..throwDart(d('D20'));
+      expect(other.isCheckedOut, isTrue);
+      expect(other.isOptimal, isTrue);
+      expect(other.steps.first.quality, DartQuality.optimal);
+    });
+
+    test('S19 then D19 checks 57 out, but D19 is not a better double: not optimal', () {
+      final other = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
+        ..throwDart(d('S19'))
+        ..throwDart(d('D19'));
       expect(other.isCheckedOut, isTrue);
       expect(other.isOptimal, isFalse);
       expect(other.steps.first.quality, DartQuality.fine);

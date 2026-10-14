@@ -4,24 +4,14 @@ How the routes on the "The Outs" pages of dartscheckoutassistant.com compare wit
 
 - Numbers with a checkout, all read from the site: 162
 - Site routes that are legal checkouts: 413
-- Optimal in the app: 249
-- Not optimal in the app: 164
+- Optimal in the app: 263
+- Not optimal in the app: 150
 
-The site's first-choice ("Throw") routes are accepted as optimal next to the chart routes, wherever they have the fewest darts and as many singles as the best routes (for three-dart numbers whenever they have the fewest darts). Two-dart numbers from 51 to 70 are only ever the bull-safe routes.
+The site's first-choice ("Throw") routes are accepted as optimal next to the chart routes, wherever they have the fewest darts and as many singles as the best routes (for three-dart numbers whenever they have the fewest darts). Two-dart numbers from 51 to 70 are only ever the bull-safe routes, plus (from 51 to 60) a single that leaves a better double.
 
 ## Numbers where no first-choice route of the site is optimal here
 
 - 50: site `S10 D20`, app `Bull` (uses 2 darts; the fewest is 1)
-- 51: site `S11 D20`, app `S1 Bull` (two darts on 51 to 70: only the bull-safe S1 Bull)
-- 52: site `S12 D20`, app `S2 Bull` (two darts on 51 to 70: only the bull-safe S2 Bull)
-- 53: site `S13 D20`, app `S3 Bull` (two darts on 51 to 70: only the bull-safe S3 Bull)
-- 54: site `S14 D20`, app `S4 Bull` (two darts on 51 to 70: only the bull-safe S4 Bull)
-- 55: site `S15 D20`, app `T5 D20` (two darts on 51 to 70: only the bull-safe T5 D20 / S5 Bull)
-- 56: site `S16 D20`, app `T6 D19` (two darts on 51 to 70: only the bull-safe T6 D19 / S6 Bull)
-- 57: site `S17 D20`, app `T7 D18` (two darts on 51 to 70: only the bull-safe T7 D18 / S7 Bull)
-- 58: site `S18 D20`, app `T8 D17` (two darts on 51 to 70: only the bull-safe T8 D17 / S8 Bull)
-- 59: site `S19 D20`, app `T9 D16` (two darts on 51 to 70: only the bull-safe T9 D16 / S9 Bull)
-- 60: site `S20 D20`, app `T10 D15` (two darts on 51 to 70: only the bull-safe T10 D15 / S10 Bull)
 - 75: site `T17 D12`, app `25 Bull` (fewer singles (1 are possible, e.g. 25 Bull))
 - 132: site `T20 T16 D12`, app `T19 25 Bull` (fewer singles (1 are possible, e.g. T19 25 Bull))
 - 135: site `Bull T15 D20`, app `T20 25 Bull` (fewer singles (1 are possible, e.g. T20 25 Bull))
@@ -93,24 +83,10 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 110: `S20 T18 D18` - uses 3 darts; the fewest is 2
 - 110: `T20 S18 D16` - uses 3 darts; the fewest is 2
 
-## Not the bull-safe route (2 darts, 51 to 70) (40)
+## Not the bull-safe route (2 darts, 51 to 70) (26)
 
-- 51: `S11 D20` - two darts on 51 to 70: only the bull-safe S1 Bull
-- 51: `S15 D18` - two darts on 51 to 70: only the bull-safe S1 Bull
-- 51: `S19 D16` - two darts on 51 to 70: only the bull-safe S1 Bull
-- 52: `S12 D20` - two darts on 51 to 70: only the bull-safe S2 Bull
-- 52: `T12 D8` - two darts on 51 to 70: only the bull-safe S2 Bull
-- 52: `S20 D16` - two darts on 51 to 70: only the bull-safe S2 Bull
-- 53: `S13 D20` - two darts on 51 to 70: only the bull-safe S3 Bull
-- 53: `S17 D18` - two darts on 51 to 70: only the bull-safe S3 Bull
-- 54: `S14 D20` - two darts on 51 to 70: only the bull-safe S4 Bull
-- 55: `S15 D20` - two darts on 51 to 70: only the bull-safe T5 D20 / S5 Bull
-- 56: `S16 D20` - two darts on 51 to 70: only the bull-safe T6 D19 / S6 Bull
-- 56: `T16 D4` - two darts on 51 to 70: only the bull-safe T6 D19 / S6 Bull
-- 57: `S17 D20` - two darts on 51 to 70: only the bull-safe T7 D18 / S7 Bull
-- 58: `S18 D20` - two darts on 51 to 70: only the bull-safe T8 D17 / S8 Bull
-- 59: `S19 D20` - two darts on 51 to 70: only the bull-safe T9 D16 / S9 Bull
-- 60: `S20 D20` - two darts on 51 to 70: only the bull-safe T10 D15 / S10 Bull
+- 52: `T12 D8` - two darts on 51 to 70: only the bull-safe S2 Bull or a single that leaves a better double
+- 56: `T16 D4` - two darts on 51 to 70: only the bull-safe T6 D19 / S6 Bull or a single that leaves a better double
 - 61: `25 D18` - two darts on 51 to 70: only the bull-safe T11 D14 / S11 Bull
 - 61: `T15 D8` - two darts on 51 to 70: only the bull-safe T11 D14 / S11 Bull
 - 61: `T7 D20` - two darts on 51 to 70: only the bull-safe T11 D14 / S11 Bull

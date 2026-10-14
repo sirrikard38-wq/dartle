@@ -85,18 +85,16 @@ void main() {
       expect(other.isOptimal, isFalse);
     });
 
-    test('57: the triple of 7 or the single 7 with the Bull is optimal, S17 D20 is not', () {
+    test('57: the bull-safe routes and a single that leaves a better double are optimal', () {
       final c = catalog.forTarget(57)!;
       expect(c.dartsLeft, 2);
-      for (final text in ['T7 D18', 'S7 Bull']) {
+      for (final text in ['T7 D18', 'S7 Bull', 'S17 D20', '25 D16']) {
         expect(validator.validate(c, darts(text)).isOptimal, isTrue, reason: text);
       }
-      // A single and a double checks 57 out, but the bull-safe routes are better.
-      for (final text in ['S17 D20', 'S19 D19', '25 D16']) {
-        final r = validator.validate(c, darts(text));
-        expect(r.isCorrect, isTrue, reason: text);
-        expect(r.isOptimal, isFalse, reason: text);
-      }
+      // S19 D19 checks 57 out, but D19 is not one of the better doubles.
+      final r = validator.validate(c, darts('S19 D19'));
+      expect(r.isCorrect, isTrue);
+      expect(r.isOptimal, isFalse);
     });
 
     test('170 accepts only T20 T20 Bull', () {
