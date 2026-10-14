@@ -72,9 +72,11 @@ class ViewContext {
       isFinalBox ? Multiplier.double : (pickedMultiplier ?? Multiplier.single);
 
   /// The multiplier a new checkout starts with: Triple when the best route has
-  /// a triple in it, otherwise Single.
-  static Multiplier? startingMultiplier(Challenge? challenge) =>
-      challenge != null && challenge.hasCheckout && challenge.optimalRoute.trebleCount > 0
-          ? Multiplier.treble
-          : null;
+  /// a triple in it, and also for a number with no checkout; otherwise Single
+  /// (null).
+  static Multiplier? startingMultiplier(Challenge? challenge) {
+    if (challenge == null) return null;
+    if (!challenge.hasCheckout) return Multiplier.treble;
+    return challenge.optimalRoute.trebleCount > 0 ? Multiplier.treble : null;
+  }
 }
