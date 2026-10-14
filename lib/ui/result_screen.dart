@@ -6,6 +6,7 @@ import '../dartle.dart';
 import 'choice_screen.dart';
 import 'dartboard.dart';
 import 'dom.dart';
+import 'modal.dart';
 import 'tiles.dart';
 import 'view_context.dart';
 
@@ -17,21 +18,16 @@ int _seed(String text) =>
 web.HTMLElement buildResultScreen(ViewContext ctx) {
   final game = ctx.game;
   final result = game.lastResult!;
+  final challenge = result.challenge;
   final round = result.round;
   final entered = result.playerRoute.darts;
-  final gaveUp = result.validation.outcome == AttemptOutcome.gaveUp;
-  // Always three boxes. Calculator: the darts already thrown are blurred out,
-  // as they were while playing. Choice: all three are free.
-  final slots = round?.maxDarts ?? Visit.darts;
-  final blurred = round != null ? 0 : result.challenge.alreadyThrown;
+  final noCheckoutRight = result.isNoCheckoutAnswer;
 
   final String headline;
   if (result.isCorrect && result.isOptimal) {
     headline = 'Optimal!';
   } else if (result.isCorrect) {
     headline = 'Checkout!';
-  } else if (gaveUp) {
-    headline = 'Skipped';
   } else {
     headline = switch (result.validation.outcome) {
       AttemptOutcome.bust => 'Bust',
@@ -40,26 +36,95 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
     };
   }
 
-  // Calculator: compare to the best route. Choice: each dart's own rating.
+  // Calculator: compare to the best routes. Practice: each dart's own rating.
   final List<TileState>? states = entered.isEmpty
       ? null
       : round != null
           ? [for (final s in round.steps) tileStateFor(s.quality)]
           : TileFeedback.best(entered, result.optimalRoutes);
-  final best = result.optimalRoutes.first;
+  final best = result.optimalRoutes.isEmpty ? null : result.optimalRoutes.first;
+
+  // One more route with a better double, then up to 3 more, shown as boxes.
+  final extras = best == null
+      ? const <CheckoutRoute>[]
+      : BetterDoubles.extras(result.optimalRoutes, best);
+  web.HTMLElement? extraBoxes() => extras.isEmpty
+      ? null
+      : el('div', cls: 'extra-routes', children: [
+          el('span', cls: 'extra-title', text: 'Also optimal'),
+          for (final route in extras)
+            tileRow(route.darts,
+                slots: route.length,
+                small: true,
+                states: List.filled(route.length, TileState.correct),
+                label: 'Also optimal: ${route.notation}'),
+        ]);
+
+  final showYours = entered.isNotEmpty;
+  final showBest = best != null && !result.isOptimal;
+  final yourExtras = !showBest ? extraBoxes() : null;
+  final bestExtras = showBest ? extraBoxes() : null;
 
   return el('main', cls: 'screen result', children: [
     el('div', cls: 'play-area', children: [
       el('p', cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
-          text: '${result.isCorrect ? '✓ ' : (gaveUp ? '' : '✗ ')}$headline',
+          text: '${result.isCorrect ? '✓ ' : '✗ '}$headline',
           attrs: {'role': 'status'}),
-      el('p', cls: 'target small', text: '${result.challenge.target}'),
-      if (!gaveUp) el('p', cls: 'message', text: result.validation.message),
+      el('p', cls: 'target small', text: '${challenge.target}'),
 
-      // The two boards, small and side by side. Each has its own route boxes
-      // directly underneath it (taps keep their exact position on the board).
+      // A right "No checkout": good job, and one silly line of encouragement.
+      if (noCheckoutRight) ...[
+        el('p', cls: 'good-job', text: 'Good job, no checkout here!'),
+        el('p', cls: 'encourage', text: result.encouragement ?? ''),
+      ],
+
+      // Only these links under the number: the explanations are in popups.
+      el('p', cls: 'why-row', children: [
+        button('Show why.', cls: 'text-link', focusKey: 'why', onPressed: (_) {
+          showModal(title: 'Why', body: [
+            for (final line in RouteExplainer.explain(
+              challenge: challenge,
+              optimalRoutes: result.optimalRoutes,
+              playerRoute: result.playerRoute,
+              playerCorrect: result.isCorrect,
+              playerOptimal: result.isOptimal,
+              mistake: result.validation.message,
+            ))
+              modalLine(line),
+          ]);
+        }),
+        if (result.isPractice && result.optimalRoutes.isNotEmpty)
+          button('All possibilities', cls: 'text-link', focusKey: 'all', onPressed: (_) {
+            showModal(title: 'All possibilities', body: [
+              el('p', cls: 'modal-line', text: 'Every optimal way to check out ${challenge.target}.'),
+              el('div', cls: 'possibilities', children: [
+                for (final route in result.optimalRoutes)
+                  el('figure', cls: 'board-figure', children: [
+                    buildDartboard(
+                      linesOnly: true,
+                      marks: spreadMarks(route.darts, const [], math.Random(_seed(route.notation))),
+                      label: 'Route ${route.notation}',
+                    ),
+                    tileRow(route.darts,
+                        slots: route.length,
+                        small: true,
+                        states: List.filled(route.length, TileState.correct),
+                        label: route.notation),
+                  ]),
+              ]),
+            ]);
+          }),
+      ]),
+
+      // The boards, small and side by side. Each has its route boxes directly
+      // underneath it (taps keep their exact position on the board).
       el('div', cls: 'result-boards', children: [
-        if (entered.isNotEmpty)
+        if (noCheckoutRight)
+          el('figure', cls: 'board-figure', children: [
+            buildDartboard(linesOnly: true, label: 'Empty board: no darts used'),
+            el('figcaption', text: 'No darts used'),
+          ]),
+        if (showYours)
           el('figure', cls: 'board-figure', children: [
             buildDartboard(
               linesOnly: true,
@@ -71,14 +136,16 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
             ),
             el('figcaption', text: 'Your darts'),
             tileRow(entered,
-                slots: slots,
-                blurred: blurred,
+                slots: Visit.darts,
+                used: challenge.layout.used,
                 small: true,
                 states: states,
                 label: 'Your darts'),
+            if (yourExtras != null) yourExtras,
           ]),
-        // Not optimal (or missed): the best route, marked and boxed the same way.
-        if (!result.isOptimal)
+        // Not optimal (or missed): the best route, marked and boxed the same
+        // way, with more optimal routes as boxes.
+        if (showBest)
           el('figure', cls: 'board-figure', children: [
             buildDartboard(
               linesOnly: true,
@@ -93,27 +160,20 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
                 small: true,
                 states: List.filled(best.length, TileState.correct),
                 label: 'Optimal route'),
+            if (bestExtras != null) bestExtras,
           ]),
       ]),
-      // Choice: every fewest-darts route is equally good - show a few.
-      if (!result.isOptimal && round != null && result.optimalRoutes.length > 1)
-        el('p', cls: 'equal-routes', children: [
-          el('span', text: 'Equally optimal'),
-          el('strong', text: result.optimalRoutes.take(5).map((r) => r.notation).join('  ·  ')),
-        ]),
       ..._footer(ctx, result),
     ]),
   ]);
 }
 
-/// Time, points, breakdown and the next button - the same in both modes.
+/// Time, score and the buttons.
 List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
   final game = ctx.game;
   final score = result.score;
-  // Checkout practice has no clock and no score, so it shows no time and no
-  // points at all - just the result and the boards.
-  final timed = !result.isChoice;
-  final scored = !result.isChoice;
+  // The practice modes have no clock and no score. A replay has neither.
+  final scored = game.mode.hasScore && !result.isReplay;
   final timeLeft = game.timeLimit - result.elapsed;
 
   web.HTMLElement big(String value, String label, {bool negative = false}) =>
@@ -123,37 +183,39 @@ List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
       ]);
 
   return [
-    if (timed || scored)
+    if (scored)
       el('div', cls: 'big-stats', children: [
-        if (timed) ...[
-          // Where the countdown stopped (negative if you ran over) ...
-          big(formatCountdown(timeLeft), 'TIME LEFT', negative: timeLeft.isNegative),
-          // ... and the real time taken: 30s down to -8.33s is 38.33s used.
-          big(formatSeconds(result.elapsed), 'TIME USED'),
-        ],
-        if (scored)
-          // The session score, with what this attempt gave next to it (+5 or -4).
-          el('div', cls: 'big-stat', children: [
-            el('div', cls: 'points-row', children: [
-              el('strong',
-                  cls: game.sessionPoints < 0 ? 'neg' : null,
-                  text: formatScore(game.sessionPoints)),
-              el('span',
-                  cls: 'delta${score.total < 0 ? ' neg' : ''}',
-                  text: formatPoints(score.total)),
-            ]),
-            el('span', text: 'POINTS'),
-          ]),
-      ]),
+        // Where the countdown stopped (negative if you ran over) ...
+        big(formatCountdown(timeLeft), 'TIME LEFT', negative: timeLeft.isNegative),
+        // ... and the real time taken: 30s down to -8.33s is 38.33s used.
+        big(formatSeconds(result.elapsed), 'TIME USED'),
+        // The current score, centred, with what this attempt gave small beside
+        // it. Press it to see how it was worked out.
+        button('', cls: 'big-stat score-stat', focusKey: 'score', ariaLabel:
+              'Score ${game.sessionPoints}, ${formatPoints(score.total)} this time. '
+              'Press to see how it was worked out.',
+            onPressed: (_) {
+          showModal(title: 'How the score was worked out', body: [
+            for (final line in score.explain()) modalLine(line),
+            modalLine('Score now: ${game.sessionPoints}.'),
+          ]);
+        })
+          ..appendChild(el('div', cls: 'points-row', children: [
+            el('strong', text: formatScore(game.sessionPoints)),
+            el('span', cls: 'delta', text: formatPoints(score.total)),
+          ]))
+          ..appendChild(el('span', text: 'SCORE')),
+      ])
+    else if (result.isReplay)
+      el('p', cls: 'hint', text: 'Replay - no clock, no points.'),
     button('Next checkout',
         cls: 'cta',
         focusKey: 'next',
         onPressed: (_) => game.nextCheckout()),
-    // Checkout practice: play the same number again, to try another route.
-    if (result.isChoice)
-      button('Same checkout',
-          cls: 'cta secondary',
-          focusKey: 'same',
-          onPressed: (_) => game.sameCheckout()),
+    // Play the same number again: no clock, no points, nothing saved.
+    button('Replay checkout',
+        cls: 'cta secondary',
+        focusKey: 'replay',
+        onPressed: (_) => game.replayCheckout()),
   ];
 }

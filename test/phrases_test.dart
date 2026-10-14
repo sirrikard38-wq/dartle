@@ -35,6 +35,17 @@ void main() {
       ]));
     });
 
+    test('"a" and "an" are used properly', () {
+      final a = RegExp(r'\ba (?=[aeiou])');
+      final an = RegExp(r'\ban (?![aeiou])');
+      for (final line in [...Phrases.insults, ...Phrases.encouragements]) {
+        // "a unicycle" is right: it starts with a consonant sound.
+        final check = line.replaceAll('a unicycle', 'the unicycle');
+        expect(a.hasMatch(check), isFalse, reason: line);
+        expect(an.hasMatch(check), isFalse, reason: line);
+      }
+    });
+
     test('the two lists are different things', () {
       expect(Phrases.insults.toSet().intersection(Phrases.encouragements.toSet()), isEmpty);
     });

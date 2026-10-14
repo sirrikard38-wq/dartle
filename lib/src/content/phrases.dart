@@ -57,6 +57,10 @@ abstract final class Phrases {
     return List.unmodifiable(lines);
   }
 
+  /// "a" or "an" for the word that follows ("an otter", but "a unicycle").
+  static String _a(String word) =>
+      'aeiou'.contains(word[0]) && !word.startsWith('uni') ? 'an' : 'a';
+
   static String _cap(String text) =>
       text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
 
@@ -96,15 +100,15 @@ abstract final class Phrases {
 
   static Iterable<String> _insultCandidates() sync* {
     for (final noun in _nouns) {
-      yield 'You look like a $noun!';
+      yield 'You look like ${_a(noun)} $noun!';
       yield '${_cap(noun)} head!';
-      yield 'Even a $noun would have hit that!';
-      yield 'Your brain called. It wants to be a $noun.';
+      yield 'Even ${_a(noun)} $noun would have hit that!';
+      yield 'Your brain called. It wants to be ${_a(noun)} $noun.';
       for (final adj in _adjectives) {
         yield '${_cap(adj)} $noun!';
         yield 'You $adj $noun!';
-        yield 'You smell like a $adj $noun!';
-        yield 'Your darts are a $adj $noun!';
+        yield 'You smell like ${_a(adj)} $adj $noun!';
+        yield 'Your darts are ${_a(adj)} $adj $noun!';
       }
     }
     for (final adj in _adjectives) {
@@ -112,8 +116,8 @@ abstract final class Phrases {
       yield 'You are so $adj!';
     }
     for (final shape in _shapes) {
-      yield 'You are a $shape!';
-      yield 'You throw like a $shape!';
+      yield 'You are ${_a(shape)} $shape!';
+      yield 'You throw like ${_a(shape)} $shape!';
     }
     // A little mild swearing, as ordered.
     for (final noun in _nouns) {
@@ -164,15 +168,15 @@ abstract final class Phrases {
       yield 'Absolute $animal energy!';
       yield 'Hell yes, $animal!';
       for (final praise in _praise) {
-        yield 'You are a $praise $animal!';
+        yield 'You are ${_a(praise)} $praise $animal!';
       }
       for (final skill in _skills) {
-        yield 'You $skill like a $animal!';
+        yield 'You $skill like ${_a(animal)} $animal!';
       }
     }
     for (final thing in _things) {
       yield 'No $thing is out of your reach.';
-      yield 'You could out-throw a $thing.';
+      yield 'You could out-throw ${_a(thing)} $thing.';
       for (final praise in _praise) {
         yield 'Pure $praise $thing energy!';
       }

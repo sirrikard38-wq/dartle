@@ -9,8 +9,8 @@ import 'tiles.dart';
 import 'view_context.dart';
 
 /// Places a dart and, the moment the answer is complete, submits it: the last
-/// box in Checkout calculator, or the end of the round in Checkout practice.
-/// There is no confirm step: if you missed, you missed.
+/// free box in Checkout calculator, or the end of the round in the practice
+/// modes. There is no confirm step: if you missed, you missed.
 ///
 /// [point] is where the board was tapped (null when entered another way); it
 /// becomes the translucent mark for that dart.
@@ -18,12 +18,12 @@ void enterDart(ViewContext ctx, DartThrow dart, [BoardPoint? point]) {
   final game = ctx.game;
   if (game.phase != GamePhase.playing || game.isHandFull) return;
 
-  // Checkout practice: a number with a lit best dart is worth that dart however
-  // it was entered (board, keypad or typed). The mark then goes in the middle
-  // of the lit area instead of where it was pressed.
+  // Practice: a number with a lit best dart is worth that dart however it was
+  // entered (board or typed). The mark then goes in the middle of the lit area
+  // instead of where it was pressed.
   var worth = dart;
   var at = point;
-  if (game.mode == GameMode.choice) {
+  if (game.mode.isPractice) {
     worth = ChoiceAdvisor.resolveTap(game.choiceHints, dart);
     if (worth != dart) at = null;
   }
@@ -42,28 +42,23 @@ void enterDart(ViewContext ctx, DartThrow dart, [BoardPoint? point]) {
   if (game.isHandFull) game.submit();
 }
 
-/// "Give up", at the end of the screen just above How to play. It ends the run
-/// and shows the leaderboard.
-web.HTMLElement buildGiveUp(ViewContext ctx) => el('div', cls: 'give-up', children: [
-      button('Give up',
-          cls: 'text-btn', focusKey: 'skip', onPressed: (_) => ctx.giveUp()),
-    ]);
-
-/// The Single / Double / Treble toggle with the board or keypad. Shared by both
-/// game modes.
+/// The Single / Double / Triple toggle with the board, Undo and (in Checkout
+/// calculator) No checkout. Shared by every game mode.
 web.HTMLElement buildEntryPanel(ViewContext ctx) {
   final game = ctx.game;
+  final practice = game.mode.isPractice;
   return buildInputPanel(
-    view: ctx.inputView,
     multiplier: ctx.activeMultiplier(),
     finalBox: ctx.isFinalBox,
     canUndo: game.canUndo,
+    undosLeft: game.undosLeft,
     marks: markPoints(game.entered, ctx.marks),
-    // Checkout practice has no ring buttons: the area pressed is the dart thrown.
-    ringButtons: game.mode != GameMode.choice,
-    // Checkout practice: light up the best darts before the player chooses.
-    lit: game.mode == GameMode.choice ? game.choiceHints : null,
-    onChangeView: ctx.setInputView,
+    // The practice modes have no ring buttons: the area pressed is the dart
+    // thrown.
+    ringButtons: !practice,
+    showNoCheckout: !practice,
+    // Practice: light up the best darts before the player chooses.
+    lit: practice ? game.choiceHints : null,
     onPickMultiplier: (m, kb) {
       ctx.pickedMultiplier = m;
       ctx.keepFocus(kb ? 'mode-${m.name}' : null);
@@ -77,11 +72,12 @@ web.HTMLElement buildEntryPanel(ViewContext ctx) {
       ctx.keepFocus(kb ? 'undo' : null);
       game.undo();
     },
+    onNoCheckout: (kb) => game.pressNoCheckout(),
   );
 }
 
 web.HTMLElement buildGameScreen(ViewContext ctx) {
-  if (ctx.game.mode == GameMode.choice) return buildChoiceScreen(ctx);
+  if (ctx.game.mode.isPractice) return buildChoiceScreen(ctx);
 
   final game = ctx.game;
   final challenge = game.challenge!;
@@ -94,11 +90,11 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
         'aria-label': 'Checkout ${challenge.target}, '
             '${challenge.dartsLeft} ${challenge.dartsLeft == 1 ? 'dart' : 'darts'} left',
       }),
-      // Always three boxes. Darts already thrown are blurred out: only the
-      // free boxes can be used.
+      // Always three boxes. The ones already used are crossed out: only the
+      // free boxes can be filled.
       tileRow(game.entered,
           slots: Visit.darts,
-          blurred: challenge.alreadyThrown,
+          used: challenge.layout.used,
           activeIndex: game.entered.length,
           live: true,
           showDarts: true,
@@ -108,10 +104,13 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
               ? null
               : TileFeedback.best(game.entered, game.currentOptimalRoutes)),
       _remainingLine(challenge.target, game.entered),
-      timerLine(game),
+      // A replay has no clock.
+      if (game.isReplay)
+        el('p', cls: 'hint', text: 'Replay - no clock, no points.')
+      else
+        timerLine(game),
     ]),
     buildEntryPanel(ctx),
-    buildGiveUp(ctx),
     buildHowToPlay(game),
   ]);
 }

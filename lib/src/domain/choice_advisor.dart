@@ -48,6 +48,10 @@ class ChoiceAdvisor {
     };
   }
 
+  /// True when [target] has exactly one legal checkout (170 is just
+  /// T20 T20 Bull): "Only possible checkout."
+  bool hasOnlyOneCheckout(int target) => _engine.legalRoutes(target).length == 1;
+
   /// Every equally optimal route for [remaining], best-looking first. With
   /// [bullSafe] false (the last box used) a two-dart number over 50 is played
   /// the ordinary way. Empty if [remaining] cannot be checked out.

@@ -1,8 +1,14 @@
 # Dartle — Darts Checkout Trainer
 
-Wordle-style trainer for 501 checkouts. A number appears with three boxes (a
-visit); boxes that are blurred out are darts already thrown, and you fill the
-free ones with S/D/T/Bull buttons.
+Wordle-style trainer for 501 checkouts, in three modes:
+
+- **Checkout calculator** - a number and three boxes (a visit). Boxes that are
+  crossed out are darts already used; you fill the free ones. Against the
+  clock, scored by streak, saved to statistics and the leaderboard.
+- **Checkout practice** - choose your own darts one at a time; the optimal darts
+  are lit on the board. No clock, no score, nothing saved.
+- **Checkout input** - type any number (2-170) and practise it the same way.
+
 Pure Dart, compiled to JS; the only runtime dependency is `package:web`.
 
 ## Run
@@ -14,39 +20,57 @@ dart run tool/build.dart       # compiles web/ into build/
 dart run tool/serve.dart       # http://localhost:8080
 ```
 
+Every push to `main` is tested, built and published to GitHub Pages by
+`.github/workflows/pages.yml`.
+
 ## Rules chosen (documented, not assumed)
 
 - Checkout = 1–3 darts summing exactly to the target; **last dart must be a
-  double D1–D20 or Bull (50)**. Outer bull (25) is a legal non-finishing dart.
-- No misses/busts are modelled.
-- Checkoutable totals: 2–170 except 159, 162, 163, 165, 166, 168, 169.
-  Computed by exhaustive search, never hand-listed.
-- A challenge's dart count = the minimum darts it needs. So 140/150/160/167/170
-  are always 3 darts; the generator cannot produce an impossible
-  target/dart-count pair because it only draws from the catalog.
-- Checkout calculator always shows three boxes (`Visit`). A 1-dart number has
-  its first two boxes blurred (already thrown); a 2-dart number has either just
-  the first box blurred or all three free (50/50); a 3-dart number has all three
-  free. A checkout may use fewer darts than are free and is judged the moment
-  the number is checked out.
-- On 51–70 with all three darts free, **single, single, double** is optimal
-  (better than any treble-double: `SingleSingleDouble`). With the first dart
-  blurred, the bull-safe treble finish (55–70) stays optimal.
-- **Optimal** = the canonical chart route (`canonical_checkouts.dart`) plus a
-  few approved alternates. Fallback for any uncovered number is
-  `CheckoutStrategy` (fewer darts → preferred finisher → trebles → big first
-  dart). `72` is charted as `T20 D6` per the product spec (`T16 D12` is an
-  approved alternate). Tests verify every chart entry is legal and minimal.
+  double D1–D20 or Bull (50)**. Outer bull (25) is a single and a legal
+  non-finishing dart.
+- Checkoutable totals: 2–170 except 159, 162, 163, 165, 166, 168, 169
+  (computed by exhaustive search, never hand-listed). Those seven are dealt in
+  the calculator too; the right answer is the **No checkout** button.
+- A number's dart count = the fewest darts it needs. The calculator always shows
+  three boxes (`Visit`, `BoxLayout`): a **1-dart** number has its first two
+  boxes crossed out; a **2-dart** number has the left box crossed out, except
+  between 51 and 70 where it is the left or the right box (50/50); a
+  **3-dart** number has none crossed out. Free darts always equal the fewest
+  darts.
+- **Optimal** (see `OptimalRouteService`), in order:
+  1. the fewest darts;
+  2. **bull-safe** where it applies - 2 darts on 51-70 with the left box used,
+     and 3-dart numbers whose first triple leaves 51-70: the triple of the
+     number whose single leaves 50, then the double, *or* that single, then the
+     Bull (57: `T7 D18`, `S7 Bull`; 119: `T19 T12 D13`, `T19 S12 Bull`). A
+     three-dart number also accepts its chart route;
+  3. otherwise the **most singles** (they are far easier to hit; the outer bull
+     counts), then setup doubles last, then fewer triples, using only sensible
+     aims (singles, T15-T20). 35 is `S15 D10` = `S3 D16` = `S17 D9`, never
+     `T5 D10`. With the right box used on 51-70 this rule applies: 57 is
+     `S17 D20`, 65 is `25 D20`.
+  Equal routes are all optimal, in any order of the setup darts. 120 stays
+  `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
+  equal route is shown first; tests verify every chart entry is legal and
+  minimal.
+- **Better doubles** are a set: D20 D18 D16 D14 D12 D10 D8 D6 D5 D4 D2 D1. The
+  result screen shows one more optimal route on one of them, plus up to three
+  more, as boxes.
+- **Score** (calculator only): a right answer with time left on the 30 s clock
+  scores the streak length (1st = 1, 2nd = 2, ... 10th = 10); a right answer
+  after the clock ran out scores 0 and keeps the streak; a miss costs nothing
+  and resets the streak. Undo: 3 per session.
 - Difficulty is a data-driven complexity band (`difficulty.dart`):
   `(darts-1) + trebles + (bull?1:0) + (target>=100?1:0)`.
-  Easy 0–1, Medium 2–4, Hard 5+.
 
 ## Layout
 
 ```
-lib/src/domain       DartThrow, CheckoutRoute, CheckoutEngine, optimal routes,
-                     difficulty, catalog, generator, validator
-lib/src/scoring      ScoringService (base + difficulty + optimal + speed)
+lib/src/domain       DartThrow, CheckoutRoute, CheckoutEngine, optimal routes
+                     (bull-safe, better doubles, explainer), box layouts,
+                     catalog, generator, validator
+lib/src/content      the 1000 insults and 1000 encouragements
+lib/src/scoring      ScoringService (streak points)
 lib/src/timing       AttemptTimer (monotonic, idempotent start)
 lib/src/stats        AttemptRecord, HistoryRepository, StatisticsService
 lib/src/leaderboard  LeaderboardRepository (+ local impl), LeaderboardService

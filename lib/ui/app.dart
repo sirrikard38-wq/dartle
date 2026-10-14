@@ -5,9 +5,12 @@ import 'package:web/web.dart' as web;
 import '../dartle.dart';
 import 'dom.dart';
 import 'game_screen.dart';
+import 'impossible_screen.dart';
 import 'leaderboard_screen.dart';
 import 'menu_screen.dart';
+import 'modal.dart';
 import 'modes_screen.dart';
+import 'number_entry_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
 import 'stats_screen.dart';
@@ -21,21 +24,24 @@ class DartleApp {
       game: _game,
       rerender: render,
       showPage: _showPage,
-      giveUp: _giveUp,
       keepFocus: (key) => _focusKey = key,
       toast: _showToast,
-      setInputView: _setInputView,
-      inputView: _loadInputView(),
     );
     _game.addListener(() {
       final phase = _game.phase;
       if (phase != _lastPhase) {
-        // A new checkout starts with the smart default mode again.
-        if (phase == GamePhase.playing) _ctx.pickedMultiplier = null;
-        // Celebrate the moment an optimal checkout is revealed.
+        // A new checkout starts with the smart default mode: Triple when the
+        // best route has a triple in it.
+        if (phase == GamePhase.playing) {
+          _ctx.pickedMultiplier = ViewContext.startingMultiplier(_game.challenge);
+        }
+        if (phase == GamePhase.entering) _ctx.numberBuffer = '';
+        // Celebrate the moment an optimal checkout is revealed (not in a replay).
+        final result = _game.lastResult;
         if (phase == GamePhase.result &&
             _game.mode.hasSound &&
-            _game.lastResult?.isOptimal == true) {
+            result?.isOptimal == true &&
+            result?.isReplay == false) {
           _sound.playOptimal();
         }
         if (phase != GamePhase.result) _sound.stop();
@@ -74,36 +80,6 @@ class DartleApp {
     render();
   }
 
-  static const String _inputViewKey = 'dartle.inputview';
-
-  InputView _loadInputView() {
-    try {
-      final saved = web.window.localStorage.getItem(_inputViewKey);
-      return InputView.values.firstWhere((v) => v.name == saved,
-          orElse: () => InputView.board);
-    } on Object {
-      return InputView.board;
-    }
-  }
-
-  void _setInputView(InputView view) {
-    _ctx.inputView = view;
-    try {
-      web.window.localStorage.setItem(_inputViewKey, view.name);
-    } on Object {
-      // Preference just won't persist.
-    }
-    _focusKey = 'view-toggle';
-    render();
-  }
-
-  /// Give up: the skipped attempt is saved, then the leaderboard opens (with
-  /// this attempt already counted). The back arrow there returns to the menu.
-  Future<void> _giveUp() async {
-    _page = MenuPage.leaderboard;
-    await _game.giveUp(toMenu: true);
-  }
-
   /// Opens a menu page. Leaving a checkout stops its timer and the unfinished
   /// attempt is not recorded.
   void _showPage(MenuPage page) {
@@ -122,6 +98,8 @@ class DartleApp {
     final screen = switch (_game.phase) {
       GamePhase.playing => buildGameScreen(_ctx),
       GamePhase.result => buildResultScreen(_ctx),
+      GamePhase.entering => buildNumberEntryScreen(_ctx),
+      GamePhase.impossible => buildImpossibleScreen(_ctx),
       GamePhase.menu => switch (_page) {
           MenuPage.welcome => buildWelcomeScreen(_ctx),
           MenuPage.home => buildMenuScreen(_ctx),
@@ -130,9 +108,13 @@ class DartleApp {
           MenuPage.leaderboard => buildLeaderboardScreen(_ctx),
         },
     };
-    // Fade a screen in only when it changes, not on every dart tapped.
+    // Fade a screen in only when it changes, not on every dart tapped. A popup
+    // belongs to the screen it was opened on.
     final screenKey = '${_game.phase.name}-${_page.name}';
-    if (screenKey != _lastScreen) screen.classList.add('enter');
+    if (screenKey != _lastScreen) {
+      screen.classList.add('enter');
+      closeModal();
+    }
     _lastScreen = screenKey;
 
     _root.textContent = '';
@@ -169,13 +151,17 @@ class DartleApp {
           render();
         });
 
-    // No sound (and no sound button) while playing Checkout practice.
+    // No sound (and no sound button) in the practice modes.
     final showSound = inMenu || _game.mode.hasSound;
     final right = el('div', cls: 'header-actions', children: [
       if (showSound) soundButton,
-      // Checkout practice has no score, so no score pill there.
+      // Only Checkout calculator has a score: the current score, with a small
+      // grey label under it.
       if (!inMenu && _game.mode.hasScore)
-        el('span', cls: 'score-pill', text: '${_game.sessionPoints}'),
+        el('div', cls: 'score-box', children: [
+          el('span', cls: 'score-pill', text: formatScore(_game.sessionPoints)),
+          el('span', cls: 'score-label', text: 'Current score'),
+        ]),
     ]);
 
     return el('header', cls: 'app-header', children: [
@@ -206,6 +192,11 @@ class DartleApp {
 
   void _onKey(web.KeyboardEvent event) {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key == 'Escape' && isModalOpen) {
+      closeModal();
+      return;
+    }
+    if (isModalOpen) return; // a popup is open: the keys belong to it
     final active = web.document.activeElement;
     final tag = active?.tagName.toLowerCase();
     if (tag == 'input' || tag == 'textarea' || tag == 'select') return;
@@ -220,8 +211,32 @@ class DartleApp {
           event.preventDefault();
           _game.nextCheckout();
         }
+      case GamePhase.entering:
+        _onEntryKey(event, onButton);
+      case GamePhase.impossible:
+        if (event.key == 'Enter' && !onButton) {
+          final next = _root.querySelector('[data-focus="next"]');
+          if (next != null && !next.hasAttribute('disabled')) {
+            event.preventDefault();
+            _game.nextCheckout();
+          }
+        }
       case GamePhase.menu:
         break;
+    }
+  }
+
+  /// Checkout input: type the number on the keyboard too.
+  void _onEntryKey(web.KeyboardEvent event, bool onButton) {
+    final key = event.key;
+    if (key == 'Backspace') {
+      event.preventDefault();
+      deleteNumberDigit(_ctx);
+    } else if (key == 'Enter' && !onButton) {
+      event.preventDefault();
+      submitNumber(_ctx);
+    } else if (key.length == 1 && '0123456789'.contains(key)) {
+      typeNumberDigit(_ctx, key);
     }
   }
 
@@ -247,8 +262,8 @@ class DartleApp {
   }
 
   void _pick(Multiplier m) {
-    // Checkout practice has no ring buttons, so S / D / T do nothing there.
-    if (_game.mode == GameMode.choice) return;
+    // The practice modes have no ring buttons, so S / D / T do nothing there.
+    if (_game.mode.isPractice) return;
     if (_ctx.isFinalBox && m != Multiplier.double) {
       _showToast('The last dart must be a double');
       return;

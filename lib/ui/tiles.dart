@@ -33,12 +33,12 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 /// A Wordle row of [slots] tiles. Missing entries render as empty boxes.
 ///
 /// * [states] colours the tiles and plays the flip reveal.
-/// * [activeIndex] outlines the box that will receive the next dart.
+/// * [activeIndex] outlines the free box that will receive the next dart.
 /// * [showDarts] puts small darts in each box: one in the first box, two in
 ///   the second, three in the third (the box's dart number).
-/// * [blurred] blurs out that many boxes from the left: darts already thrown.
-///   They cannot be used, so [darts] (and [states] and [activeIndex]) start at
-///   the first box after them.
+/// * [used] are the boxes that are already used (crossed out in burgundy, with
+///   their darts dotted). They cannot be filled: [darts], [states] and
+///   [activeIndex] count only the free boxes, left to right.
 web.HTMLElement tileRow(
   List<DartThrow> darts, {
   required int slots,
@@ -48,23 +48,25 @@ web.HTMLElement tileRow(
   String? label,
   bool live = false,
   bool showDarts = false,
-  int blurred = 0,
+  Set<int> used = const {},
 }) {
-  final free = slots - blurred;
+  final free = [for (var i = 0; i < slots; i++) if (!used.contains(i)) i];
   return el('div', cls: 'tile-row${small ? ' small' : ''}', attrs: {
     'role': 'group',
     'aria-label': label ??
-        'Your checkout, $free ${free == 1 ? 'dart' : 'darts'} left',
+        'Your checkout, ${free.length} ${free.length == 1 ? 'dart' : 'darts'} left',
   }, children: [
     for (var i = 0; i < slots; i++)
-      if (i < blurred)
-        _tile(null, index: i, active: false, live: live, showDarts: showDarts, blurred: true)
+      if (used.contains(i))
+        _tile(null, index: i, active: false, live: live, showDarts: showDarts, usedBox: true)
       else
         _tile(
-          i - blurred < darts.length ? darts[i - blurred] : null,
+          free.indexOf(i) < darts.length ? darts[free.indexOf(i)] : null,
           index: i,
-          state: states != null && i - blurred < states.length ? states[i - blurred] : null,
-          active: i - blurred == activeIndex,
+          state: states != null && free.indexOf(i) < states.length
+              ? states[free.indexOf(i)]
+              : null,
+          active: free.indexOf(i) == activeIndex,
           live: live,
           showDarts: showDarts,
         ),
@@ -77,20 +79,20 @@ web.HTMLElement _tile(DartThrow? dart,
     required bool active,
     required bool live,
     required bool showDarts,
-    bool blurred = false}) {
+    bool usedBox = false}) {
   // `live` colours a dart the moment it is entered (no flip, no replay on each
   // re-render); `reveal` is the animated end-of-attempt flip.
   final classes = [
     'tile',
     if (dart != null) 'filled m-${dart.multiplier.name}',
     if (active) 'active',
-    if (blurred) 'blurred',
-    if (showDarts) 'has-darts',
+    if (usedBox) 'used',
+    if (showDarts || usedBox) 'has-darts',
     if (state != null) '${live ? 'live' : 'reveal'} ${state.name}',
   ].join(' ');
 
-  final description = blurred
-      ? 'already thrown'
+  final description = usedBox
+      ? 'already used'
       : dart == null
           ? 'empty'
           : state == null
@@ -104,7 +106,7 @@ web.HTMLElement _tile(DartThrow? dart,
     textNode(dart?.notation ?? ''),
     if (state != null) el('span', cls: 'mark', text: _stateMarks[state]!, attrs: {'aria-hidden': 'true'}),
     // Box 1 holds one dart, box 2 two, box 3 three - all the same size.
-    if (showDarts)
+    if (showDarts || usedBox)
       el('span', cls: 'tile-darts', attrs: {'aria-hidden': 'true'}, children: [
         for (var k = 0; k <= index; k++) dartGlyph() as web.Node,
       ]),

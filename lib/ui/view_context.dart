@@ -5,35 +5,19 @@ import '../dartle.dart';
 /// The pages shown while the game phase is `menu` (i.e. away from a checkout).
 enum MenuPage { welcome, home, modes, stats, leaderboard }
 
-/// How darts are entered. Kept as an enum so more looks can be added.
-enum InputView {
-  board('Board'),
-  keys('Keys');
-
-  const InputView(this.label);
-  final String label;
-}
-
 /// What every screen builder needs from the app shell.
 class ViewContext {
   ViewContext({
     required this.game,
     required this.rerender,
     required this.showPage,
-    required this.giveUp,
     required this.keepFocus,
     required this.toast,
-    required this.setInputView,
-    this.inputView = InputView.board,
   });
 
   final GameController game;
   final void Function() rerender;
   final void Function(MenuPage page) showPage;
-
-  /// Give up: records the skipped attempt, then shows the leaderboard. Closing
-  /// the leaderboard goes back to the menu.
-  final Future<void> Function() giveUp;
 
   /// Restore focus to the element with this `data-focus` key after the next
   /// render (keyboard users only).
@@ -42,19 +26,18 @@ class ViewContext {
   /// Short message at the top of the screen.
   final void Function(String message) toast;
 
-  /// Switches (and remembers) the input look.
-  final void Function(InputView view) setInputView;
-
-  InputView inputView;
   LeaderboardSort leaderboardSort = LeaderboardSort.points;
 
   /// Multiplier the player explicitly picked for non-final darts; null means
   /// "single". It stays selected across darts until changed.
   Multiplier? pickedMultiplier;
 
+  /// Checkout input: the digits typed so far.
+  String numberBuffer = '';
+
   /// Where each entered dart landed on the board, aligned with
   /// `game.entered`. An entry is null when the dart was not entered by
-  /// tapping the board (keypad, keyboard); its mark is drawn mid-segment.
+  /// tapping the board (keyboard); its mark is drawn mid-segment.
   final List<BoardPoint?> marks = [];
 
   /// Randomness for placing repeated darts side by side. Positions are stored
@@ -73,8 +56,9 @@ class ViewContext {
     }
   }
 
-  /// True when the next dart is the last box - which must be a double. Only in
-  /// Checkout calculator; in Checkout practice you pick every dart freely.
+  /// True when the next dart is the last free box - which must be a double.
+  /// Only in Checkout calculator; in the practice modes you pick every dart
+  /// freely.
   bool get isFinalBox {
     final challenge = game.challenge;
     return challenge != null &&
@@ -82,8 +66,15 @@ class ViewContext {
         game.entered.length == challenge.dartsLeft - 1;
   }
 
-  /// The multiplier the input applies right now. The finishing dart is always
+  /// The multiplier the input applies right now. The finishing box is always
   /// a double, so it is forced; earlier darts use the sticky choice.
   Multiplier activeMultiplier() =>
       isFinalBox ? Multiplier.double : (pickedMultiplier ?? Multiplier.single);
+
+  /// The multiplier a new checkout starts with: Triple when the best route has
+  /// a triple in it, otherwise Single.
+  static Multiplier? startingMultiplier(Challenge? challenge) =>
+      challenge != null && challenge.hasCheckout && challenge.optimalRoute.trebleCount > 0
+          ? Multiplier.treble
+          : null;
 }

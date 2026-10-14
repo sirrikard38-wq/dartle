@@ -4,7 +4,7 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
-/// After Start: pick Checkout calculator or Checkout practice.
+/// After Start: pick Checkout calculator, Checkout practice or Checkout input.
 web.HTMLElement buildModesScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -21,7 +21,6 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen modes', children: [
     el('div', cls: 'play-area', children: [
-      el('h2', text: 'Choose a game'),
       el('div', cls: 'mode-list', children: [
         for (final mode in GameMode.values) modeButton(mode),
       ]),

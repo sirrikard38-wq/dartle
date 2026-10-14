@@ -22,6 +22,7 @@ export 'src/domain/dart_throw.dart';
 export 'src/domain/difficulty.dart';
 export 'src/domain/natural_aim.dart';
 export 'src/domain/optimal_route_service.dart';
+export 'src/domain/route_explainer.dart';
 export 'src/domain/tile_feedback.dart';
 export 'src/game/app_factory.dart';
 export 'src/game/game_controller.dart';

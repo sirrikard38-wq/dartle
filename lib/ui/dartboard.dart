@@ -197,6 +197,13 @@ web.Element buildDartboard({
   // Invisible press areas.
   if (interactive) {
     final litNumbers = {for (final d in lit ?? const <DartThrow>{}) d.number};
+    // A number with two or more lit areas (say the triple and the single, or
+    // the single and the double): each area is its own press area, exactly the
+    // size it is drawn, so you can pick the one you mean.
+    final manyLit = {
+      for (final n in litNumbers)
+        if (lit!.where((d) => d.number == n).length > 1) n,
+    };
     web.Element sector(double r0, double r1, double a0, double a1) =>
         svg('path', cls: 'hit', attrs: {'d': _sectorPath(r0, r1, a0, a1)});
 
@@ -209,13 +216,14 @@ web.Element buildDartboard({
         final hit = sector(_hitInner, _hitOuter, a0, a1);
         makeTappable(hit, DartThrow(mode!, number), focusKey: 'seg-$number');
         root.appendChild(hit);
-      } else if (litNumbers.contains(number)) {
-        // A number with a lit best dart: anywhere on it is worth that dart.
+      } else if (litNumbers.contains(number) && !manyLit.contains(number)) {
+        // A number with one lit best dart: anywhere on it is worth that dart.
         final hit = sector(_hitInner, _hitOuter, a0, a1);
         makeTappable(hit, DartThrow(Multiplier.single, number), focusKey: 'seg-$number');
         root.appendChild(hit);
       } else {
-        // Otherwise the exact area pressed is the dart thrown.
+        // Otherwise the exact area pressed is the dart thrown (with two or more
+        // lit areas, an unlit area of that number counts as the best lit dart).
         for (final zone in BoardZone.values) {
           final hit = sector(zone.inner, zone.outer, a0, a1);
           makeTappable(hit, DartThrow(zone.multiplier, number),

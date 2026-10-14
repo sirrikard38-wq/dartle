@@ -4,6 +4,24 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
+/// One row of the all-numbers table. A number with no checkout is in red and
+/// says so.
+web.HTMLElement _numberRow(GameController game, int n, TargetStats? t) {
+  final noCheckout = game.hasNoCheckout(n);
+  final success = t == null ? '—' : '${t.successes}/${t.attempts}';
+  return el('tr', cls: noCheckout ? 'no-checkout-row' : null, children: [
+    el('th', text: '$n', attrs: {'scope': 'row'}),
+    el('td', text: success),
+    if (noCheckout)
+      el('td', cls: 'no-checkout', text: 'no checkout', attrs: {'colspan': '3'})
+    else ...[
+      el('td', text: formatMsAsSeconds(t?.averageSuccessTimeMs)),
+      el('td', text: formatMsAsSeconds(t?.bestTimeMs)),
+      el('td', text: t == null ? '—' : '${t.optimalSuccesses}/${t.successes}'),
+    ],
+  ]);
+}
+
 web.HTMLElement buildStatsScreen(ViewContext ctx) {
   final game = ctx.game;
   final s = game.summary;
@@ -33,6 +51,7 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
   ]);
 
   final weakest = byTarget.where((t) => t.successes < t.attempts).take(5).toList();
+  final stats = {for (final t in byTarget) t.target: t};
 
   return el('main', cls: 'screen stats', children: [
     el('div', cls: 'play-area', children: [
@@ -53,7 +72,7 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
           for (final t in weakest)
             el('li', children: [
               el('strong', text: '${t.target}'),
-              el('span', text: '${t.successes} of ${t.attempts} right'),
+              el('span', text: '${t.successes} of ${t.attempts} success'),
             ]),
         ]),
       el('details', cls: 'more', children: [
@@ -68,28 +87,20 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
             ('Hard points', '${s.pointsByDifficulty[DifficultyLevel.hard]}'),
           ]) ...[el('dt', text: k), el('dd', text: v)],
         ]),
-        if (byTarget.isNotEmpty)
-          el('div', cls: 'table-wrap', children: [
-            el('table', cls: 'data-table', children: [
-              el('caption', text: 'Every number you have tried'),
-              el('thead', children: [
-                el('tr', children: [
-                  for (final h in ['No.', 'Right', 'Avg', 'Best', 'Optimal'])
-                    el('th', text: h, attrs: {'scope': 'col'}),
-                ]),
-              ]),
-              el('tbody', children: [
-                for (final t in byTarget)
-                  el('tr', children: [
-                    el('th', text: '${t.target}', attrs: {'scope': 'row'}),
-                    el('td', text: '${t.successes}/${t.attempts}'),
-                    el('td', text: formatMsAsSeconds(t.averageSuccessTimeMs)),
-                    el('td', text: formatMsAsSeconds(t.bestTimeMs)),
-                    el('td', text: '${t.optimalSuccesses}/${t.successes}'),
-                  ]),
+        el('div', cls: 'table-wrap', children: [
+          el('table', cls: 'data-table', children: [
+            el('caption', text: 'Every number, from 170 down to 2'),
+            el('thead', children: [
+              el('tr', children: [
+                for (final h in ['No.', 'Success', 'Avg', 'Best', 'Optimal'])
+                  el('th', text: h, attrs: {'scope': 'col'}),
               ]),
             ]),
+            el('tbody', children: [
+              for (var n = 170; n >= 2; n--) _numberRow(game, n, stats[n]),
+            ]),
           ]),
+        ]),
         button('Reset statistics', cls: 'text-btn', onPressed: (_) {
           if (web.window.confirm('Erase all saved statistics?')) {
             game.resetStatistics();

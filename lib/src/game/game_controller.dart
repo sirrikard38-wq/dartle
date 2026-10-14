@@ -187,6 +187,17 @@ class GameController {
   /// be checked out. Empty in Checkout calculator or once the round is over.
   Set<DartThrow> get choiceHints => _round?.optimalDarts ?? const {};
 
+  /// True for a number from 2 to 170 that has no checkout at all.
+  bool hasNoCheckout(int number) => _generator.isImpossible(number);
+
+  /// True when the number on screen can only be checked out one way.
+  bool get hasOnlyOneCheckout {
+    final challenge = _challenge;
+    return challenge != null &&
+        challenge.hasCheckout &&
+        _advisor.hasOnlyOneCheckout(challenge.target);
+  }
+
   /// Optimal routes for the checkout on screen. Empty when no checkout is
   /// showing (or the number has none).
   List<CheckoutRoute> get currentOptimalRoutes {

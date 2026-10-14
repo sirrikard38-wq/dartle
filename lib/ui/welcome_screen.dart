@@ -20,8 +20,8 @@ web.Element _dartIcon() => svg('svg', cls: 'dart-icon', attrs: {
       svg('path', attrs: {'d': 'M56 11 L70 14 L56 17 Z', 'fill': 'currentColor'}),
     ]);
 
-/// Shown every time the app opens: DARTLE, "Checkout calculator" and the
-/// author fade in one after another, then give way to "Welcome" with a name
+/// Shown every time the app opens: DARTLE and "Checkout calculator by PK
+/// Normal" fade in one after another, then give way to "Welcome" with a name
 /// box. Enter (or the dart button) continues to the menu. Tap to skip.
 web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
   final game = ctx.game;
@@ -60,7 +60,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     // Fade in from nothing, one after the other; no movement.
     el('div', cls: 'intro', children: [
       el('h1', cls: 'i1', text: 'DARTLE'),
-      el('p', cls: 'i2', text: 'by PK Normal'),
+      el('p', cls: 'i2', text: 'Checkout calculator by PK Normal'),
     ]),
     el('div', cls: 'form', children: [
       el('h2', text: 'Welcome'),

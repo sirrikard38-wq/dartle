@@ -2,7 +2,7 @@
 enum Multiplier {
   single(1, 'S', 'Single'),
   double(2, 'D', 'Double'),
-  treble(3, 'T', 'Treble');
+  treble(3, 'T', 'Triple');
 
   const Multiplier(this.factor, this.prefix, this.label);
 
