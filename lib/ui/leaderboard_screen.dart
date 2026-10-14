@@ -9,6 +9,7 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
   final sort = ctx.leaderboardSort;
   final list = el('ol', cls: 'rank-list');
   final status = el('p', cls: 'hint', text: 'Loading…');
+  final note = el('p', cls: 'hint', text: '');
 
   String metric(LeaderboardEntry e) => switch (sort) {
         LeaderboardSort.points => '${e.totalPoints}',
@@ -18,14 +19,24 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
       };
 
   game.leaderboard(sort).then((entries) {
-    status.textContent = '';
+    final online = game.leaderboardIsOnline;
+    final myId = game.leaderboardPlayerId;
+    // Online rows are told apart by id (two players may share a name); local
+    // rows by name.
+    bool isMe(LeaderboardEntry e) =>
+        e.id != null && myId != null ? e.id == myId : e.playerName == game.playerName;
+
+    status.textContent = entries.isEmpty ? 'No scores yet - be the first!' : '';
     for (final e in entries) {
-      final isMe = e.playerName == game.playerName;
-      list.appendChild(el('li', cls: isMe ? 'me' : null, children: [
+      list.appendChild(el('li', cls: isMe(e) ? 'me' : null, children: [
         el('span', cls: 'name', text: e.playerName),
         el('strong', text: metric(e)),
       ]));
     }
+    note.textContent = online
+        ? 'Online leaderboard: everyone who plays Dartle. Your name and scores '
+            'are visible to all players.'
+        : 'Scores on this device, plus sample players.';
   });
 
   return el('main', cls: 'screen leaderboard', children: [
@@ -43,7 +54,7 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
       ]),
       status,
       list,
-      el('p', cls: 'hint', text: 'Local scores plus sample players. Online ranking comes later.'),
+      note,
     ]),
   ]);
 }

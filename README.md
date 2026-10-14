@@ -55,6 +55,14 @@ The Android project is generated in the build (only the settings, artwork and
 build cache so each download can update the last; it is not a Play Store key.
 There is no iPhone app file: that needs a paid Apple developer account.
 
+## Online leaderboard
+
+The leaderboard can be shared by every player through a free Firebase Realtime
+Database (anonymous sign-in, rules in `firebase/database.rules.json`). Setup is
+in [docs/online-leaderboard.md](docs/online-leaderboard.md): fill in
+`web/online.json`. Until it is filled in, or when there is no connection, the
+leaderboard shows the scores on the device, as before.
+
 ## Rules chosen (documented, not assumed)
 
 - Checkout = 1–3 darts summing exactly to the target; **last dart must be a

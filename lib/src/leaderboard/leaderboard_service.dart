@@ -15,6 +15,7 @@ enum LeaderboardSort {
 
 class LeaderboardEntry {
   const LeaderboardEntry({
+    this.id,
     required this.playerName,
     required this.totalPoints,
     required this.averageTimeMs,
@@ -24,12 +25,13 @@ class LeaderboardEntry {
   });
 
   factory LeaderboardEntry.fromJson(Map<String, Object?> json) => LeaderboardEntry(
+        id: json['id'] as String?,
         playerName: json['playerName'] as String,
-        totalPoints: json['totalPoints'] as int,
-        averageTimeMs: json['averageTimeMs'] as int?,
+        totalPoints: (json['totalPoints'] as num).toInt(),
+        averageTimeMs: (json['averageTimeMs'] as num?)?.toInt(),
         accuracyPercent: (json['accuracyPercent'] as num).toDouble(),
         optimalPercent: (json['optimalPercent'] as num).toDouble(),
-        attempts: json['attempts'] as int,
+        attempts: (json['attempts'] as num).toInt(),
       );
 
   factory LeaderboardEntry.fromStats(String playerName, StatsSummary stats) =>
@@ -42,6 +44,8 @@ class LeaderboardEntry {
         attempts: stats.totalAttempts,
       );
 
+  /// Who this row belongs to on the online board (null for local rows).
+  final String? id;
   final String playerName;
   final int totalPoints;
 
@@ -52,6 +56,7 @@ class LeaderboardEntry {
   final int attempts;
 
   Map<String, Object?> toJson() => {
+        if (id != null) 'id': id,
         'playerName': playerName,
         'totalPoints': totalPoints,
         'averageTimeMs': averageTimeMs,
@@ -61,12 +66,20 @@ class LeaderboardEntry {
       };
 }
 
-/// Where leaderboard data lives. Implement this against a real backend later.
+/// Where leaderboard data lives: on this device ([LocalLeaderboardRepository])
+/// or on the shared online board (`OnlineLeaderboardRepository`).
 abstract interface class LeaderboardRepository {
   Future<List<LeaderboardEntry>> fetchEntries();
 
-  /// Inserts or replaces the entry for `entry.playerName`.
+  /// Inserts or replaces this player's entry.
   Future<void> submit(LeaderboardEntry entry);
+
+  /// True when the last [fetchEntries] came from the shared online board.
+  bool get isOnline;
+
+  /// This player's id on the online board (null when there is none yet), to
+  /// show which row is theirs.
+  String? get playerId;
 }
 
 /// Browser-local leaderboard seeded with mock rivals so it is never empty.
@@ -76,6 +89,12 @@ class LocalLeaderboardRepository implements LeaderboardRepository {
   static const String storageKey = 'dartle.leaderboard.v1';
 
   final StorageService _storage;
+
+  @override
+  bool get isOnline => false;
+
+  @override
+  String? get playerId => null;
 
   static const List<LeaderboardEntry> _mockRivals = [
     LeaderboardEntry(playerName: 'Bully', totalPoints: 186, averageTimeMs: 5200, accuracyPercent: 91, optimalPercent: 84, attempts: 40),
@@ -126,6 +145,12 @@ class LeaderboardService {
   LeaderboardService(this._repository);
 
   final LeaderboardRepository _repository;
+
+  /// True when the last board came from the shared online leaderboard.
+  bool get isOnline => _repository.isOnline;
+
+  /// This player's id on the online board, if they have one.
+  String? get playerId => _repository.playerId;
 
   Future<List<LeaderboardEntry>> ranked(
       [LeaderboardSort sort = LeaderboardSort.points]) async {

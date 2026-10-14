@@ -2,10 +2,14 @@ import 'package:dartle/dartle.dart';
 import 'package:dartle/ui/app.dart';
 import 'package:dartle/ui/install.dart';
 import 'package:dartle/ui/local_storage_service.dart';
+import 'package:dartle/ui/online_setup.dart';
 import 'package:web/web.dart' as web;
 
 Future<void> main() async {
-  final game = createGameController(LocalStorageService());
+  final storage = LocalStorageService();
+  // The shared online leaderboard, if web/online.json is filled in.
+  final leaderboard = await buildLeaderboard(storage);
+  final game = createGameController(storage, leaderboard: leaderboard);
   final root = web.document.querySelector('#app')!;
   final app = DartleApp(root, game);
   await game.init(); // loads saved history and the player name

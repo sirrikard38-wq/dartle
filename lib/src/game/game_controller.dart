@@ -231,6 +231,12 @@ class GameController {
   Future<List<LeaderboardEntry>> leaderboard(LeaderboardSort sort) =>
       _leaderboard.ranked(sort);
 
+  /// True when the last leaderboard shown came from the shared online board.
+  bool get leaderboardIsOnline => _leaderboard.isOnline;
+
+  /// This player's id on the online board (to mark their row), if any.
+  String? get leaderboardPlayerId => _leaderboard.playerId;
+
   void addListener(void Function() listener) => _listeners.add(listener);
 
   Future<void> init() async {

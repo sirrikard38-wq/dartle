@@ -14,7 +14,14 @@ import '../storage/storage_service.dart';
 import 'game_controller.dart';
 
 /// Composition root: the only place concrete services are wired together.
-GameController createGameController(StorageService storage, {Random? random}) {
+///
+/// With no [leaderboard] the leaderboard stays on this device; pass an
+/// [OnlineLeaderboardRepository] to share it with every player.
+GameController createGameController(
+  StorageService storage, {
+  Random? random,
+  LeaderboardRepository? leaderboard,
+}) {
   final engine = CheckoutEngine();
   final optimal = OptimalRouteService(engine);
   final catalog = CheckoutCatalog(engine, optimal);
@@ -26,7 +33,7 @@ GameController createGameController(StorageService storage, {Random? random}) {
     scoring: const ScoringService(),
     statistics: const StatisticsService(),
     history: HistoryRepository(storage),
-    leaderboard: LeaderboardService(LocalLeaderboardRepository(storage)),
+    leaderboard: LeaderboardService(leaderboard ?? LocalLeaderboardRepository(storage)),
     storage: storage,
     random: random,
   );

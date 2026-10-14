@@ -1,0 +1,35 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "leaderboard": {
+      ".read": true,
+      ".indexOn": ["totalPoints"],
+      "$playerId": {
+        ".write": "auth != null && auth.uid === $playerId",
+        ".validate": "newData.hasChildren(['playerName', 'totalPoints', 'accuracyPercent', 'optimalPercent', 'attempts'])",
+        "playerName": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+        },
+        "totalPoints": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+        },
+        "averageTimeMs": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3600000"
+        },
+        "accuracyPercent": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "optimalPercent": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "attempts": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
