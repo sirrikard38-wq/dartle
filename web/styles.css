@@ -458,11 +458,12 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .pad-undo, .pad-enter { font-size: 0.85rem; letter-spacing: 0.04em; }
 .pad-undo { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
-/* A number that cannot be checked out: each line fades in smoothly, 2 s apart. */
+/* A number that cannot be checked out: the words fade in, the insult 1 s later,
+   the Next checkout button 2 s after that. */
 .fade { opacity: 0; animation: fade-in 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .fade-1 { animation-delay: 150ms; }
-.fade-2 { animation-delay: 2150ms; }
-.fade-3 { animation-delay: 4150ms; }
+.fade-2 { animation-delay: 1150ms; }
+.fade-3 { animation-delay: 3150ms; }
 .impossible-title { font-size: 1.6rem; font-weight: 700; max-width: 18ch; margin: 18px 0 12px; }
 .insult { font-size: 1.3rem; color: var(--muted); max-width: 22ch; margin: 8px 0 18px; }
 .breakdown, .more { margin: 8px 0; text-align: left; font-size: 0.9rem; max-width: 36ch; }
