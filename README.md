@@ -4,9 +4,9 @@ Wordle-style trainer for 501 checkouts, in three modes:
 
 - **Checkout calculator** - a number and three boxes (a visit). Boxes that are
   crossed out are darts already used; you fill the free ones. Against the
-  clock, scored by streak, saved to statistics and the leaderboard. Each
-  one-dart number comes up 2% of the time (21 numbers, 42% together); every
-  other number, the seven with no checkout included, shares the rest equally.
+  clock, scored by streak, saved to statistics and the leaderboard. All the
+  one-dart numbers (21) together come up 2% of the time; every other number, the
+  seven with no checkout included, shares the other 98% equally.
 - **Checkout practice** - choose your own darts one at a time; the optimal darts
   are lit on the board. No clock, no score, nothing saved.
 - **Checkout input** - type any number (2-170) and practise it the same way.

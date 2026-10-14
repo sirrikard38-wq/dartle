@@ -87,11 +87,12 @@ void main() {
     }
   });
 
-  group('the calculator: one-dart numbers 2% each, every other number equal', () {
-    // 21 one-dart numbers x 2% = 42%; the other 148 numbers (2- and 3-dart
-    // checkouts and the 7 with none) share the remaining 58% equally.
-    const oneDartShare = 0.02;
-    const otherShare = (1 - 21 * oneDartShare) / 148;
+  group('the calculator: all one-dart numbers together 2%, every other number equal', () {
+    // The 21 one-dart numbers share 2% (about 0.095% each); the other 148
+    // numbers (2- and 3-dart checkouts and the 7 with none) share 98% equally.
+    const oneDartTotal = 0.02;
+    const oneDartShare = oneDartTotal / 21;
+    const otherShare = (1 - oneDartTotal) / 148;
 
     test('2 to 170, the no-checkout numbers included', () {
       final gen = ChallengeGenerator(catalog, random: Random(42), memory: 5);
@@ -107,7 +108,8 @@ void main() {
       for (final entry in counts.entries) {
         final oneDart = catalog.forTarget(entry.key)?.dartCount == 1;
         final expected = draws * (oneDart ? oneDartShare : otherShare);
-        expect(entry.value, inInclusiveRange(expected * 0.7, expected * 1.3),
+        final slack = oneDart ? 0.5 : 0.3; // a rare number is noisier
+        expect(entry.value, inInclusiveRange(expected * (1 - slack), expected * (1 + slack)),
             reason: '${entry.key} drawn ${entry.value}x, expected ~${expected.round()}');
       }
       // 1-, 2- and 3-dart checkouts all appear.
@@ -115,23 +117,22 @@ void main() {
           {1, 2, 3});
     });
 
-    test('each one-dart number comes up about 2% of the time', () {
-      expect(ChallengeGenerator.calculatorOneDartChancePercent, 2);
+    test('the one-dart numbers come up 2% of the time in total', () {
+      expect(ChallengeGenerator.calculatorOneDartTotalPercent, 2);
       final gen = ChallengeGenerator(catalog, random: Random(5), memory: 3);
-      final counts = <int, int>{};
+      var oneDart = 0;
       const draws = 60000;
       for (var i = 0; i < draws; i++) {
         final c = gen.next();
-        counts[c.target] = (counts[c.target] ?? 0) + 1;
+        if (c.hasCheckout && c.dartCount == 1) oneDart++;
       }
-      final oneDart = [for (final c in catalog.all) if (c.dartCount == 1) c.target];
-      expect(oneDart, hasLength(21)); // D1-D20 and the Bull
-      for (final t in oneDart) {
-        expect(counts[t]! / draws, closeTo(oneDartShare, 0.004), reason: 'one-dart $t');
-      }
+      expect(oneDart / draws, closeTo(oneDartTotal, 0.004));
+      expect(
+          [for (final c in catalog.all) if (c.dartCount == 1) c.target], hasLength(21),
+          reason: 'D1-D20 and the Bull');
     });
 
-    test('numbers with no checkout come up about 2.7% of the time', () {
+    test('numbers with no checkout come up about 4.6% of the time', () {
       final gen = ChallengeGenerator(catalog, random: Random(8));
       var none = 0;
       const draws = 40000;
