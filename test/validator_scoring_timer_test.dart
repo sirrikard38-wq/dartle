@@ -46,6 +46,20 @@ void main() {
           AttemptOutcome.invalidFinish);
     });
 
+    test('a miscount has an equation: 142 entered as T20 T20 D16 is 60 + 60 + 32 = 152', () {
+      final c142 = catalog.forTarget(142)!;
+      final r = validator.validate(c142, darts('T20 T20 D16'));
+      expect(r.outcome, AttemptOutcome.wrongTotal);
+      expect(r.playerRoute.arithmetic, '60 + 60 + 32 = 152');
+    });
+
+    test('only a miscount is wrongTotal: a right total on a non-double is not', () {
+      final r = validator.validate(c72, darts('T18 S18'));
+      expect(r.outcome, AttemptOutcome.invalidFinish);
+      expect(r.outcome, isNot(AttemptOutcome.wrongTotal));
+      expect(validator.validate(c72, darts('T20 D6')).outcome, AttemptOutcome.correct);
+    });
+
     test('outer bull cannot finish 25-ending routes', () {
       final c = catalog.forTarget(50)!;
       expect(validator.validate(c, darts('25')).outcome, AttemptOutcome.wrongTotal);

@@ -78,6 +78,14 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
           attrs: {'role': 'status'}),
       el('p', cls: 'target small', text: '${challenge.target}'),
 
+      // A miscount: show what the darts you entered really add up to, e.g.
+      // "60 + 60 + 32 = 152" on 142. Only when the total was wrong.
+      if (result.validation.outcome == AttemptOutcome.wrongTotal)
+        el('p', cls: 'equation', text: result.playerRoute.arithmetic, attrs: {
+          'aria-label': 'You entered ${result.playerRoute.arithmetic.replaceAll('=', 'which is')}, '
+              'not ${challenge.target}',
+        }),
+
       // A right "No checkout": good job, and one silly line of encouragement.
       if (noCheckoutRight) ...[
         el('p', cls: 'good-job', text: 'Good job, no checkout here!'),
