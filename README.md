@@ -4,7 +4,9 @@ Wordle-style trainer for 501 checkouts, in three modes:
 
 - **Checkout calculator** - a number and three boxes (a visit). Boxes that are
   crossed out are darts already used; you fill the free ones. Against the
-  clock, scored by streak, saved to statistics and the leaderboard.
+  clock, scored by streak, saved to statistics and the leaderboard. Each
+  one-dart number comes up 2% of the time (21 numbers, 42% together); every
+  other number, the seven with no checkout included, shares the rest equally.
 - **Checkout practice** - choose your own darts one at a time; the optimal darts
   are lit on the board. No clock, no score, nothing saved.
 - **Checkout input** - type any number (2-170) and practise it the same way.
@@ -118,7 +120,7 @@ leaderboard shows the scores on the device, as before.
 lib/src/domain       DartThrow, CheckoutRoute, CheckoutEngine, optimal routes
                      (bull-safe, better doubles, explainer), box layouts,
                      catalog, generator, validator
-lib/src/content      the 1000 insults and 1000 encouragements
+lib/src/content      the 1000 insults and the five praise lines, contact links
 lib/src/scoring      ScoringService (streak points)
 lib/src/timing       AttemptTimer (monotonic, idempotent start)
 lib/src/stats        AttemptRecord, HistoryRepository, StatisticsService

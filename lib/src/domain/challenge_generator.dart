@@ -6,8 +6,10 @@ import 'difficulty.dart';
 
 /// Who the numbers are drawn for.
 enum Deal {
-  /// Checkout calculator: every number from 2 to 170 has an equal chance,
-  /// including the few that have no checkout.
+  /// Checkout calculator: every number from 2 to 170, including the few that
+  /// have no checkout. Each one-dart number has
+  /// [ChallengeGenerator.calculatorOneDartChancePercent] percent; all the
+  /// others share the rest equally.
   calculator,
 
   /// Checkout practice: numbers that need two or more darts; each one-dart
@@ -23,6 +25,9 @@ class ChallengeGenerator {
   /// In practice each one-dart number is drawn with this chance (percent).
   static const double oneDartChancePercent = 1;
 
+  /// In the calculator each one-dart number is drawn with this chance (percent).
+  static const double calculatorOneDartChancePercent = 2;
+
   final CheckoutCatalog _catalog;
   final Random _random;
 
@@ -31,8 +36,8 @@ class ChallengeGenerator {
 
   final List<int> _recent = [];
 
-  /// Next challenge. With no [level] every number has an equal chance (see
-  /// [Deal]); with a level, only that difficulty band is drawn from.
+  /// Next challenge. With no [level] the numbers are weighted as [Deal] says;
+  /// with a level, only that difficulty band is drawn from, all equally.
   Challenge next([DifficultyLevel? level, Deal deal = Deal.calculator]) {
     final pool = level != null
         ? _catalog.forLevel(level)
@@ -46,8 +51,8 @@ class ChallengeGenerator {
         : _recent.sublist(_recent.length - window);
     final candidates =
         pool.where((c) => !recent.contains(c.target)).toList(growable: false);
-    final choice = deal == Deal.practice && level == null
-        ? _weighted(candidates)
+    final choice = level == null
+        ? _weighted(pool, candidates, _oneDartPercent(deal))
         : candidates[_random.nextInt(candidates.length)];
     _recent.add(choice.target);
     return choice;
@@ -61,13 +66,19 @@ class ChallengeGenerator {
   bool isImpossible(int target) =>
       _catalog.anyForTarget(target)?.hasCheckout == false;
 
-  /// One-dart numbers get [oneDartChancePercent] each; the rest share what is
-  /// left equally.
-  Challenge _weighted(List<Challenge> candidates) {
-    final oneDart = _catalog.all.where((c) => c.dartCount == 1).length;
-    final others = _catalog.all.length - oneDart;
-    final otherWeight = (100 - oneDart * oneDartChancePercent) / others;
-    double weight(Challenge c) => c.dartCount == 1 ? oneDartChancePercent : otherWeight;
+  static double _oneDartPercent(Deal deal) => switch (deal) {
+        Deal.calculator => calculatorOneDartChancePercent,
+        Deal.practice => oneDartChancePercent,
+      };
+
+  /// One-dart numbers get [oneDartPercent] each; the rest of [pool] shares what
+  /// is left equally. Only [candidates] (the pool without the recent numbers)
+  /// can be picked.
+  Challenge _weighted(List<Challenge> pool, List<Challenge> candidates, double oneDartPercent) {
+    final oneDart = pool.where((c) => c.dartCount == 1).length;
+    final others = pool.length - oneDart;
+    final otherWeight = (100 - oneDart * oneDartPercent) / others;
+    double weight(Challenge c) => c.dartCount == 1 ? oneDartPercent : otherWeight;
     final total = candidates.fold<double>(0, (sum, c) => sum + weight(c));
     var pick = _random.nextDouble() * total;
     for (final c in candidates) {
