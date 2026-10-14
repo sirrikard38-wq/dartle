@@ -295,9 +295,8 @@ void main() {
       final routes = optimal.optimalRoutes(35);
       expect(routes.length, greaterThan(4), reason: 'plenty to choose from');
       final primary = routes.first;
-      final extras = BetterDoubles.extras(routes, primary);
+      final extras = BetterDoubles.extras(routes, exclude: [primary]);
       expect(extras, hasLength(3));
-      expect(extras, isNotEmpty);
       expect(BetterDoubles.leavesBetterDouble(extras.first), isTrue);
       expect(extras.any((x) => x.isEquivalentTo(primary)), isFalse);
       for (final x in extras) {
@@ -305,9 +304,29 @@ void main() {
       }
     });
 
+    test('extras never repeat a route that is already on screen (the one entered)', () {
+      final routes = optimal.optimalRoutes(35);
+      final primary = routes.first;
+      final entered = routes[3]; // the player entered another optimal route
+      final extras = BetterDoubles.extras(routes, exclude: [primary, entered]);
+      expect(extras.any((x) => x.isEquivalentTo(entered)), isFalse);
+      expect(extras.any((x) => x.isEquivalentTo(primary)), isFalse);
+      expect(extras, hasLength(3));
+      // Without excluding the entered route, it can come back (here: it is
+      // still one of the optimal routes, so it is in All possibilities).
+      expect(routes.any((x) => x.isEquivalentTo(entered)), isTrue);
+    });
+
+    test('when the player entered an optimal route, the primary can be an extra', () {
+      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull
+      final entered = routes[1];
+      final extras = BetterDoubles.extras(routes, exclude: [entered]);
+      expect(extras.map((x) => x.notation), ['T7 D18']);
+    });
+
     test('extras of a number with one optimal route is empty', () {
       final routes = optimal.optimalRoutes(170);
-      expect(BetterDoubles.extras(routes, routes.first), isEmpty);
+      expect(BetterDoubles.extras(routes, exclude: [routes.first]), isEmpty);
     });
   });
 }

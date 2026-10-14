@@ -44,10 +44,18 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
           : TileFeedback.best(entered, result.optimalRoutes);
   final best = result.optimalRoutes.isEmpty ? null : result.optimalRoutes.first;
 
+  final showYours = entered.isNotEmpty;
+  final showBest = best != null && !result.isOptimal;
+
   // One more route with a better double, then up to 2 more, shown as boxes.
+  // Never the route you entered or the optimal route already on screen - those
+  // (and every other optimal route) are in "All possibilities".
   final extras = best == null
       ? const <CheckoutRoute>[]
-      : BetterDoubles.extras(result.optimalRoutes, best);
+      : BetterDoubles.extras(result.optimalRoutes, exclude: [
+          if (showBest) best,
+          if (showYours) result.playerRoute,
+        ]);
   web.HTMLElement? extraBoxes() => extras.isEmpty
       ? null
       : el('div', cls: 'extra-routes', children: [
@@ -60,8 +68,6 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
                 label: 'Also optimal: ${route.notation}'),
         ]);
 
-  final showYours = entered.isNotEmpty;
-  final showBest = best != null && !result.isOptimal;
   final yourExtras = !showBest ? extraBoxes() : null;
   final bestExtras = showBest ? extraBoxes() : null;
 
