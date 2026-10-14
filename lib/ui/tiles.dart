@@ -32,7 +32,8 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 
 /// A Wordle row of [slots] tiles. Missing entries render as empty boxes.
 ///
-/// * [states] colours the tiles and plays the flip reveal.
+/// * [states] colours the tiles and plays the flip reveal (result screen only:
+///   the boxes stay plain while you play).
 /// * [activeIndex] outlines the free box that will receive the next dart.
 /// * [showDarts] puts small darts in each box: one in the first box, two in
 ///   the second, three in the third (the box's dart number).
@@ -46,7 +47,6 @@ web.HTMLElement tileRow(
   int activeIndex = -1,
   bool small = false,
   String? label,
-  bool live = false,
   bool showDarts = false,
   Set<int> used = const {},
 }) {
@@ -58,7 +58,7 @@ web.HTMLElement tileRow(
   }, children: [
     for (var i = 0; i < slots; i++)
       if (used.contains(i))
-        _tile(null, index: i, active: false, live: live, showDarts: showDarts, usedBox: true)
+        _tile(null, index: i, active: false, showDarts: showDarts, usedBox: true)
       else
         _tile(
           free.indexOf(i) < darts.length ? darts[free.indexOf(i)] : null,
@@ -67,7 +67,6 @@ web.HTMLElement tileRow(
               ? states[free.indexOf(i)]
               : null,
           active: free.indexOf(i) == activeIndex,
-          live: live,
           showDarts: showDarts,
         ),
   ]);
@@ -77,18 +76,16 @@ web.HTMLElement _tile(DartThrow? dart,
     {required int index,
     TileState? state,
     required bool active,
-    required bool live,
     required bool showDarts,
     bool usedBox = false}) {
-  // `live` colours a dart the moment it is entered (no flip, no replay on each
-  // re-render); `reveal` is the animated end-of-attempt flip.
+  // A coloured tile plays the animated end-of-attempt flip (`reveal`).
   final classes = [
     'tile',
     if (dart != null) 'filled m-${dart.multiplier.name}',
     if (active) 'active',
     if (usedBox) 'used',
     if (showDarts || usedBox) 'has-darts',
-    if (state != null) '${live ? 'live' : 'reveal'} ${state.name}',
+    if (state != null) 'reveal ${state.name}',
   ].join(' ');
 
   final description = usedBox

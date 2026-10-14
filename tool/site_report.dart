@@ -11,17 +11,13 @@ String _why(CheckoutEngine engine, OptimalRouteService optimal, int n, CheckoutR
   if (r.length > fewest) {
     return 'uses ${r.length} darts; the fewest is $fewest';
   }
-  final best = optimal.optimalRoutes(n, twoDartBullSafe: false).first;
-  final bestSingles = OptimalRouteService.singles(best);
   if (fewest == 2 && BullSafeFinish.covers(n)) {
     final bullSafe = BullSafeFinish.twoDartRoutes(n).map((x) => x.notation).join(' / ');
-    if (OptimalRouteService.singles(r) < bestSingles) {
-      return 'first box used: only the bull-safe $bullSafe; last box used: a single route has more singles';
-    }
-    return 'first box used: only the bull-safe $bullSafe';
+    return 'two darts on 51 to 70: only the bull-safe $bullSafe';
   }
-  if (OptimalRouteService.singles(r) < bestSingles) {
-    return 'fewer singles ($bestSingles are possible, e.g. ${best.notation})';
+  final best = optimal.optimalRoutes(n).first;
+  if (OptimalRouteService.singles(r) < OptimalRouteService.singles(best)) {
+    return 'fewer singles (${OptimalRouteService.singles(best)} are possible, e.g. ${best.notation})';
   }
   if (r.setupDarts.any((d) => !NaturalAim.isNatural(d))) {
     return 'a setup dart that is not a sensible aim';
@@ -38,10 +34,8 @@ void main() {
   final differing = <String>[];
   final byReason = <String, List<String>>{};
   for (final n in engine.checkoutableTargets) {
-    final left = optimal.optimalRoutes(n);
-    final right = optimal.optimalRoutes(n, twoDartBullSafe: false);
-    bool isOptimal(CheckoutRoute x) =>
-        left.any(x.isEquivalentTo) || right.any(x.isEquivalentTo);
+    final routes = optimal.optimalRoutes(n);
+    bool isOptimal(CheckoutRoute x) => routes.any(x.isEquivalentTo);
     final throws = [for (final t in siteThrowRoutes[n] ?? const <String>[]) r(t)];
     final others = [for (final t in siteOtherRoutes[n] ?? const <String>[]) r(t)];
     for (final x in [...throws, ...others]) {
@@ -52,7 +46,7 @@ void main() {
         final why = _why(engine, optimal, n, x);
         final key = why.startsWith('uses ')
             ? 'More darts than the fewest'
-            : why.startsWith('first box used')
+            : why.startsWith('two darts on 51')
                 ? 'Not the bull-safe route (2 darts, 51 to 70)'
                 : why.startsWith('fewer singles')
                     ? 'Fewer singles than the best routes'
@@ -64,7 +58,7 @@ void main() {
     }
     if (throws.isNotEmpty && !throws.any(isOptimal)) {
       differing.add('- $n: site `${throws.map((x) => x.notation).join('` / `')}`, '
-          'app `${left.first.notation}` (${_why(engine, optimal, n, throws.first)})');
+          'app `${routes.first.notation}` (${_why(engine, optimal, n, throws.first)})');
     }
   }
 
@@ -79,13 +73,14 @@ void main() {
     ..writeln('- Numbers with a checkout, all read from the site: '
         '${engine.checkoutableTargets.length}')
     ..writeln('- Site routes that are legal checkouts: $total')
-    ..writeln('- Optimal in the app (either box rule): $optimalCount')
+    ..writeln('- Optimal in the app: $optimalCount')
     ..writeln('- Not optimal in the app: ${total - optimalCount}')
     ..writeln()
     ..writeln('The site\'s first-choice ("Throw") routes are accepted as optimal next '
         'to the chart routes, wherever they have the fewest darts and as many '
         'singles as the best routes (for three-dart numbers whenever they have the '
-        'fewest darts).')
+        'fewest darts). Two-dart numbers from 51 to 70 are only ever the '
+        'bull-safe routes.')
     ..writeln()
     ..writeln('## Numbers where no first-choice route of the site is optimal here')
     ..writeln()

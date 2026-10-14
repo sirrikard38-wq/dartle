@@ -64,14 +64,9 @@ class ChoiceRound {
 
   int get dartsLeft => maxDarts - _steps.length;
 
-  /// Which optimal routes apply right now. At the start it is the layout's
-  /// choice (the last box used plays the ordinary way); once a dart is thrown,
-  /// the bull-safe routes apply.
-  bool get bullSafe => _steps.isEmpty ? layout.bullSafe : true;
-
   /// The equally optimal darts to throw next (empty once the round is over).
   Set<DartThrow> get optimalDarts =>
-      isFinished ? const {} : _advisor.optimalDarts(remaining, bullSafe: bullSafe);
+      isFinished ? const {} : _advisor.optimalDarts(remaining);
 
   /// Checked out using only equally optimal choices.
   bool get isOptimal =>
@@ -85,7 +80,6 @@ class ChoiceRound {
       remaining: before,
       dartsLeft: dartsLeft,
       dart: dart,
-      bullSafe: bullSafe,
     );
     final scored = before - dart.score;
     final step = ChoiceStep(
@@ -94,7 +88,7 @@ class ChoiceRound {
       remainingAfter: quality == DartQuality.bust ? before : scored,
       dartsLeftBefore: dartsLeft,
       quality: quality,
-      optimalChoices: _advisor.optimalDarts(before, bullSafe: bullSafe),
+      optimalChoices: _advisor.optimalDarts(before),
     );
     _steps.add(step);
     if (quality == DartQuality.bust) {

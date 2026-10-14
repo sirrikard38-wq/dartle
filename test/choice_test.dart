@@ -40,17 +40,11 @@ void main() {
     });
 
     group('priority: fewest darts, bull-safe, then the most singles', () {
-      test('57 with the first box used: the treble and the single of 7 are lit', () {
+      test('57: the triple and the single of 7 are lit, and nothing else', () {
         expect(advisor.optimalDarts(57), {d('T7'), d('S7')});
-        // ... and the same after a first dart of a longer round.
         expect(advisor.optimalRoutes(57).map((r) => r.notation), ['T7 D18', 'S7 Bull']);
-      });
-
-      test('57 with the last box used: the singles that leave a double are lit, not T7', () {
-        final lit = advisor.optimalDarts(57, bullSafe: false);
-        expect(lit, containsAll([d('S17'), d('S19'), d('25'), d('S7')]));
-        expect(lit, isNot(contains(d('T7'))));
-        expect(lit.every((x) => x.multiplier == Multiplier.single), isTrue);
+        // The singles that leave a double (S17 D20) are not lit on 51 to 70.
+        expect(advisor.optimalDarts(57), isNot(contains(d('S17'))));
       });
 
       test('singles come first: 35 lights singles only, never T5', () {
@@ -282,7 +276,6 @@ void main() {
       final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed);
       expect(r.maxDarts, 2);
       expect(r.dartsLeft, 2);
-      expect(r.bullSafe, isTrue);
       expect(r.optimalDarts, {d('T7'), d('S7')});
       r.throwDart(d('S7')); // leaves exactly 50
       expect(r.remaining, 50);
@@ -298,22 +291,13 @@ void main() {
       expect(r.isOptimal, isTrue);
     });
 
-    test('last box used: the ordinary way - singles first, T7 is not optimal', () {
-      final r = ChoiceRound(57, advisor, layout: BoxLayout.rightUsed);
-      expect(r.maxDarts, 2);
-      expect(r.bullSafe, isFalse);
-      expect(r.optimalDarts, containsAll([d('S17'), d('S19'), d('25'), d('S7')]));
-      expect(r.optimalDarts, isNot(contains(d('T7'))));
-      r.throwDart(d('S17')); // 40 left: the bull-safe rule applies from here on
-      expect(r.bullSafe, isTrue);
-      r.throwDart(d('D20'));
-      expect(r.isOptimal, isTrue);
-
-      final other = ChoiceRound(57, advisor, layout: BoxLayout.rightUsed)
-        ..throwDart(d('T7'))
-        ..throwDart(d('D18'));
+    test('S17 then D20 checks 57 out, but it is not optimal: the bull-safe route is', () {
+      final other = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
+        ..throwDart(d('S17'))
+        ..throwDart(d('D20'));
       expect(other.isCheckedOut, isTrue);
-      expect(other.isOptimal, isFalse, reason: 'it checks out, but a single was better');
+      expect(other.isOptimal, isFalse);
+      expect(other.steps.first.quality, DartQuality.fine);
     });
 
     test('a one-dart number has one free box', () {
@@ -334,7 +318,6 @@ void main() {
     test('119 with three free: after T19 the bull-safe pair is lit', () {
       final r = ChoiceRound(119, advisor)..throwDart(d('T19'));
       expect(r.remaining, 62);
-      expect(r.bullSafe, isTrue);
       expect(r.optimalDarts, {d('T12'), d('S12')});
       r.throwDart(d('S12'));
       r.throwDart(d('Bull'));

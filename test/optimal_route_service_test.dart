@@ -7,9 +7,8 @@ void main() {
   final engine = CheckoutEngine();
   final optimal = OptimalRouteService(engine);
 
-  Set<String> notations(int target, {bool bullSafe = true}) => {
-        for (final route in optimal.optimalRoutes(target, twoDartBullSafe: bullSafe))
-          route.notation,
+  Set<String> notations(int target) => {
+        for (final route in optimal.optimalRoutes(target)) route.notation,
       };
 
   group('canonical chart', () {
@@ -120,26 +119,27 @@ void main() {
     });
   });
 
-  group('two darts over 50 up to 70: first box used vs last box used', () {
-    test('first box used (bull-safe): treble of the number whose single leaves Bull, or that single and Bull', () {
+  group('two darts over 50 up to 70: always bull-safe', () {
+    test('the triple of the number whose single leaves Bull, or that single and Bull', () {
       expect(notations(57), {'T7 D18', 'S7 Bull'});
       expect(notations(65), {'T15 D10', 'S15 Bull'});
       expect(notations(70), {'T20 D5', 'S20 Bull'});
-      // 51..54 have no treble route, only the single and the Bull.
+      // 51..54 have no triple route, only the single and the Bull.
       expect(notations(52), {'S2 Bull'});
       expect(notations(51), {'S1 Bull'});
       expect(optimal.optimalRoute(67)!.notation, 'T17 D8'); // primary
     });
 
-    test('last box used (as usual): a single, then a double', () {
-      expect(notations(57, bullSafe: false), containsAll(['S17 D20', 'S19 D19', '25 D16', 'S7 Bull']));
-      expect(notations(57, bullSafe: false), isNot(contains('T7 D18')));
-      expect(notations(65, bullSafe: false), {'25 D20', 'S15 Bull'});
-      expect(optimal.optimalRoute(57, twoDartBullSafe: false)!.notation, 'S17 D20');
-      expect(optimal.optimalRoute(52, twoDartBullSafe: false)!.notation, 'S12 D20');
+    test('a single and a double is not optimal there, even though it checks out', () {
+      for (final text in ['S17 D20', 'S19 D19', '25 D16']) {
+        expect(engine.isLegalRoute(57, r(text)), isTrue, reason: text);
+        expect(optimal.isOptimal(57, r(text)), isFalse, reason: text);
+      }
+      expect(optimal.isOptimal(65, r('25 D20')), isFalse);
+      expect(optimal.isOptimal(52, r('S12 D20')), isFalse);
     });
 
-    test('2-dart targets 55..70 teach the bull-safe route by default', () {
+    test('every 2-dart target from 55 to 70 teaches the bull-safe route first', () {
       for (var t = 55; t <= 70; t++) {
         expect(optimal.optimalRoute(t)!.notation, BullSafeFinish.twoDartFinish(t)!.notation,
             reason: '$t');
@@ -147,9 +147,11 @@ void main() {
       }
     });
 
-    test('outside 51..70 the last-box rule changes nothing', () {
-      for (final t in [41, 42, 50, 71, 72, 85, 100, 110]) {
-        expect(notations(t, bullSafe: false), notations(t), reason: '$t');
+    test('every 2-dart target from 51 to 70 has only the bull-safe routes', () {
+      for (var t = 51; t <= 70; t++) {
+        expect(engine.minimumDarts(t), 2, reason: '$t');
+        expect(notations(t), {for (final x in BullSafeFinish.twoDartRoutes(t)) x.notation},
+            reason: '$t');
       }
     });
   });
@@ -163,13 +165,11 @@ void main() {
       expect(optimal.isOptimal(35, r('T5 D10')), isFalse);
     });
 
-    test('42 and 52: any single that leaves a double is optimal, a treble route is not', () {
+    test('42: any single that leaves a double is optimal, a triple route is not', () {
       expect(optimal.isOptimal(42, r('S2 D20')), isTrue);
       expect(optimal.isOptimal(42, r('S10 D16')), isTrue);
       expect(optimal.isOptimal(42, r('T2 D18')), isFalse);
       expect(engine.isLegalRoute(42, r('T2 D18')), isTrue);
-      expect(optimal.isOptimal(52, r('S12 D20'), twoDartBullSafe: false), isTrue);
-      expect(optimal.isOptimal(52, r('S2 Bull'), twoDartBullSafe: false), isTrue);
     });
 
     test('where no single can do it, trebles of 15 and up are optimal', () {
@@ -185,14 +185,13 @@ void main() {
     });
 
     test('the outer bull is a single', () {
-      expect(optimal.isOptimal(65, r('25 D20'), twoDartBullSafe: false), isTrue);
       expect(optimal.isOptimal(135, r('T20 25 Bull')), isTrue);
+      expect(optimal.isOptimal(35, r('25 D5')), isTrue); // 25 + 10
     });
 
     test('a chart route with fewer singles than the best is not optimal', () {
-      // 56's chart entry T16 D4 uses a treble where singles do the job.
-      expect(optimal.isOptimal(56, r('T16 D4'), twoDartBullSafe: false), isFalse);
-      expect(optimal.isOptimal(56, r('S16 D20'), twoDartBullSafe: false), isTrue);
+      // 135's chart entry T20 T17 D12 has no single where T20 25 Bull has one.
+      expect(optimal.isOptimal(135, r('T20 T17 D12')), isFalse);
     });
   });
 
@@ -229,19 +228,17 @@ void main() {
 
     test('every checkoutable number has optimal routes, all legal and fewest-darts', () {
       for (final target in engine.checkoutableTargets) {
-        for (final bullSafe in [true, false]) {
-          final routes = optimal.optimalRoutes(target, twoDartBullSafe: bullSafe);
-          expect(routes, isNotEmpty, reason: '$target');
-          for (final route in routes) {
-            expect(engine.isLegalRoute(target, route), isTrue, reason: '$target $route');
-            expect(route.length, engine.minimumDarts(target), reason: '$target $route');
-          }
-          // No route listed twice.
-          for (var i = 0; i < routes.length; i++) {
-            for (var j = i + 1; j < routes.length; j++) {
-              expect(routes[i].isEquivalentTo(routes[j]), isFalse,
-                  reason: '$target ${routes[i]} twice');
-            }
+        final routes = optimal.optimalRoutes(target);
+        expect(routes, isNotEmpty, reason: '$target');
+        for (final route in routes) {
+          expect(engine.isLegalRoute(target, route), isTrue, reason: '$target $route');
+          expect(route.length, engine.minimumDarts(target), reason: '$target $route');
+        }
+        // No route listed twice.
+        for (var i = 0; i < routes.length; i++) {
+          for (var j = i + 1; j < routes.length; j++) {
+            expect(routes[i].isEquivalentTo(routes[j]), isFalse,
+                reason: '$target ${routes[i]} twice');
           }
         }
       }

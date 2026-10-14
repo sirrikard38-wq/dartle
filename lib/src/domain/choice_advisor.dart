@@ -52,18 +52,17 @@ class ChoiceAdvisor {
   /// T20 T20 Bull): "Only possible checkout."
   bool hasOnlyOneCheckout(int target) => _engine.legalRoutes(target).length == 1;
 
-  /// Every equally optimal route for [remaining], best-looking first. With
-  /// [bullSafe] false (the last box used) a two-dart number over 50 is played
-  /// the ordinary way. Empty if [remaining] cannot be checked out.
-  List<CheckoutRoute> optimalRoutes(int remaining, {bool bullSafe = true}) =>
-      _optimal.optimalRoutes(remaining, twoDartBullSafe: bullSafe);
+  /// Every equally optimal route for [remaining], best-looking first. Empty
+  /// if [remaining] cannot be checked out.
+  List<CheckoutRoute> optimalRoutes(int remaining) =>
+      _optimal.optimalRoutes(remaining);
 
   /// The darts that are an equally optimal NEXT throw for [remaining]: the
   /// setup darts of every optimal route, or just the finishing double when one
   /// dart finishes it. The order of the setup darts does not matter, so any of
   /// them can be thrown first.
-  Set<DartThrow> optimalDarts(int remaining, {bool bullSafe = true}) {
-    final routes = optimalRoutes(remaining, bullSafe: bullSafe);
+  Set<DartThrow> optimalDarts(int remaining) {
+    final routes = optimalRoutes(remaining);
     if (routes.isEmpty) return const <DartThrow>{};
     if (routes.first.length == 1) {
       return Set<DartThrow>.unmodifiable({for (final r in routes) r.darts.first});
@@ -91,7 +90,6 @@ class ChoiceAdvisor {
     required int remaining,
     required int dartsLeft,
     required DartThrow dart,
-    bool bullSafe = true,
   }) {
     final after = remaining - dart.score;
     if (after < 0 || after == 1) return DartQuality.bust;
@@ -100,7 +98,7 @@ class ChoiceAdvisor {
     }
     final needed = _engine.minimumDarts(after);
     if (needed == null || needed > dartsLeft - 1) return DartQuality.poor;
-    if (optimalDarts(remaining, bullSafe: bullSafe).contains(dart)) {
+    if (optimalDarts(remaining).contains(dart)) {
       return DartQuality.optimal;
     }
     return isNaturalAim(dart) ? DartQuality.fine : DartQuality.poor;

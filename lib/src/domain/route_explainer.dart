@@ -63,25 +63,17 @@ abstract final class RouteExplainer {
 
     if (fewest == 2 && BullSafeFinish.covers(target)) {
       final n = target - BullSafeFinish.bullScore;
-      if (challenge.layout.bullSafe) {
-        final treble = BullSafeFinish.twoDartFinish(target);
-        return [
-          'Bull-safe: with two darts left on $target, aim at $n, because the '
-              'single $n leaves exactly 50, which is the Bull.',
-          if (treble != null)
-            'Throw the triple $n (${3 * n}) and then ${treble.darts.last.notation}, '
-                'or throw S$n and then the Bull. Both are equally good.'
-          else
-            'There is no triple route for $target, so it is S$n and then the Bull.',
-          'If you aim at the triple and hit the single instead, you still have '
-              'the Bull left, so a near miss still has a finish.',
-        ];
-      }
+      final treble = BullSafeFinish.twoDartFinish(target);
       return [
-        'The last box is used, so the usual rule applies: a single is far easier '
-            'to hit than a double or a triple.',
-        'So a single and then a double is best: $singles single in '
-            '${primary.notation}.',
+        'Bull-safe: with two darts left on $target, aim at $n, because the '
+            'single $n leaves exactly 50, which is the Bull.',
+        if (treble != null)
+          'Throw the triple $n (${3 * n}) and then ${treble.darts.last.notation}, '
+              'or throw S$n and then the Bull. Both are equally good.'
+        else
+          'There is no triple route for $target, so it is S$n and then the Bull.',
+        'If you aim at the triple and hit the single instead, you still have '
+            'the Bull left, so a near miss still has a finish.',
       ];
     }
 
@@ -142,11 +134,10 @@ abstract final class RouteExplainer {
     } else {
       final mine = OptimalRouteService.singles(player);
       final best = OptimalRouteService.singles(primary);
-      final bullSafe = challenge.dartCount == 2 &&
-          BullSafeFinish.covers(challenge.target) &&
-          challenge.layout.bullSafe;
+      final bullSafe =
+          challenge.dartCount == 2 && BullSafeFinish.covers(challenge.target);
       if (bullSafe) {
-        reasons.add('with the first box used it should be the triple of '
+        reasons.add('it should be the triple of '
             '${challenge.target - BullSafeFinish.bullScore} or its single, then a '
             'double or the Bull (the bull-safe route)');
       } else if (mine < best) {

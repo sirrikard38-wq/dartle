@@ -96,13 +96,9 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
           slots: Visit.darts,
           used: challenge.layout.used,
           activeIndex: game.entered.length,
-          live: true,
-          showDarts: true,
-          // Colour each dart right away: white if it belongs in the best
-          // route, light pink if not.
-          states: game.entered.isEmpty
-              ? null
-              : TileFeedback.best(game.entered, game.currentOptimalRoutes)),
+          showDarts: true),
+      // The boxes stay plain while you play. The colours (white, grey, light
+      // pink) only come on the result screen, next to the optimal examples.
       _remainingLine(challenge.target, game.entered),
       // A replay has no clock.
       if (game.isReplay)

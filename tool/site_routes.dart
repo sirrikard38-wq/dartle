@@ -75,29 +75,24 @@ void main(List<String> args) {
 
   // ---- comparison -------------------------------------------------------
   final report = StringBuffer();
-  var siteRoutes = 0, inLeft = 0, inRight = 0, inEither = 0, longer = 0;
+  var siteRoutes = 0, inApp = 0, longer = 0;
   final notOptimal = <int, List<String>>{};
   final throwDiffers = <String>[];
   for (final n in numbers) {
-    final left = optimal.optimalRoutes(n);
-    final right = optimal.optimalRoutes(n, twoDartBullSafe: false);
+    final routes = optimal.optimalRoutes(n);
     final fewest = engine.minimumDarts(n)!;
     for (final r in [...?throws[n], ...?others[n]]) {
       siteRoutes++;
-      final l = left.any(r.isEquivalentTo);
-      final rr = right.any(r.isEquivalentTo);
-      if (l) inLeft++;
-      if (rr) inRight++;
-      if (l || rr) {
-        inEither++;
+      if (routes.any(r.isEquivalentTo)) {
+        inApp++;
       } else {
         (notOptimal[n] ??= []).add('${r.notation}${r.length > fewest ? ' (${r.length} darts, fewest is $fewest)' : ''}');
         if (r.length > fewest) longer++;
       }
     }
     final main = throws[n];
-    if (main != null && !(main.any((r) => left.any(r.isEquivalentTo) || right.any(r.isEquivalentTo)))) {
-      throwDiffers.add('$n: site ${main.map((r) => r.notation).join(' / ')}  |  app ${left.first.notation}');
+    if (main != null && !main.any((r) => routes.any(r.isEquivalentTo))) {
+      throwDiffers.add('$n: site ${main.map((r) => r.notation).join(' / ')}  |  app ${routes.first.notation}');
     }
   }
 
@@ -105,9 +100,8 @@ void main(List<String> args) {
     ..writeln('Numbers with a checkout: ${numbers.length}; read from the site: '
         '${numbers.length - missing.length}${missing.isEmpty ? '' : ' (missing: $missing)'}')
     ..writeln('Site routes that are legal checkouts: $siteRoutes')
-    ..writeln('  optimal in the app (either box rule): $inEither '
-        '(left box used: $inLeft, right box used: $inRight)')
-    ..writeln('  not optimal in the app: ${siteRoutes - inEither} '
+    ..writeln('  optimal in the app: $inApp')
+    ..writeln('  not optimal in the app: ${siteRoutes - inApp} '
         '(of which longer than the fewest darts: $longer)')
     ..writeln('Numbers whose site "Throw" routes are all NOT optimal in the app: ${throwDiffers.length}');
   if (problems.isNotEmpty) {

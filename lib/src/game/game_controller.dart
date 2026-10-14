@@ -203,8 +203,7 @@ class GameController {
   List<CheckoutRoute> get currentOptimalRoutes {
     final challenge = _challenge;
     if (challenge == null) return const [];
-    return _optimal.optimalRoutes(challenge.target,
-        twoDartBullSafe: challenge.layout.bullSafe);
+    return _optimal.optimalRoutes(challenge.target);
   }
 
   /// The countdown starts here (30s by default).

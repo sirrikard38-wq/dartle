@@ -15,8 +15,7 @@ enum Deal {
   practice,
 }
 
-/// Picks the next challenge from the catalog, avoiding recent repeats, and
-/// deals which boxes are used.
+/// Picks the next challenge from the catalog, avoiding recent repeats.
 class ChallengeGenerator {
   ChallengeGenerator(this._catalog, {Random? random, this.memory = 8})
       : _random = random ?? Random();
@@ -32,9 +31,8 @@ class ChallengeGenerator {
 
   final List<int> _recent = [];
 
-  /// Next challenge, with its boxes dealt (see [Visit.deal]). With no [level]
-  /// every number has an equal chance (see [Deal]); with a level, only that
-  /// difficulty band is drawn from.
+  /// Next challenge. With no [level] every number has an equal chance (see
+  /// [Deal]); with a level, only that difficulty band is drawn from.
   Challenge next([DifficultyLevel? level, Deal deal = Deal.calculator]) {
     final pool = level != null
         ? _catalog.forLevel(level)
@@ -52,24 +50,16 @@ class ChallengeGenerator {
         ? _weighted(candidates)
         : candidates[_random.nextInt(candidates.length)];
     _recent.add(choice.target);
-    return _deal(choice);
+    return choice;
   }
 
-  /// The challenge for a number the player picked, with its boxes dealt. Null
-  /// when the number is outside 2 to 170 or cannot be checked out.
-  Challenge? forNumber(int target) {
-    final base = _catalog.forTarget(target);
-    return base == null ? null : _deal(base);
-  }
+  /// The challenge for a number the player picked. Null when the number is
+  /// outside 2 to 170 or cannot be checked out.
+  Challenge? forNumber(int target) => _catalog.forTarget(target);
 
   /// True for a number in 2 to 170 that has no checkout at all.
   bool isImpossible(int target) =>
       _catalog.anyForTarget(target)?.hasCheckout == false;
-
-  Challenge _deal(Challenge base) {
-    if (!base.hasCheckout) return base;
-    return _catalog.dealt(base, Visit.deal(base.dartCount, base.target, _random));
-  }
 
   /// One-dart numbers get [oneDartChancePercent] each; the rest share what is
   /// left equally.

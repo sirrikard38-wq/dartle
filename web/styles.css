@@ -213,14 +213,13 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .tile.filled .tile-darts { color: inherit; opacity: 0.8; }
 .dart-glyph { width: 10px; height: 24px; display: block; flex: none; }
 
-/* A dart you have entered: white if it belongs in the best route (the
-   default), light pink if not, grey if it is the right dart in the wrong
-   role. Marks (✓ • ×) back the colours up. */
+/* A dart you have entered stays plain white while you play - no colour tells
+   you whether it was right. */
 .tile.filled { background: var(--white); color: var(--ink); border-color: var(--white); }
-.tile.filled.live.absent  { background: var(--pink); border-color: var(--pink); }
-.tile.filled.live.present { background: var(--present); border-color: var(--present); }
 
-/* Result reveal: flips from blank to its final colour. */
+/* Result screen: each dart flips to its colour - white if it belongs in the
+   best route, light pink if not, grey if it is the right dart in the wrong
+   role. Marks (✓ • ×) back the colours up. */
 .tile.reveal { --final: var(--white); --final-fg: var(--ink); animation: flip 600ms ease forwards; animation-delay: calc(var(--i) * 300ms); }
 .tile.reveal.present { --final: var(--present); }
 .tile.reveal.absent  { --final: var(--pink); }

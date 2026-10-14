@@ -40,9 +40,9 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
           slots: Visit.darts,
           used: round.layout.used,
           activeIndex: game.entered.length,
-          live: true,
-          showDarts: true,
-          states: steps.isEmpty ? null : [for (final s in steps) tileStateFor(s.quality)]),
+          // Plain boxes while you play: each dart's rating colour (white,
+          // grey, light pink) only shows on the result screen.
+          showDarts: true),
       if (game.isReplay) el('p', cls: 'hint', text: 'Replay - the same number again.'),
     ]),
     buildEntryPanel(ctx),

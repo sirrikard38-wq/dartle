@@ -7,9 +7,9 @@ import 'optimal_route_service.dart';
 /// and bucketed by difficulty. The generator only ever draws from here, which
 /// is what guarantees an impossible target/dart-count pair cannot appear.
 class CheckoutCatalog {
-  CheckoutCatalog(CheckoutEngine engine, this._optimal) {
+  CheckoutCatalog(CheckoutEngine engine, OptimalRouteService optimal) {
     for (final target in engine.checkoutableTargets) {
-      final route = _optimal.optimalRoute(target)!;
+      final route = optimal.optimalRoute(target)!;
       final complexity = CheckoutComplexity.rate(route);
       final challenge = Challenge(
         target: target,
@@ -26,7 +26,6 @@ class CheckoutCatalog {
     }
   }
 
-  final OptimalRouteService _optimal;
   final List<Challenge> _all = [];
   final List<Challenge> _impossible = [];
   final Map<DifficultyLevel, List<Challenge>> _byLevel = {};
@@ -55,14 +54,5 @@ class CheckoutCatalog {
       if (c.target == target) return c;
     }
     return forTarget(target);
-  }
-
-  /// [base] played with [layout] boxes used. Its reference route is the optimal
-  /// one for the darts that are free, which can differ: on 51 to 70 with the
-  /// right box used the ordinary route applies, not the bull-safe one.
-  Challenge dealt(Challenge base, BoxLayout layout) {
-    if (!base.hasCheckout) return base;
-    final route = _optimal.optimalRoute(base.target, twoDartBullSafe: layout.bullSafe)!;
-    return base.dealt(layout, route);
   }
 }

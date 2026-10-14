@@ -16,20 +16,17 @@ import 'site_routes.dart';
 ///
 ///  1. **Fewest darts.** A number that can be finished in 2 darts is never
 ///     played (or accepted as optimal) in 3.
-///  2. **Bull-safe**, where it applies: with two darts left on 51 to 70 (the
-///     first box used), and for three-dart numbers whose first treble leaves
-///     51 to 70. The treble of the number whose single leaves 50, then the
-///     double - or that single, then the Bull. All of them are equal
-///     (57: T7 D18, S7 Bull; 119: T19 T12 D13, T19 S12 Bull). See
-///     [BullSafeFinish]. A three-dart number also accepts its chart route.
+///  2. **Bull-safe**, where it applies: two-dart numbers from 51 to 70, and
+///     three-dart numbers whose first treble leaves 51 to 70. The treble of the
+///     number whose single leaves 50, then the double - or that single, then
+///     the Bull. All of them are equal (57: T7 D18, S7 Bull; 119: T19 T12 D13,
+///     T19 S12 Bull). See [BullSafeFinish]. A three-dart number also accepts
+///     its standard routes.
 ///  3. **More singles.** It is far easier to hit a single than a double or a
 ///     treble, so the routes with the most single setup darts win (the outer
 ///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9 - never T5 D10.
 ///  4. **Setup doubles last, then fewer triples.** Only sensible aims are
 ///     used (singles and T15-T20, see [NaturalAim]).
-///
-/// With two darts on 51 to 70 and the *last* box used, rule 2 does not apply
-/// and the ordinary rules do: 57 is S17 D20, 65 is S25 D20.
 ///
 /// [chartOnlyCheckouts] (120) always keep their classic chart route. A chart
 /// route is shown first when it is one of the optimal routes. A chart entry
@@ -57,35 +54,32 @@ class OptimalRouteService {
   final Map<int, List<CheckoutRoute>> _cache = {};
 
   /// The primary optimal route, or null when [target] is not checkoutable.
-  CheckoutRoute? optimalRoute(int target, {bool twoDartBullSafe = true}) {
-    final routes = optimalRoutes(target, twoDartBullSafe: twoDartBullSafe);
+  CheckoutRoute? optimalRoute(int target) {
+    final routes = optimalRoutes(target);
     return routes.isEmpty ? null : routes.first;
   }
 
   /// All optimal routes (primary first) for [target]; empty if impossible.
-  ///
-  /// [twoDartBullSafe] false is the "last box used" case: a two-dart number
-  /// over 50 is then played the ordinary way, not the bull-safe way.
-  List<CheckoutRoute> optimalRoutes(int target, {bool twoDartBullSafe = true}) {
+  List<CheckoutRoute> optimalRoutes(int target) {
     final minimum = _engine.minimumDarts(target);
     if (minimum == null) return const [];
     return _cache.putIfAbsent(
-      target * 2 + (twoDartBullSafe ? 1 : 0),
-      () => List.unmodifiable(_compute(target, minimum, twoDartBullSafe)),
+      target,
+      () => List.unmodifiable(_compute(target, minimum)),
     );
   }
 
   /// Whether [route] is one of the optimal routes for [target]. Order of the
   /// non-finishing darts is irrelevant. A route longer than the minimum is
   /// never optimal.
-  bool isOptimal(int target, CheckoutRoute route, {bool twoDartBullSafe = true}) =>
-      optimalRoutes(target, twoDartBullSafe: twoDartBullSafe).any(route.isEquivalentTo);
+  bool isOptimal(int target, CheckoutRoute route) =>
+      optimalRoutes(target).any(route.isEquivalentTo);
 
   /// How many of the setup darts are singles (the outer bull counts).
   static int singles(CheckoutRoute route) =>
       route.setupDarts.where((d) => d.multiplier == Multiplier.single).length;
 
-  List<CheckoutRoute> _compute(int target, int minimum, bool bullSafe) {
+  List<CheckoutRoute> _compute(int target, int minimum) {
     final routes = <CheckoutRoute>[];
     bool add(CheckoutRoute? route) {
       if (route == null) return false;
@@ -108,7 +102,7 @@ class OptimalRouteService {
       _engine.legalRoutes(target, darts: 1).forEach(add);
     } else {
       final safe = switch (minimum) {
-        2 when bullSafe => BullSafeFinish.twoDartRoutes(target),
+        2 => BullSafeFinish.twoDartRoutes(target),
         3 => BullSafeFinish.threeDartRoutes(target),
         _ => const <CheckoutRoute>[],
       };

@@ -33,22 +33,20 @@ Every push to `main` is tested, built and published to GitHub Pages by
   the calculator too; the right answer is the **No checkout** button.
 - A number's dart count = the fewest darts it needs. The calculator always shows
   three boxes (`Visit`, `BoxLayout`): a **1-dart** number has its first two
-  boxes crossed out; a **2-dart** number has the left box crossed out, except
-  between 51 and 70 where it is the left or the right box (50/50); a
-  **3-dart** number has none crossed out. Free darts always equal the fewest
-  darts.
+  boxes crossed out; a **2-dart** number has its left box crossed out (the
+  right box is never crossed); a **3-dart** number has none crossed out. Free
+  darts always equal the fewest darts.
 - **Optimal** (see `OptimalRouteService`), in order:
   1. the fewest darts;
-  2. **bull-safe** where it applies - 2 darts on 51-70 with the left box used,
-     and 3-dart numbers whose first triple leaves 51-70: the triple of the
-     number whose single leaves 50, then the double, *or* that single, then the
-     Bull (57: `T7 D18`, `S7 Bull`; 119: `T19 T12 D13`, `T19 S12 Bull`). A
+  2. **bull-safe** where it applies - 2-dart numbers from 51 to 70 (always), and
+     3-dart numbers whose first triple leaves 51-70: the triple of the number
+     whose single leaves 50, then the double, *or* that single, then the Bull
+     (57: `T7 D18`, `S7 Bull`; 119: `T19 T12 D13`, `T19 S12 Bull`). A
      three-dart number also accepts its chart route;
   3. otherwise the **most singles** (they are far easier to hit; the outer bull
      counts), then setup doubles last, then fewer triples, using only sensible
      aims (singles, T15-T20). 35 is `S15 D10` = `S3 D16` = `S17 D9`, never
-     `T5 D10`. With the right box used on 51-70 this rule applies: 57 is
-     `S17 D20`, 65 is `25 D20`.
+     `T5 D10`.
   Equal routes are all optimal, in any order of the setup darts. 120 stays
   `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
   equal route is shown first; tests verify every chart entry is legal and

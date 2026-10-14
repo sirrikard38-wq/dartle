@@ -127,8 +127,7 @@ class CheckoutValidator {
       outcome: AttemptOutcome.correct,
       playerRoute: route,
       message: '${route.arithmetic}. Correct!',
-      isOptimal: _optimal.isOptimal(target, route,
-          twoDartBullSafe: challenge.layout.bullSafe),
+      isOptimal: _optimal.isOptimal(target, route),
     );
   }
 }

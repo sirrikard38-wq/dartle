@@ -33,9 +33,8 @@ web.HTMLElement buildHowToPlay(GameController game) {
       section('The basics',
           'You get a number and always three boxes. A box that is crossed out is a '
           'dart already used, so it cannot be filled. A one-dart number has its '
-          'first two boxes crossed out. A two-dart number has one box crossed out: '
-          'between 51 and 70 it is the left one or the right one (50/50), '
-          'otherwise the left one. A three-dart number has nothing crossed out. '
+          'first two boxes crossed out. A two-dart number has its left box '
+          'crossed out. A three-dart number has nothing crossed out. '
           'Pick Single, Double or Triple, then tap a number. The last free box is '
           'always a double or Bull. Your answer is checked the moment it is '
           'complete. Not every number can be checked out: if there is no checkout, '
@@ -51,13 +50,12 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'optimal. The outer bull (25) counts as a single. Where no single can do '
         'it, triples T15 to T20 are used.'),
     section('Bull safety',
-        'With two darts left on 51 to 70 (the left box crossed out), aim at the '
-        'number that is 50 less than what is left. Say 57 is left: the single 7 '
-        'leaves exactly 50, so throw the triple T7 and then D18, or the single S7 '
-        'and then the Bull. If you aim at the triple and hit the single, you still '
-        'have the Bull. With the right box crossed out, the usual rule applies '
-        'instead: 57 is S17 D20. For three darts the first dart should leave 51 '
-        'to 70 (119: T19 leaves 62, then T12 D13 or S12 Bull).'),
+        'With two darts left on 51 to 70, aim at the number that is 50 less than '
+        'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '
+        'the triple T7 and then D18, or the single S7 and then the Bull. These '
+        'are the optimal routes. If you aim at the triple and hit the single, you '
+        'still have the Bull. For three darts the first dart should leave 51 to '
+        '70 (119: T19 leaves 62, then T12 D13 or S12 Bull).'),
     section('The board',
         'Pick Single, Double or Triple and the matching rings of the board turn '
         'grey; everything else goes dark. The board is drawn to real '
@@ -66,10 +64,10 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'press leaves a see-through circle on that ring, so you can see how the '
         'checkout looks on the board.'),
     section('Colours',
-        'Each dart is coloured as soon as you enter it. White means it belongs in '
-        'the best route. Light pink means it does not. Grey means the right dart '
-        'in the wrong place. After the checkout, All possibilities shows every '
-        'optimal route on its own board.'),
+        'The boxes stay plain while you play. After the checkout, each dart '
+        'flips to a colour: white means it belongs in the best route, light pink '
+        'means it does not, and grey means the right dart in the wrong place. '
+        'All possibilities shows every optimal route on its own board.'),
     if (game.mode.hasScore) ...[
       section('Score',
           'A correct checkout with time left on the clock scores as many points as '
