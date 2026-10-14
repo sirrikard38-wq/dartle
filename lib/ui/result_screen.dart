@@ -44,7 +44,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
           : TileFeedback.best(entered, result.optimalRoutes);
   final best = result.optimalRoutes.isEmpty ? null : result.optimalRoutes.first;
 
-  // One more route with a better double, then up to 3 more, shown as boxes.
+  // One more route with a better double, then up to 2 more, shown as boxes.
   final extras = best == null
       ? const <CheckoutRoute>[]
       : BetterDoubles.extras(result.optimalRoutes, best);
@@ -78,22 +78,11 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
         el('p', cls: 'encourage', text: result.encouragement ?? ''),
       ],
 
-      // Only these links under the number: the explanations are in popups.
-      el('p', cls: 'why-row', children: [
-        button('Show why.', cls: 'text-link', focusKey: 'why', onPressed: (_) {
-          showModal(title: 'Why', body: [
-            for (final line in RouteExplainer.explain(
-              challenge: challenge,
-              optimalRoutes: result.optimalRoutes,
-              playerRoute: result.playerRoute,
-              playerCorrect: result.isCorrect,
-              playerOptimal: result.isOptimal,
-              mistake: result.validation.message,
-            ))
-              modalLine(line),
-          ]);
-        }),
-        if (result.isPractice && result.optimalRoutes.isNotEmpty)
+      // Only one link under the number, in every mode: every optimal route,
+      // each with its marked board and boxes, in a popup. (A number with no
+      // checkout has no routes to show.)
+      if (result.optimalRoutes.isNotEmpty)
+        el('p', cls: 'why-row', children: [
           button('All possibilities', cls: 'text-link', focusKey: 'all', onPressed: (_) {
             showModal(title: 'All possibilities', body: [
               el('p', cls: 'modal-line', text: 'Every optimal way to check out ${challenge.target}.'),
@@ -114,7 +103,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
               ]),
             ]);
           }),
-      ]),
+        ]),
 
       // The boards, small and side by side. Each has its route boxes directly
       // underneath it (taps keep their exact position on the board).

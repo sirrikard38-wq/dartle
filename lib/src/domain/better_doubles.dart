@@ -21,7 +21,7 @@ abstract final class BetterDoubles {
   static List<CheckoutRoute> extras(
     List<CheckoutRoute> routes,
     CheckoutRoute primary, {
-    int more = 3,
+    int more = 2,
   }) {
     final others = routes.where((r) => !r.isEquivalentTo(primary)).toList();
     final result = <CheckoutRoute>[];

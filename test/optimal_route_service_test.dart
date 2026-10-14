@@ -294,11 +294,12 @@ void main() {
       expect(BetterDoubles.leavesBetterDouble(r('S19 D19')), isFalse);
     });
 
-    test('extras: one more route with a better double, then up to 3 others', () {
+    test('extras: one more route with a better double, then up to 2 others', () {
       final routes = optimal.optimalRoutes(35);
+      expect(routes.length, greaterThan(4), reason: 'plenty to choose from');
       final primary = routes.first;
       final extras = BetterDoubles.extras(routes, primary);
-      expect(extras.length, lessThanOrEqualTo(4));
+      expect(extras, hasLength(3));
       expect(extras, isNotEmpty);
       expect(BetterDoubles.leavesBetterDouble(extras.first), isTrue);
       expect(extras.any((x) => x.isEquivalentTo(primary)), isFalse);

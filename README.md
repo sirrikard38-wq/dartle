@@ -60,8 +60,9 @@ Every push to `main` is tested, built and published to GitHub Pages by
   rules win; every difference is listed in `docs/site-comparison.md`
   (`dart run tool/site_report.dart`).
 - **Better doubles** are a set: D20 D18 D16 D14 D12 D10 D8 D6 D5 D4 D2 D1. The
-  result screen shows one more optimal route on one of them, plus up to three
-  more, as boxes.
+  result screen shows one more optimal route on one of them, plus up to two
+  more, as boxes, and an **All possibilities** popup (every optimal route with
+  its marked board and boxes) in every mode.
 - **Score** (calculator only): a right answer with time left on the 30 s clock
   scores the streak length (1st = 1, 2nd = 2, ... 10th = 10); a right answer
   after the clock ran out scores 0 and keeps the streak; a miss costs nothing

@@ -68,7 +68,8 @@ web.HTMLElement buildHowToPlay(GameController game) {
     section('Colours',
         'Each dart is coloured as soon as you enter it. White means it belongs in '
         'the best route. Light pink means it does not. Grey means the right dart '
-        'in the wrong place. After the checkout, Show why. explains the route.'),
+        'in the wrong place. After the checkout, All possibilities shows every '
+        'optimal route on its own board.'),
     if (game.mode.hasScore) ...[
       section('Score',
           'A correct checkout with time left on the clock scores as many points as '

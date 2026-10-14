@@ -5,9 +5,10 @@ import 'checkout_route.dart';
 import 'natural_aim.dart';
 import 'optimal_route_service.dart';
 
-/// Writes the "Show why." text: why a number is played the way it is, and why
-/// the route the player chose is optimal or not. Pure text, built from the same
-/// rules as [OptimalRouteService], one plain sentence per line.
+/// Writes the reasons behind a number's optimal routes: why it is played the
+/// way it is, and why the route the player chose is optimal or not. Pure text,
+/// built from the same rules as [OptimalRouteService], one plain sentence per
+/// line. (No screen shows it at the moment; it was the "Show why." popup.)
 abstract final class RouteExplainer {
   static List<String> explain({
     required Challenge challenge,
