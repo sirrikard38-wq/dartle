@@ -45,8 +45,8 @@ To switch the online board off again, empty both values.
 - Every checkout in Checkout calculator saves the player's totals under
   `/leaderboard/<their id>`: name, points, average time, accuracy, optimal %,
   attempts. A failed upload is sent again with the next result.
-- The board shows the top 500 players by points, and the other rankings (average
-  time, accuracy, optimal %) are computed from those.
+- The board shows the top 180 players by points, and the other rankings (average
+  time, accuracy, optimal %) are computed from those same 180.
 - Each request waits at most 6 seconds; after that the screen shows the scores on
   the device instead, with a note saying so.
 - Clearing the browser's data (or reinstalling the app) makes a new anonymous id,

@@ -224,12 +224,15 @@ class OnlineLeaderboardRepository implements LeaderboardRepository {
     required StorageService storage,
     required LeaderboardRepository local,
     DateTime Function()? now,
-    this.maxEntries = 500,
+    this.maxEntries = topPlayers,
     this.requestTimeout = const Duration(seconds: 6),
   })  : _config = config,
         _http = http,
         _local = local,
         _session = FirebaseSession(config, http, storage, now: now);
+
+  /// The leaderboard has this many players: the top ones by points.
+  static const int topPlayers = 180;
 
   /// The most players loaded (the top ones by points).
   final int maxEntries;
@@ -275,6 +278,15 @@ class OnlineLeaderboardRepository implements LeaderboardRepository {
           final entry = _parse('$id', value);
           if (entry != null) entries.add(entry);
         });
+      }
+      // The server already sends only the top [maxEntries]; keep to that even
+      // if it ever sends more.
+      if (entries.length > maxEntries) {
+        entries.sort((a, b) {
+          final byPoints = b.totalPoints.compareTo(a.totalPoints);
+          return byPoints != 0 ? byPoints : a.playerName.compareTo(b.playerName);
+        });
+        entries.removeRange(maxEntries, entries.length);
       }
       _playerId = await _session.knownId();
       _online = true;

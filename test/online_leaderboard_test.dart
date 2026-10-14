@@ -277,8 +277,33 @@ void main() {
       expect(alice.accuracyPercent, 80.5);
       expect(entries.firstWhere((e) => e.id == 'p2').averageTimeMs, isNull);
       expect(firebase.lastGet!.queryParameters['orderBy'], '"totalPoints"');
-      expect(firebase.lastGet!.queryParameters['limitToLast'], '500');
+      expect(firebase.lastGet!.queryParameters['limitToLast'], '180');
       expect(r.isOnline, isTrue);
+    });
+
+    test('the board has the top 180 players, the best by points', () async {
+      expect(OnlineLeaderboardRepository.topPlayers, 180);
+      for (var i = 1; i <= 200; i++) {
+        firebase.board['p$i'] = {
+          'playerName': 'Player $i', 'totalPoints': i, 'accuracyPercent': 50,
+          'optimalPercent': 50, 'attempts': 4,
+        };
+      }
+      final entries = await repo().fetchEntries();
+      expect(entries, hasLength(180));
+      expect(entries.map((e) => e.totalPoints).reduce((a, b) => a < b ? a : b), 21,
+          reason: 'the 20 lowest of 200 players are cut');
+      expect(entries.map((e) => e.totalPoints).reduce((a, b) => a > b ? a : b), 200);
+    });
+
+    test('fewer than 180 players: all of them are there', () async {
+      for (var i = 1; i <= 50; i++) {
+        firebase.board['p$i'] = {
+          'playerName': 'Player $i', 'totalPoints': i, 'accuracyPercent': 50,
+          'optimalPercent': 50, 'attempts': 4,
+        };
+      }
+      expect(await repo().fetchEntries(), hasLength(50));
     });
 
     test('numbers that come back as 12.0 are still whole numbers', () async {
