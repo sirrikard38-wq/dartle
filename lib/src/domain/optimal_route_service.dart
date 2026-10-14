@@ -6,6 +6,7 @@ import 'checkout_route.dart';
 import 'checkout_strategy.dart';
 import 'dart_throw.dart';
 import 'natural_aim.dart';
+import 'site_routes.dart';
 
 /// Answers "what is the optimal way to check out N?".
 ///
@@ -39,14 +40,20 @@ class OptimalRouteService {
     CheckoutStrategy strategy = const CheckoutStrategy(),
     Map<int, String> canonical = canonicalCheckouts,
     Set<int> chartOnly = chartOnlyCheckouts,
+    Map<int, List<String>> siteThrows = siteThrowRoutes,
   })  : _strategy = strategy,
         _canonical = canonical,
-        _chartOnly = chartOnly;
+        _chartOnly = chartOnly,
+        _siteThrows = siteThrows;
 
   final CheckoutEngine _engine;
   final CheckoutStrategy _strategy;
   final Map<int, String> _canonical;
   final Set<int> _chartOnly;
+
+  /// The first-choice routes of dartscheckoutassistant.com, treated like the
+  /// chart: standard routes that are accepted next to the rules' own routes.
+  final Map<int, List<String>> _siteThrows;
   final Map<int, List<CheckoutRoute>> _cache = {};
 
   /// The primary optimal route, or null when [target] is not checkoutable.
@@ -89,6 +96,12 @@ class OptimalRouteService {
     }
 
     final chart = _chartRoute(target);
+    // The standard routes: the chart's, then the site's first choices.
+    final standard = [
+      if (chart != null) chart,
+      for (final text in _siteThrows[target] ?? const <String>[])
+        CheckoutRoute.parse(text),
+    ];
     if (_chartOnly.contains(target)) {
       add(chart);
     } else if (minimum == 1) {
@@ -101,13 +114,16 @@ class OptimalRouteService {
       };
       if (safe.isNotEmpty) {
         safe.forEach(add);
-        if (minimum == 3) add(chart); // the chart route is accepted too
+        // A three-dart number also accepts its standard routes.
+        if (minimum == 3) standard.forEach(add);
       } else {
         final tier = _tierRoutes(target, minimum);
-        // The chart route comes first when it is as good as the best (it has
-        // as many singles); a chart route with fewer singles is not optimal.
-        if (chart != null && tier.isNotEmpty && singles(chart) >= singles(tier.first)) {
-          add(chart);
+        // A standard route comes first when it is as good as the best (it has
+        // as many singles); one with fewer singles is not optimal.
+        if (tier.isNotEmpty) {
+          for (final route in standard) {
+            if (singles(route) >= singles(tier.first)) add(route);
+          }
         }
         tier.forEach(add);
       }

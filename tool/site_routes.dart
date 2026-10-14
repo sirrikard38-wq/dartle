@@ -1,0 +1,154 @@
+// Turns the raw route lines read from dartscheckoutassistant.com ("The Outs")
+// into lib/src/domain/site_routes.dart, and prints how those routes compare
+// with this app's optimal routes.
+//
+//   dart run tool/site_routes.dart <routes.txt> [--write]
+//
+// Each input line is `number|label|text`, e.g. `65|Throw|Single Bull, Double 20`.
+// Only the routes are kept (facts); nicknames, tips and notes are not used.
+import 'dart:io';
+
+import 'package:dartle/dartle.dart';
+
+final _token = RegExp(r'^(Single|Double|Treble|Triple)\s+(Bull|\d+)$', caseSensitive: false);
+
+DartThrow? _dart(String token) {
+  final m = _token.firstMatch(token.trim());
+  if (m == null) return null;
+  final ring = m.group(1)!.toLowerCase();
+  final what = m.group(2)!.toLowerCase();
+  if (what == 'bull') {
+    return ring == 'single' ? DartThrow.outerBull : (ring == 'double' ? DartThrow.bull : null);
+  }
+  final n = int.parse(what);
+  if (n < 1 || n > 20) return null;
+  return DartThrow(
+    ring == 'single' ? Multiplier.single : (ring == 'double' ? Multiplier.double : Multiplier.treble),
+    n,
+  );
+}
+
+CheckoutRoute? _route(String text) {
+  var t = text;
+  final paren = t.indexOf('(');
+  if (paren >= 0) t = t.substring(0, paren);
+  if (t.contains('leaves') || t.contains(':')) return null; // a setup, or prose
+  final darts = <DartThrow>[];
+  for (final part in t.split(',')) {
+    final d = _dart(part);
+    if (d == null) return null;
+    darts.add(d);
+  }
+  return darts.isEmpty ? null : CheckoutRoute(darts);
+}
+
+void main(List<String> args) {
+  final engine = CheckoutEngine();
+  final optimal = OptimalRouteService(engine);
+  final lines = File(args.first).readAsLinesSync().where((l) => l.trim().isNotEmpty);
+
+  final throws = <int, List<CheckoutRoute>>{};
+  final others = <int, List<CheckoutRoute>>{};
+  final problems = <String>[];
+  for (final line in lines) {
+    final parts = line.split('|');
+    final n = int.parse(parts[0]);
+    final label = parts[1];
+    final route = _route(parts.sublist(2).join('|'));
+    if (route == null) continue; // prose, or a setup that leaves a number
+    if (!engine.isLegalRoute(n, route)) {
+      problems.add('$n $label: ${route.notation} is not a legal checkout of $n '
+          '(adds up to ${route.total}${route.endsOnDouble ? '' : ', does not end on a double'})');
+      continue;
+    }
+    final into = label.toLowerCase() == 'throw' ? throws : others;
+    final list = into.putIfAbsent(n, () => []);
+    if (!list.any((r) => r.isEquivalentTo(route))) list.add(route);
+  }
+  // A route in Throw is not repeated in the other list.
+  for (final n in others.keys) {
+    others[n]!.removeWhere((r) => throws[n]?.any(r.isEquivalentTo) ?? false);
+  }
+
+  final numbers = engine.checkoutableTargets;
+  final missing = [for (final n in numbers) if (!throws.containsKey(n) && !others.containsKey(n)) n];
+
+  // ---- comparison -------------------------------------------------------
+  final report = StringBuffer();
+  var siteRoutes = 0, inLeft = 0, inRight = 0, inEither = 0, longer = 0;
+  final notOptimal = <int, List<String>>{};
+  final throwDiffers = <String>[];
+  for (final n in numbers) {
+    final left = optimal.optimalRoutes(n);
+    final right = optimal.optimalRoutes(n, twoDartBullSafe: false);
+    final fewest = engine.minimumDarts(n)!;
+    for (final r in [...?throws[n], ...?others[n]]) {
+      siteRoutes++;
+      final l = left.any(r.isEquivalentTo);
+      final rr = right.any(r.isEquivalentTo);
+      if (l) inLeft++;
+      if (rr) inRight++;
+      if (l || rr) {
+        inEither++;
+      } else {
+        (notOptimal[n] ??= []).add('${r.notation}${r.length > fewest ? ' (${r.length} darts, fewest is $fewest)' : ''}');
+        if (r.length > fewest) longer++;
+      }
+    }
+    final main = throws[n];
+    if (main != null && !(main.any((r) => left.any(r.isEquivalentTo) || right.any(r.isEquivalentTo)))) {
+      throwDiffers.add('$n: site ${main.map((r) => r.notation).join(' / ')}  |  app ${left.first.notation}');
+    }
+  }
+
+  report
+    ..writeln('Numbers with a checkout: ${numbers.length}; read from the site: '
+        '${numbers.length - missing.length}${missing.isEmpty ? '' : ' (missing: $missing)'}')
+    ..writeln('Site routes that are legal checkouts: $siteRoutes')
+    ..writeln('  optimal in the app (either box rule): $inEither '
+        '(left box used: $inLeft, right box used: $inRight)')
+    ..writeln('  not optimal in the app: ${siteRoutes - inEither} '
+        '(of which longer than the fewest darts: $longer)')
+    ..writeln('Numbers whose site "Throw" routes are all NOT optimal in the app: ${throwDiffers.length}');
+  if (problems.isNotEmpty) {
+    report.writeln('\nRoutes that did not check out (data problems):');
+    problems.forEach(report.writeln);
+  }
+  report.writeln('\n"Throw" differences (site first choice vs the app\'s first route):');
+  throwDiffers.forEach(report.writeln);
+  report.writeln('\nEvery site route the app does not call optimal:');
+  for (final e in notOptimal.entries) {
+    report.writeln('${e.key}: ${e.value.join(', ')}');
+  }
+  stdout.write(report);
+
+  if (args.contains('--write')) {
+    final out = StringBuffer()
+      ..writeln('// GENERATED by tool/site_routes.dart - do not edit by hand.')
+      ..writeln('//')
+      ..writeln('// Checkout routes listed on the "The Outs" pages of dartscheckoutassistant.com,')
+      ..writeln('// one page per score. Routes only (facts); no text from the site is used.')
+      ..writeln('// Every route here is checked to be a legal checkout of its number.')
+      ..writeln('')
+      ..writeln('/// The site\'s first-choice ("Throw") routes per number, in its order.')
+      ..writeln('const Map<int, List<String>> siteThrowRoutes = {');
+    for (final n in numbers) {
+      if (throws[n] != null) {
+        out.writeln("  $n: [${throws[n]!.map((r) => "'${r.notation}'").join(', ')}],");
+      }
+    }
+    out
+      ..writeln('};')
+      ..writeln('')
+      ..writeln('/// The site\'s other routes ("Backup" and "Option") per number.')
+      ..writeln('const Map<int, List<String>> siteOtherRoutes = {');
+    for (final n in numbers) {
+      if (others[n] != null && others[n]!.isNotEmpty) {
+        out.writeln("  $n: [${others[n]!.map((r) => "'${r.notation}'").join(', ')}],");
+      }
+    }
+    out.writeln('};');
+    File('lib/src/domain/site_routes.dart').writeAsStringSync(out.toString());
+    stdout.writeln('\nWrote lib/src/domain/site_routes.dart');
+  }
+}
