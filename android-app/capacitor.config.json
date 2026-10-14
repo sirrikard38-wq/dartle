@@ -1,0 +1,9 @@
+{
+  "appId": "com.pknormal.dartle",
+  "appName": "Dartle",
+  "webDir": "../build",
+  "backgroundColor": "#000000",
+  "android": {
+    "backgroundColor": "#000000"
+  }
+}

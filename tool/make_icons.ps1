@@ -1,15 +1,21 @@
-# Draws the app icons into web/icons/ : a black tile with a white dartboard.
+# Draws the app icons: a black tile with a white dartboard.
 #   powershell -ExecutionPolicy Bypass -File tool/make_icons.ps1
+#
+#  * web/icons/          the installable web app's icons (manifest, iPhone, favicon)
+#  * android-app/assets/ the source art the Android app's icons and splash screen
+#                        are made from (by @capacitor/assets, in the GitHub build)
 Add-Type -AssemblyName System.Drawing
 
-$out = Join-Path $PSScriptRoot '..\web\icons'
-New-Item -ItemType Directory -Force $out | Out-Null
+$root = Join-Path $PSScriptRoot '..'
+$web = Join-Path $root 'web\icons'
+$android = Join-Path $root 'android-app\assets'
+New-Item -ItemType Directory -Force $web, $android | Out-Null
 
-function New-Icon([int]$size, [double]$scale, [string]$name) {
+function New-Icon([int]$size, [double]$scale, [string]$path, [bool]$transparent = $false) {
   $bmp = New-Object System.Drawing.Bitmap $size, $size
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = 'AntiAlias'
-  $g.Clear([System.Drawing.Color]::Black)
+  if ($transparent) { $g.Clear([System.Drawing.Color]::Transparent) } else { $g.Clear([System.Drawing.Color]::Black) }
 
   $c = $size / 2.0
   $R = $size * 0.5 * $scale            # outer radius of the board
@@ -37,14 +43,24 @@ function New-Icon([int]$size, [double]$scale, [string]$name) {
   Disc ($R * 0.075) $black
 
   $g.Dispose()
-  $path = Join-Path $out $name
   $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
   $bmp.Dispose()
-  Write-Output "wrote $name ($size x $size)"
+  Write-Output "wrote $(Split-Path $path -Leaf) ($size x $size)"
 }
 
-New-Icon 192 0.92 'icon-192.png'
-New-Icon 512 0.92 'icon-512.png'
-New-Icon 512 0.72 'icon-maskable-512.png'      # extra margin: platforms crop it
-New-Icon 180 0.92 'apple-touch-icon.png'
-New-Icon 32 0.96 'favicon-32.png'
+# The web app.
+New-Icon 192 0.92 (Join-Path $web 'icon-192.png')
+New-Icon 512 0.92 (Join-Path $web 'icon-512.png')
+New-Icon 512 0.72 (Join-Path $web 'icon-maskable-512.png')      # extra margin: platforms crop it
+New-Icon 180 0.92 (Join-Path $web 'apple-touch-icon.png')
+New-Icon 32 0.96 (Join-Path $web 'favicon-32.png')
+
+# The Android app (the names @capacitor/assets looks for).
+New-Icon 1024 0.92 (Join-Path $android 'icon-only.png')
+New-Icon 1024 0.60 (Join-Path $android 'icon-foreground.png') $true   # adaptive icon: stays in the safe zone
+$bg = New-Object System.Drawing.Bitmap 1024, 1024
+$gb = [System.Drawing.Graphics]::FromImage($bg); $gb.Clear([System.Drawing.Color]::Black); $gb.Dispose()
+$bg.Save((Join-Path $android 'icon-background.png'), [System.Drawing.Imaging.ImageFormat]::Png); $bg.Dispose()
+Write-Output 'wrote icon-background.png (1024 x 1024)'
+New-Icon 2732 0.16 (Join-Path $android 'splash.png')
+New-Icon 2732 0.16 (Join-Path $android 'splash-dark.png')

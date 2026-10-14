@@ -7,6 +7,7 @@ import 'package:web/web.dart' as web;
 /// and plays with no connection. Quietly does nothing where it is not allowed
 /// (an address that is not https or localhost, or an old browser).
 Future<void> registerServiceWorker() async {
+  if (isNativeShell) return; // the Android app already holds every file
   try {
     await web.window.navigator.serviceWorker.register('sw.js'.toJS).toDart;
   } on Object {
@@ -48,9 +49,21 @@ void watchForInstall(void Function() changed) {
   );
 }
 
-/// True when the app is running from the home screen, not in a browser tab.
+/// True inside the Android app (a Capacitor shell around this page), where
+/// there is nothing to install and no browser around the page.
+bool get isNativeShell {
+  try {
+    return (web.window as JSObject).has('Capacitor');
+  } on Object {
+    return false;
+  }
+}
+
+/// True when the app is running from the home screen or as a store/.apk app,
+/// not in a browser tab.
 bool get isInstalledApp {
   try {
+    if (isNativeShell) return true;
     if (web.window.matchMedia('(display-mode: standalone)').matches) return true;
     final standalone = (web.window.navigator as JSObject).getProperty('standalone'.toJS);
     return standalone.dartify() == true; // iOS Safari's own flag

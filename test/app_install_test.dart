@@ -85,6 +85,68 @@ void main() {
     });
   });
 
+  group('Android app (.apk) project', () {
+    final config =
+        jsonDecode(File('android-app/capacitor.config.json').readAsStringSync()) as Map<String, Object?>;
+    final package =
+        jsonDecode(File('android-app/package.json').readAsStringSync()) as Map<String, Object?>;
+    final workflow = File('.github/workflows/android.yml').readAsStringSync();
+
+    test('wraps the built site, with a black background', () {
+      expect(config['appId'], matches(RegExp(r'^[a-z]+(\.[a-z]+)+$')));
+      expect(config['appName'], 'Dartle');
+      expect(config['webDir'], '../build', reason: 'the output of tool/build.dart');
+      expect(config['backgroundColor'], '#000000');
+    });
+
+    test('pins the Capacitor versions so a build is repeatable', () {
+      final deps = {
+        ...(package['dependencies'] as Map<String, Object?>),
+        ...(package['devDependencies'] as Map<String, Object?>),
+      };
+      for (final name in ['@capacitor/core', '@capacitor/android', '@capacitor/cli', '@capacitor/assets']) {
+        expect(deps[name], matches(RegExp(r'^\d+\.\d+\.\d+$')), reason: '$name is pinned exactly');
+      }
+      expect(deps['@capacitor/core'], deps['@capacitor/android']);
+      expect(deps['@capacitor/core'], deps['@capacitor/cli']);
+    });
+
+    test('has the artwork @capacitor/assets needs, at the right sizes', () {
+      for (final entry in {
+        'icon-only.png': 1024,
+        'icon-foreground.png': 1024,
+        'icon-background.png': 1024,
+        'splash.png': 2732,
+        'splash-dark.png': 2732,
+      }.entries) {
+        expect(pngSize(File('android-app/assets/${entry.key}')), (entry.value, entry.value),
+            reason: entry.key);
+      }
+    });
+
+    test('the workflow builds the site, makes the project, builds the APK and publishes it', () {
+      for (final step in [
+        'dart run tool/build.dart',
+        'npx cap add android',
+        'npx capacitor-assets generate --android',
+        'dart run tool/patch_android.dart',
+        'npx cap sync android',
+        './gradlew assembleDebug',
+        'gh release create android-latest dartle.apk',
+      ]) {
+        expect(workflow, contains(step), reason: step);
+      }
+      expect(workflow, contains('contents: write'));
+      expect(workflow, contains('debug.keystore'), reason: 'the signing key is kept between builds');
+    });
+
+    test('the generated Android project is not kept in git', () {
+      final ignore = File('.gitignore').readAsStringSync();
+      expect(ignore, contains('android-app/android/'));
+      expect(ignore, contains('android-app/node_modules/'));
+    });
+  });
+
   group('service worker', () {
     final sw = File('web/sw.js').readAsStringSync();
 

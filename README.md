@@ -40,6 +40,21 @@ Pieces: `web/manifest.webmanifest` (name, colours, icons), `web/icons/` (made by
 on the device; on iPhone the home-screen app keeps its own copy, separate from
 the Safari tab. Store versions (Google Play, App Store) are not built.
 
+## Android app (.apk)
+
+`.github/workflows/android.yml` wraps the same site as an Android app
+(Capacitor, in `android-app/`), builds the `.apk` and publishes it as the
+`android-latest` release on every push to `main`:
+
+https://github.com/sirrikard38-wq/dartle/releases/download/android-latest/dartle.apk
+
+Download it on the phone and open it; Android asks once to allow installing
+from that source. The app holds every file itself, so it needs no connection.
+The Android project is generated in the build (only the settings, artwork and
+`tool/patch_android.dart` are in git). The signing key is a debug key kept in the
+build cache so each download can update the last; it is not a Play Store key.
+There is no iPhone app file: that needs a paid Apple developer account.
+
 ## Rules chosen (documented, not assumed)
 
 - Checkout = 1–3 darts summing exactly to the target; **last dart must be a

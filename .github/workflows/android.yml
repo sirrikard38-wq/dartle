@@ -1,0 +1,79 @@
+name: Android app
+
+# Wraps the site as an Android app (Capacitor), builds the .apk and publishes it
+# as the "android-latest" release, so it can be downloaded and installed on a
+# phone:
+#   https://github.com/sirrikard38-wq/dartle/releases/download/android-latest/dartle.apk
+#
+# The Android project (android-app/android) is generated here every time; only
+# its settings, icons and patch script live in git.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # to publish the release
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # The site itself (what the app wraps).
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart run tool/build.dart
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Accept the Android SDK licences
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      # Without a saved key every build would be signed with a new one, and a
+      # phone refuses to update an app signed with a different key.
+      - name: Keep the same signing key between builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
+      - name: Make the Android project
+        working-directory: android-app
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx capacitor-assets generate --android
+
+      - name: Patch it (version, portrait, black bars)
+        run: dart run tool/patch_android.dart "${{ github.run_number }}"
+
+      - name: Copy the site into it
+        working-directory: android-app
+        run: npx cap sync android
+
+      - name: Build the APK
+        working-directory: android-app/android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Publish it as the android-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android-app/android/app/build/outputs/apk/debug/app-debug.apk dartle.apk
+          gh release delete android-latest --cleanup-tag --yes || true
+          gh release create android-latest dartle.apk \
+            --target "${{ github.sha }}" \
+            --title "Dartle for Android" \
+            --notes "The Android app, built from commit ${{ github.sha }}. Download dartle.apk on your phone and open it; allow installing from this source if Android asks."
