@@ -86,9 +86,11 @@ leaderboard shows the scores on the device, as before.
      3-dart numbers whose first triple leaves 51-70: the triple of the number
      whose single leaves 50, then the double, *or* that single, then the Bull
      (57: `T7 D18`, `S7 Bull`; 119: `T19 T12 D13`, `T19 S12 Bull`). A
-     three-dart number also accepts its chart route. A two-dart number from 41
-     to 60 also accepts **a single that leaves a better double** (see below):
-     57 is also `S17 D20`, 60 is also `S20 D20` (`SingleLeave`);
+     three-dart number also accepts its chart route. With two darts left on 41
+     to 60 **a single that leaves a better double** (see below) is as good: 57 is
+     also `S17 D20`, 60 is also `S20 D20`; and after the first triple of a
+     three-dart number that leaves 51-60, 109 is also `T19 S20 D16`
+     (`SingleLeave`);
   3. otherwise the **most singles** (they are far easier to hit; the outer bull
      counts), then setup doubles last, then fewer triples, using only sensible
      aims (singles, T15-T20). 35 is `S15 D10` = `S3 D16` = `S17 D9`, never

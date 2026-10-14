@@ -315,6 +315,16 @@ void main() {
       expect(other.steps.first.quality, DartQuality.fine);
     });
 
+    test('109: T19, S20, D16 is optimal at every step (52 left, then a single and D16)', () {
+      final r = ChoiceRound(109, advisor)
+        ..throwDart(d('T19'))
+        ..throwDart(d('S20'))
+        ..throwDart(d('D16'));
+      expect(r.isCheckedOut, isTrue);
+      expect(r.isOptimal, isTrue);
+      expect(r.steps.map((s) => s.quality), everyElement(DartQuality.optimal));
+    });
+
     test('a one-dart number has one free box', () {
       final r = ChoiceRound(40, advisor, layout: BoxLayout.leftTwoUsed);
       expect(r.maxDarts, 1);

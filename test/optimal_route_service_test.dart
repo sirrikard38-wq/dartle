@@ -216,6 +216,43 @@ void main() {
     test('the routes are listed on the biggest double first', () {
       expect(SingleLeave.twoDartRoutes(57).map((x) => x.notation), ['S17 D20', '25 D16']);
     });
+
+    test('109: T19 leaves 52, then S20 D16 (or S12 D20, S16 D18) is optimal, in any order', () {
+      for (final text in ['T19 S20 D16', 'S20 T19 D16', 'T19 S12 D20', 'T19 S16 D18']) {
+        expect(engine.isLegalRoute(109, r(text)), isTrue, reason: text);
+        expect(optimal.isOptimal(109, r(text)), isTrue, reason: text);
+      }
+      // The bull-safe route is still the first one shown.
+      expect(optimal.optimalRoute(109)!.notation,
+          BullSafeFinish.threeDartRoutes(109).first.notation);
+      expect(notations(109), contains('T19 S2 Bull'));
+      // D19 is not one of the better doubles.
+      expect(engine.isLegalRoute(109, r('T19 S14 D19')), isTrue);
+      expect(optimal.isOptimal(109, r('T19 S14 D19')), isFalse);
+    });
+
+    test('after the first treble the same 41 to 60 rule applies, and only there', () {
+      // 121: T20 leaves 61, outside 41..60, so S25 D18 is not optimal.
+      expect(optimal.isOptimal(121, r('T20 S25 D18')), isFalse);
+      var checked = 0;
+      for (final target in engine.checkoutableTargets) {
+        if (engine.minimumDarts(target) != 3 || chartOnlyCheckouts.contains(target)) continue;
+        for (final route in SingleLeave.threeDartRoutes(target)) {
+          final left = target - route.darts.first.score;
+          expect(route.darts.first.isTreble, isTrue, reason: '$target ${route.notation}');
+          expect(left, inInclusiveRange(51, 60), reason: '$target ${route.notation}');
+          expect(engine.isLegalRoute(target, route), isTrue, reason: '$target ${route.notation}');
+          expect(optimal.isOptimal(target, route), isTrue, reason: '$target ${route.notation}');
+          checked++;
+        }
+      }
+      expect(checked, greaterThan(20));
+    });
+
+    test('120 keeps exactly its classic route', () {
+      expect(SingleLeave.threeDartRoutes(120), isNotEmpty); // T20 leaves 60 ...
+      expect(optimal.optimalRoutes(120).map((x) => x.notation), ['T20 S20 D20']);
+    });
   });
 
   group('more singles win: never a treble or double where a single will do', () {

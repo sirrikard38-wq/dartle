@@ -4,8 +4,8 @@ How the routes on the "The Outs" pages of dartscheckoutassistant.com compare wit
 
 - Numbers with a checkout, all read from the site: 162
 - Site routes that are legal checkouts: 413
-- Optimal in the app: 263
-- Not optimal in the app: 150
+- Optimal in the app: 282
+- Not optimal in the app: 131
 
 The site's first-choice ("Throw") routes are accepted as optimal next to the chart routes, wherever they have the fewest darts and as many singles as the best routes (for three-dart numbers whenever they have the fewest darts). Two-dart numbers from 51 to 70 are only ever the bull-safe routes, plus (from 51 to 60) a single that leaves a better double.
 
@@ -143,7 +143,7 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 135: `Bull T15 D20` - fewer singles (1 are possible, e.g. T20 25 Bull)
 - 135: `T20 T17 D12` - fewer singles (1 are possible, e.g. T20 25 Bull)
 
-## Other (35)
+## Other (16)
 
 - 99: `S19 T20 D10` - not one of the routes the rules pick
 - 99: `T17 S16 D16` - not one of the routes the rules pick
@@ -151,32 +151,13 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 102: `T20 S6 D18` - not one of the routes the rules pick
 - 103: `S19 T20 D12` - not one of the routes the rules pick
 - 103: `T19 S10 D18` - not one of the routes the rules pick
-- 103: `T17 S12 D20` - not one of the routes the rules pick
-- 105: `S19 T18 D16` - not one of the routes the rules pick
 - 105: `T19 S16 D16` - not one of the routes the rules pick
 - 105: `T20 S13 D16` - not one of the routes the rules pick
-- 106: `S20 T18 D16` - not one of the routes the rules pick
 - 106: `T20 S10 D18` - not one of the routes the rules pick
 - 108: `S20 T20 D14` - not one of the routes the rules pick
-- 108: `T19 S19 D16` - not one of the routes the rules pick
-- 108: `T18 S14 D20` - not one of the routes the rules pick
-- 108: `T17 S17 D20` - not one of the routes the rules pick
-- 109: `S20 T19 D16` - not one of the routes the rules pick
 - 109: `T20 S17 D16` - not one of the routes the rules pick
-- 111: `T20 S11 D20` - not one of the routes the rules pick
-- 111: `S20 T17 D20` - not one of the routes the rules pick
-- 112: `S20 T20 D16` - not one of the routes the rules pick
-- 112: `T19 S19 D18` - not one of the routes the rules pick
-- 112: `T18 S18 D20` - not one of the routes the rules pick
-- 113: `S19 T18 D20` - not one of the routes the rules pick
-- 114: `S20 T18 D20` - not one of the routes the rules pick
-- 114: `T19 S17 D20` - not one of the routes the rules pick
-- 115: `S19 T20 D18` - not one of the routes the rules pick
 - 115: `S20 T19 D19` - not one of the routes the rules pick
-- 116: `S20 T20 D18` - not one of the routes the rules pick
-- 117: `S20 T19 D20` - not one of the routes the rules pick
 - 118: `S20 T20 D19` - not one of the routes the rules pick
-- 119: `S19 T20 D20` - not one of the routes the rules pick
 - 122: `25 T19 D20` - not one of the routes the rules pick
 - 128: `T18 T18 D10` - not one of the routes the rules pick
 - 130: `T19 T19 D8` - not one of the routes the rules pick
