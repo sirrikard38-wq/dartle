@@ -170,7 +170,7 @@ void main() {
       expect(OnlineConfig.tryParse('{"databaseUrl": "https://x.firebaseio.com", "apiKey": "k"}'), isNotNull);
     });
 
-    test('the file shipped in web/ is empty until the board is set up', () {
+    test('the file shipped in web/ is a valid config, or empty for a board on this device', () {
       final shipped = File('web/online.json').readAsStringSync();
       expect(jsonDecode(shipped), isA<Map<String, Object?>>());
       // Filled in (a real board) or empty (this device only): both are valid files.
