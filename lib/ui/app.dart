@@ -6,6 +6,7 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'game_screen.dart';
 import 'impossible_screen.dart';
+import 'install.dart';
 import 'leaderboard_screen.dart';
 import 'menu_screen.dart';
 import 'modal.dart';
@@ -49,6 +50,8 @@ class DartleApp {
       }
       render();
     });
+    // The menu offers to install the app once the browser says it can.
+    watchForInstall(render);
     _toast = el('div', cls: 'toast', attrs: {'role': 'status', 'aria-live': 'polite'});
     web.document.body!.appendChild(_toast);
     web.EventStreamProviders.keyDownEvent.forTarget(web.document).listen(_onKey);

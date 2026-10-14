@@ -23,6 +23,23 @@ dart run tool/serve.dart       # http://localhost:8080
 Every push to `main` is tested, built and published to GitHub Pages by
 `.github/workflows/pages.yml`.
 
+## Install on a phone (Android and iPhone)
+
+Dartle is an installable web app (a PWA): it gets its own icon, opens full
+screen without the browser bars, and works offline once it has been opened.
+
+- **Android (Chrome):** open the site, then tap **Install app** on the menu (or
+  the browser menu, then *Install app* / *Add to Home screen*).
+- **iPhone / iPad (Safari):** open the site, tap **Share**, then **Add to Home
+  Screen**.
+
+Pieces: `web/manifest.webmanifest` (name, colours, icons), `web/icons/` (made by
+`tool/make_icons.ps1`), `web/sw.js` (offline cache, stamped per build by
+`tool/build.dart`), the safe-area CSS for notches and home bars, and
+`lib/ui/install.dart` (the menu's Install hint). Scores and statistics are saved
+on the device; on iPhone the home-screen app keeps its own copy, separate from
+the Safari tab. Store versions (Google Play, App Store) are not built.
+
 ## Rules chosen (documented, not assumed)
 
 - Checkout = 1–3 darts summing exactly to the target; **last dart must be a

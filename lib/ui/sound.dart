@@ -16,6 +16,24 @@ class SoundService {
     } on Object {
       _muted = false;
     }
+    _unlockOnFirstTap();
+  }
+
+  /// iPhones and iPads only let a page make sound from an audio context that a
+  /// tap has started. So the first tap anywhere creates and wakes one, and the
+  /// fanfare later uses that same context.
+  void _unlockOnFirstTap() {
+    final unlock = ((web.Event event) {
+      try {
+        _shared ??= web.AudioContext();
+        if (_shared!.state != 'running') _shared!.resume();
+      } on Object {
+        // No audio support: the game still works without sound.
+      }
+    }).toJS;
+    for (final type in const ['touchend', 'pointerdown', 'click', 'keydown']) {
+      web.document.addEventListener(type, unlock);
+    }
   }
 
   static const String clipPath = 'audio/optimal.mp3';
@@ -25,7 +43,13 @@ class SoundService {
 
   bool _muted = false;
   DateTime? _busyUntil;
-  web.AudioContext? _context;
+
+  /// The page's one audio context (see [_unlockOnFirstTap]), kept for good.
+  web.AudioContext? _shared;
+
+  /// The volume knob of the fanfare that is playing; disconnecting it silences
+  /// the fanfare at once.
+  web.GainNode? _master;
   web.HTMLAudioElement? _clip;
   Timer? _stopTimer;
   Timer? _fadeTimer;
@@ -71,10 +95,10 @@ class SoundService {
       _clip = null;
     }
     // Cut the synthesized fanfare short too (muting, or leaving the result).
-    final context = _context;
-    if (context != null) {
-      _context = null;
-      context.close();
+    final master = _master;
+    if (master != null) {
+      _master = null;
+      master.disconnect();
       _busyUntil = null;
     }
   }
@@ -99,8 +123,11 @@ class SoundService {
   /// major chord that fades out at the 4 second mark.
   void _fanfare() {
     try {
-      final ctx = web.AudioContext();
-      _context = ctx;
+      final ctx = _shared ??= web.AudioContext();
+      if (ctx.state != 'running') ctx.resume();
+      final master = ctx.createGain();
+      master.connect(ctx.destination);
+      _master = master;
       final now = ctx.currentTime;
       final total = duration.inMilliseconds / 1000;
 
@@ -114,7 +141,7 @@ class SoundService {
         gain.gain.linearRampToValueAtTime(volume, t0 + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.0001, t0 + length);
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(master);
         osc.start(t0);
         osc.stop(t0 + length + 0.05);
       }
@@ -130,8 +157,10 @@ class SoundService {
       }
       // One phrase only: no repeated melody, so it is heard exactly once.
       Timer(duration + const Duration(milliseconds: 300), () {
-        if (identical(_context, ctx)) _context = null;
-        ctx.close();
+        if (identical(_master, master)) {
+          _master = null;
+          master.disconnect();
+        }
       });
     } on Object {
       // No audio support: silently skip, the game still works.
