@@ -36,20 +36,6 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
         el('span', text: label),
       ]);
 
-  // Wordle-style distribution bars for completed checkouts by dart count.
-  final maxCount = [1, 2, 3]
-      .map((d) => s.successesByDartCount[d] ?? 0)
-      .fold<int>(1, (m, v) => v > m ? v : m);
-  final bars = el('div', cls: 'bars', children: [
-    for (final darts in [1, 2, 3])
-      el('div', cls: 'bar-row', children: [
-        el('span', text: '$darts'),
-        el('div', cls: 'bar', attrs: {
-          'style': 'width:${((s.successesByDartCount[darts] ?? 0) * 100 / maxCount).clamp(8, 100)}%',
-        }, children: [textNode('${s.successesByDartCount[darts] ?? 0}')]),
-      ]),
-  ]);
-
   final weakest = byTarget.where((t) => t.successes < t.attempts).take(5).toList();
   final stats = {for (final t in byTarget) t.target: t};
 
@@ -62,8 +48,6 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
         big(formatMsAsSeconds(s.averageSuccessTimeMs), 'AVG TIME'),
         big('${s.totalPoints}', 'POINTS'),
       ]),
-      el('h3', text: 'Checkouts by darts'),
-      bars,
       el('h3', text: 'Needs practice'),
       if (weakest.isEmpty)
         el('p', cls: 'hint', text: 'Nothing yet — play a few rounds.')
@@ -75,16 +59,14 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
               el('span', text: '${t.successes} of ${t.attempts} success'),
             ]),
         ]),
-      el('details', cls: 'more', children: [
-        el('summary', text: 'More numbers'),
+      // Always open: the key figures, then every number's own record.
+      el('h3', text: 'More numbers'),
+      el('div', cls: 'more-stats', children: [
         el('dl', cls: 'kv', children: [
           for (final (k, v) in [
             ('Optimal routes', formatPercent(s.optimalPercent)),
             ('Fastest checkout', formatMsAsSeconds(s.fastestSuccessMs)),
             ('Best session', '${s.bestSessionPoints}'),
-            ('Easy points', '${s.pointsByDifficulty[DifficultyLevel.easy]}'),
-            ('Medium points', '${s.pointsByDifficulty[DifficultyLevel.medium]}'),
-            ('Hard points', '${s.pointsByDifficulty[DifficultyLevel.hard]}'),
           ]) ...[el('dt', text: k), el('dd', text: v)],
         ]),
         el('div', cls: 'table-wrap', children: [

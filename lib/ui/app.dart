@@ -4,6 +4,7 @@ import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 import 'dom.dart';
+import 'footer.dart';
 import 'game_screen.dart';
 import 'impossible_screen.dart';
 import 'install.dart';
@@ -121,10 +122,11 @@ class DartleApp {
     _lastScreen = screenKey;
 
     _root.textContent = '';
-    if (!(_game.phase == GamePhase.menu && _page == MenuPage.welcome)) {
-      _root.appendChild(_buildHeader()); // the welcome screen is full-screen
-    }
+    // The welcome screen is full-screen: no header, no footer.
+    final fullScreen = _game.phase == GamePhase.menu && _page == MenuPage.welcome;
+    if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
+    if (!fullScreen) _root.appendChild(buildFooter());
 
     final key = _focusKey;
     _focusKey = null;

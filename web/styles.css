@@ -19,6 +19,7 @@
   --red: #ff4d4d;          /* a number with no checkout */
   --burgundy: #9c2a45;     /* a box that is already used: its cross and edge */
   --burgundy-soft: #c0506b;/* the dotted darts inside it */
+  --footer-bg: #2b2b2b;    /* the grey row at the end of the app */
   --focus: #ffffff;
   --tile: clamp(58px, 17vw, 72px);
   --mode-h: 44px;
@@ -410,8 +411,6 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 }
 
 /* Menu: put the app on the home screen. */
-.install-hint { margin: 22px 0 0; max-width: 26ch; font-size: 0.85rem; }
-.text-btn.install { margin-top: 14px; }
 
 /* Under the number: only underlined links. */
 .why-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin: 2px 0 0; }
@@ -486,10 +485,7 @@ summary { cursor: pointer; color: var(--muted); }
 .how-section p { margin: 0; }
 
 /* ---------- Stats / leaderboard ---------- */
-.bars { width: 100%; }
-.bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
-.bar-row > span { width: 1em; }
-.bar { background: var(--white); color: var(--ink); text-align: right; padding: 2px 8px; font-weight: 700; min-width: 2em; }
+.more-stats { width: 100%; text-align: left; font-size: 0.9rem; }
 .weak-list, .rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
 .weak-list li, .rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
 .weak-list strong { font-size: 1.2rem; }
@@ -512,6 +508,24 @@ summary { cursor: pointer; color: var(--muted); }
 /* Numbers that cannot be checked out. */
 .no-checkout-row th, .no-checkout { color: var(--red); }
 .no-checkout { text-align: center !important; }
+
+/* ---------- Footer: one grey row at the very end of the app ---------- */
+/* It reaches into the safe-area padding of #app, so on a phone with a notch or a
+   home bar the grey runs to the screen edge and the links stay clear of it. */
+.app-footer {
+  display: flex; justify-content: center; align-items: center; gap: 4px;
+  margin: 24px calc(-1 * env(safe-area-inset-right, 0px)) calc(-1 * env(safe-area-inset-bottom, 0px)) calc(-1 * env(safe-area-inset-left, 0px));
+  padding: 0 calc(8px + env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) calc(8px + env(safe-area-inset-left, 0px));
+  background: var(--footer-bg);
+}
+.footer-link {
+  flex: 1; max-width: 160px; min-height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; padding: 0 12px;
+  color: var(--offwhite); font-size: 0.85rem; letter-spacing: 0.06em; text-decoration: none;
+}
+.footer-link:hover { color: var(--white); text-decoration: underline; }
+.modal-line a { color: var(--fg); }
 
 /* ---------- Toast ---------- */
 .toast {
