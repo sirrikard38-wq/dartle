@@ -1,7 +1,6 @@
 import 'dart:io';
-import 'dart:math';
 
-import 'package:dartle/ui/spark_math.dart';
+import 'package:dartle/ui/dart_shot_timing.dart';
 import 'package:test/test.dart';
 
 /// The welcome screen's look and the dart's press animation, pinned from the
@@ -31,7 +30,7 @@ void main() {
     });
   });
 
-  group('press animation', () {
+  group('press animation: the dart sticks in the circle and wiggles', () {
     test('the dart flies half a centimetre at its old speed (150 ms)', () {
       expect(css, contains('.dart-stage.shooting .dart-go { transform: translateX(0.5cm); }'));
       expect(css, contains('transition: transform 150ms ease;'));
@@ -47,17 +46,36 @@ void main() {
       expect(css, contains('.dart-stage.shooting .target-dot { opacity: 1;'));
     });
 
-    test('the circle pops, then sparks fly half a centimetre out', () {
-      expect(css, contains('.dart-stage.popped .target-dot { animation: dot-pop'));
-      expect(css, contains('@keyframes spark-fly'));
-      expect(css, contains('translate(var(--dx), var(--dy))'));
-      expect(sparkReachCm, 0.5);
-      expect(shot, contains("stage.classList.add('shooting')"));
-      expect(shot, contains("stage.classList.add('popped')"));
-      expect(shot.indexOf("add('shooting')"), lessThan(shot.indexOf("add('popped')")));
+    test('nothing pops: no pop animation, no sparks', () {
+      expect(css, isNot(contains('dot-pop')));
+      expect(css, isNot(contains('.spark')));
+      expect(css, isNot(contains('popped')));
+      expect(shot, isNot(contains('popped')));
+      expect(shot, isNot(contains('spark')));
     });
 
-    test('the next screen comes after the animation, not before', () {
+    test('the dart wiggles around its tip, in the middle of the circle, and settles', () {
+      final rule = RegExp(r'\.dart-stage\.stuck \.dart-icon \{[^}]*\}').firstMatch(css)!.group(0)!;
+      expect(rule, contains('transform-origin: 97% 50%'), reason: 'the tip (70 of 72)');
+      expect(rule, contains('animation: dart-wiggle 550ms'));
+      // The whole block, with the braces of each step inside it.
+      final keyframes =
+          RegExp(r'@keyframes dart-wiggle \{(?:[^{}]|\{[^{}]*\})*\}').firstMatch(css)!.group(0)!;
+      final angles = RegExp(r'rotate\((-?[\d.]+)deg\)').allMatches(keyframes).map((m) => double.parse(m.group(1)!)).toList();
+      expect(angles.first, 0);
+      expect(angles.last, 0, reason: 'it settles back straight');
+      expect(angles.any((a) => a < 0) && angles.any((a) => a > 0), isTrue, reason: 'it swings both ways');
+      expect(angles.every((a) => a.abs() <= 8), isTrue, reason: 'only a little');
+      expect(dartWiggleMs, 550);
+      // Each swing is smaller than the one before: it settles.
+      final swings = angles.sublist(1, angles.length - 1).map((a) => a.abs()).toList();
+      for (var i = 1; i < swings.length; i++) {
+        expect(swings[i], lessThan(swings[i - 1]), reason: 'swing $i');
+      }
+    });
+
+    test('the sequence: fly into the circle, then stick and wiggle, then the next screen', () {
+      expect(shot.indexOf("add('shooting')"), lessThan(shot.indexOf("add('stuck')")));
       final submit = screen.substring(screen.indexOf('Future<void> submit()'));
       expect(submit.indexOf('await playDartShot(stage)'),
           lessThan(submit.indexOf('ctx.showPage(MenuPage.home)')));
@@ -73,32 +91,6 @@ void main() {
 
     test('the old extra press movement is gone', () {
       expect(css, isNot(contains('.dart-go:active')));
-    });
-  });
-
-  group('sparks', () {
-    test('ten of them, spread all the way round', () {
-      final offsets = sparkOffsets(Random(1));
-      expect(offsets, hasLength(10));
-      // Every quarter of the circle has some.
-      expect(offsets.where((o) => o.dx > 0 && o.dy > 0), isNotEmpty);
-      expect(offsets.where((o) => o.dx < 0 && o.dy > 0), isNotEmpty);
-      expect(offsets.where((o) => o.dx < 0 && o.dy < 0), isNotEmpty);
-      expect(offsets.where((o) => o.dx > 0 && o.dy < 0), isNotEmpty);
-    });
-
-    test('each flies about half a centimetre: 80% to 120% of 18.9 px', () {
-      for (var seed = 0; seed < 50; seed++) {
-        for (final o in sparkOffsets(Random(seed))) {
-          final distance = sqrt(o.dx * o.dx + o.dy * o.dy);
-          expect(distance, inInclusiveRange(0.5 * pixelsPerCm * 0.8, 0.5 * pixelsPerCm * 1.2),
-              reason: 'seed $seed');
-        }
-      }
-    });
-
-    test('the style carries the end point for the CSS', () {
-      expect(sparkStyle((dx: 12.34, dy: -5.67)), '--dx:12.3px;--dy:-5.7px');
     });
   });
 }

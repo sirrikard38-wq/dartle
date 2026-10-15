@@ -39,7 +39,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     }
     shooting = true;
     final name = input.value;
-    await playDartShot(stage); // the dart pops the circle, sparks fly ...
+    await playDartShot(stage); // the dart sticks in the circle and wiggles ...
     game.setPlayerName(name); // saves in the background
     ctx.showPage(MenuPage.home); // ... and then the next screen
   }

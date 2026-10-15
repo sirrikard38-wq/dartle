@@ -185,10 +185,10 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .dart-icon { width: 72px; height: 28px; }
 
 /* The dart sits under the name box. Pressed, a tiny circle (smaller than the Bull)
-   appears just in front of its tip, the dart flies half a centimetre - at the
-   same speed as its hover nudge - and pops the circle in the middle; sparks fly
-   half a centimetre out and fade (lib/ui/dart_shot.dart). The tip is 34px right
-   of the dart's middle (the icon is 72px wide, its tip at 70 of 72). */
+   appears just in front of its tip and the dart flies half a centimetre - at the
+   same speed as its hover nudge - into the middle of it. Nothing pops: the dart
+   stays stuck in the circle and wiggles a little (lib/ui/dart_shot.dart). The tip
+   is 34px right of the dart's middle (the icon is 72px wide, its tip at 70 of 72). */
 .dart-stage { position: relative; display: flex; justify-content: center; align-items: center; height: 52px; margin-top: 14px; }
 .target-spot { position: absolute; left: calc(50% + 34px + 0.5cm); top: 50%; width: 0; height: 0; pointer-events: none; }
 .target-dot {
@@ -198,16 +198,17 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 }
 .dart-stage.shooting .target-dot { opacity: 1; transform: scale(1); }
 .dart-stage.shooting .dart-go { transform: translateX(0.5cm); }
-.dart-stage.popped .target-dot { animation: dot-pop 140ms ease-out forwards; }
-@keyframes dot-pop { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(2); } }
-.spark {
-  position: absolute; left: 0; top: 0; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
-  border-radius: 50%; background: var(--white);
-  animation: spark-fly 450ms ease-out forwards;
-}
-@keyframes spark-fly {
-  from { opacity: 1; transform: translate(0, 0) scale(1); }
-  to   { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); }
+/* Stuck: the dart wiggles around its tip, which stays in the middle of the
+   circle, and settles - like a dart quivering in a board. */
+.dart-stage.stuck .dart-icon { transform-origin: 97% 50%; animation: dart-wiggle 550ms ease-out; }
+@keyframes dart-wiggle {
+  0%   { transform: rotate(0deg); }
+  14%  { transform: rotate(-7deg); }
+  32%  { transform: rotate(5deg); }
+  50%  { transform: rotate(-3.5deg); }
+  68%  { transform: rotate(2deg); }
+  84%  { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
 }
 
 /* ---------- Menu ---------- */
@@ -228,7 +229,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   font-weight: 800; line-height: 1;
   font-variant-numeric: lining-nums;
 }
-.target.small { font-size: 2.6rem; margin: 2px 0 10px; }
+/* On the result screen the number sits close to the dartboard under it. */
+.target.small { font-size: 2.6rem; margin: 2px 0 0; }
 
 .tile-row { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
 .tile {
@@ -438,7 +440,7 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .headline { font-size: 1.5rem; font-weight: 700; margin: 12px 0 0; }
 .message { margin: 8px 0; max-width: 34ch; }
 /* The two result boards: small and side by side. */
-.result-boards { display: flex; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 12px; margin: 12px 0 6px; width: 100%; }
+.result-boards { display: flex; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 12px; margin: 2px 0 6px; width: 100%; }
 .board-figure { margin: 0; flex: 0 1 200px; min-width: 0; }
 /* Each board has its route boxes directly under it, small enough to fit. */
 .board-figure .tile-row { margin: 4px 0 0; gap: 4px; }
