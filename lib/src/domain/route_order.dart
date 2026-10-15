@@ -10,6 +10,50 @@ abstract final class RouteOrder {
   static List<CheckoutRoute> byFinisher(Iterable<CheckoutRoute> routes) =>
       routes.toList()..sort(_compare);
 
+  /// The order the popup uses: [byFinisher], with each Bull finish that has a
+  /// treble partner moved right next to that partner (see
+  /// [withBullPairsTogether]). Everything else stays in the same order.
+  static List<CheckoutRoute> forPopup(Iterable<CheckoutRoute> routes) =>
+      withBullPairsTogether(byFinisher(routes));
+
+  /// In an already ordered list, puts every route that finishes on the Bull and
+  /// has a single among its other darts straight after the route that has the
+  /// treble of that single instead - the pair that belong together, because
+  /// missing the treble onto the single still leaves the Bull: `T7 D18` and
+  /// `S7 Bull`, `T19 T12 D13` and `T19 S12 Bull`. A Bull finish with no such
+  /// partner stays where it was, and the rest keeps its order.
+  static List<CheckoutRoute> withBullPairsTogether(List<CheckoutRoute> ordered) {
+    final result = [...ordered];
+    for (final bull in ordered) {
+      if (bull.isEmpty || !bull.darts.last.isBull) continue;
+      if (!result.any((r) => _isTreblePartner(bull, r))) continue;
+      result.remove(bull);
+      final partnerAt = result.indexWhere((r) => _isTreblePartner(bull, r));
+      result.insert(partnerAt + 1, bull);
+    }
+    return result;
+  }
+
+  /// True when [other] is [bull] with one of its single darts made a treble of
+  /// the same number, finishing on a double instead of the Bull.
+  static bool _isTreblePartner(CheckoutRoute bull, CheckoutRoute other) {
+    if (other.isEmpty || other.length != bull.length) return false;
+    final finisher = other.darts.last;
+    if (finisher.isBull || finisher.multiplier != Multiplier.double) return false;
+    final wanted = _key(other.setupDarts);
+    for (var i = 0; i < bull.setupDarts.length; i++) {
+      final dart = bull.setupDarts[i];
+      if (dart.multiplier != Multiplier.single || dart.isOuterBull) continue;
+      final swapped = bull.setupDarts.toList()..[i] = DartThrow(Multiplier.treble, dart.number);
+      if (_key(swapped) == wanted) return true;
+    }
+    return false;
+  }
+
+  /// The setup darts in a fixed order, so the order they were thrown in is ignored.
+  static String _key(List<DartThrow> darts) =>
+      (darts.toList()..sort(CheckoutRoute.compareDarts)).map((d) => d.notation).join(' ');
+
   /// The finisher's value: 1 for D1 ... 20 for D20, 25 for the Bull (after D20).
   static int finisherValue(CheckoutRoute route) =>
       route.isEmpty ? 0 : route.darts.last.number;

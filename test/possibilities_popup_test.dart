@@ -42,7 +42,7 @@ void main() {
     });
 
     test('the popup shows every route at once - no "Shoot more"', () {
-      expect(screen, contains('for (final route in RouteOrder.byFinisher(result.optimalRoutes)) figureFor(route)'));
+      expect(screen, contains('for (final route in RouteOrder.forPopup(result.optimalRoutes)) figureFor(route)'));
       expect(screen, isNot(contains('Shoot more')));
       expect(File('lib/ui/result_screen.dart').readAsStringSync(), isNot(contains('RoutePages')));
       expect(css, isNot(contains('.shoot-more')));

@@ -73,8 +73,105 @@ void main() {
     });
   });
 
+  group('RouteOrder.forPopup: a Bull finish next to the route with the treble of its single', () {
+    final engine = CheckoutEngine();
+    final optimal = OptimalRouteService(engine);
+
+    List<String> popup(int target) =>
+        RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
+
+    test('57: S7 Bull moves up next to T7 D18, the rest stays as it was', () {
+      // By finisher it would be T7 D18, S17 D20, S7 Bull.
+      expect(order(optimal.optimalRoutes(57)), ['T7 D18', 'S17 D20', 'S7 Bull']);
+      expect(popup(57), ['T7 D18', 'S7 Bull', 'S17 D20']);
+    });
+
+    test('130: T20 S20 Bull is next to T20 T20 D5', () {
+      expect(popup(130), ['T20 T20 D5', 'T20 S20 Bull']);
+    });
+
+    test('119: every Bull finish with a single is right after its partner', () {
+      final list = popup(119);
+      for (final pair in [
+        ('T19 T12 D13', 'T19 S12 Bull'),
+        ('T20 T9 D16', 'T20 S9 Bull'),
+        ('T18 T15 D10', 'T18 S15 Bull'),
+        ('T17 T18 D7', 'T17 S18 Bull'),
+      ]) {
+        final partner = list.indexOf(pair.$1);
+        expect(partner, greaterThanOrEqualTo(0), reason: pair.$1);
+        expect(list[partner + 1], pair.$2, reason: '${pair.$2} next to ${pair.$1}');
+      }
+    });
+
+    test('a Bull finish with no partner stays at the end: S1 Bull has no D24, T20 Bull has no single', () {
+      expect(popup(51).last, 'S1 Bull');
+      expect(popup(51), order(optimal.optimalRoutes(51)), reason: 'nothing moved on 51');
+      expect(popup(110), order(optimal.optimalRoutes(110)));
+    });
+
+    test('works from the finisher order whatever order the routes come in', () {
+      final routes = optimal.optimalRoutes(119);
+      final expected = RouteOrder.forPopup(routes).map((x) => x.notation).toList();
+      for (var seed = 0; seed < 15; seed++) {
+        final shuffled = routes.toList()..shuffle(Random(seed));
+        expect(RouteOrder.forPopup(shuffled).map((x) => x.notation).toList(), expected, reason: 'seed $seed');
+      }
+    });
+
+    /// An independent check of the rule: [other] is [bull] with one single made a
+    /// treble of the same number, finishing on a double that is not the Bull.
+    bool isPartner(CheckoutRoute bull, CheckoutRoute other) {
+      if (other.length != bull.length || other.darts.last.isBull) return false;
+      if (other.darts.last.multiplier != Multiplier.double) return false;
+      String key(Iterable<DartThrow> darts) => (darts.map((d) => d.notation).toList()..sort()).join(' ');
+      for (final single in bull.setupDarts.where((d) => d.multiplier == Multiplier.single && !d.isOuterBull)) {
+        final swapped = [...bull.setupDarts]..remove(single);
+        swapped.add(DartThrow(Multiplier.treble, single.number));
+        if (key(swapped) == key(other.setupDarts)) return true;
+      }
+      return false;
+    }
+
+    test('every number: the same routes; only partnered Bull finishes move, and the rest keeps its order', () {
+      var moved = 0;
+      for (final n in engine.checkoutableTargets) {
+        final routes = optimal.optimalRoutes(n);
+        final byFinisher = RouteOrder.byFinisher(routes);
+        final result = RouteOrder.forPopup(routes);
+        expect(result.map((x) => x.notation).toSet(), byFinisher.map((x) => x.notation).toSet(),
+            reason: '$n keeps every route');
+        expect(result, hasLength(byFinisher.length), reason: '$n');
+
+        // The Bull finishes that have a partner are the ones that move.
+        final partnered = [
+          for (final x in byFinisher)
+            if (x.darts.last.isBull && byFinisher.any((o) => isPartner(x, o))) x,
+        ];
+        moved += partnered.length;
+        List<String> without(List<CheckoutRoute> list) =>
+            [for (final x in list) if (!partnered.contains(x)) x.notation];
+        expect(without(result), without(byFinisher), reason: '$n: everything else keeps its order');
+
+        // Each one is right after its partner.
+        for (final bull in partnered) {
+          final at = result.indexOf(bull);
+          expect(isPartner(bull, result[at - 1]), isTrue,
+              reason: '$n: $bull should follow its partner, but follows ${result[at - 1]}');
+        }
+        // A Bull finish with no partner is not moved relative to the other unpartnered Bull finishes.
+        List<String> lonelyBulls(List<CheckoutRoute> list) => [
+              for (final x in list)
+                if (x.darts.last.isBull && !partnered.contains(x)) x.notation,
+            ];
+        expect(lonelyBulls(result), lonelyBulls(byFinisher), reason: '$n');
+      }
+      expect(moved, greaterThan(20), reason: 'the rule applies to many numbers');
+    });
+  });
+
   test('the All possibilities popup lists the routes in that order', () {
     final screen = File('lib/ui/result_screen.dart').readAsStringSync();
-    expect(screen, contains('for (final route in RouteOrder.byFinisher(result.optimalRoutes)) figureFor(route)'));
+    expect(screen, contains('for (final route in RouteOrder.forPopup(result.optimalRoutes)) figureFor(route)'));
   });
 }

@@ -99,9 +99,11 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
           el('p', cls: 'modal-line top', text: 'Every optimal way to check out'),
           // The number under it, in the middle of the popup, above all the boards.
           el('p', cls: 'modal-number', text: '${challenge.target}'),
-          // In order of the dart they finish on: D1, D2 ... D20, then the Bull.
+          // In order of the dart they finish on: D1, D2 ... D20, then the Bull -
+          // but a Bull finish sits right next to the route with the treble of its
+          // single (T7 D18 and S7 Bull).
           el('div', cls: 'possibilities', children: [
-            for (final route in RouteOrder.byFinisher(result.optimalRoutes)) figureFor(route),
+            for (final route in RouteOrder.forPopup(result.optimalRoutes)) figureFor(route),
           ]),
         ]);
       }),
