@@ -20,6 +20,7 @@
   --burgundy: #9c2a45;     /* a box that is already used: its cross and edge */
   --burgundy-soft: #c0506b;/* the dotted darts inside it */
   --focus: #ffffff;
+  --scrollbar: #686868;    /* the scrollbar, while something scrolls */
   --tile: clamp(58px, 17vw, 72px);
   --mode-h: 44px;
 }
@@ -49,6 +50,24 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Scrollbars: a slim grey bar with no arrows at the ends. It is not drawn at all
+   until something scrolls - the element that scrolls gets the class `scrolling`
+   (lib/ui/scrollbars.dart) - and about 1.5 s after the last movement it fades
+   out smoothly again. (Chrome, Edge, Safari; Firefox gets the same through
+   scrollbar-color.) */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
+  ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background-color: transparent; border-radius: 4px; transition: background-color 600ms ease; }
+  .scrolling::-webkit-scrollbar-thumb { background-color: var(--scrollbar); transition: background-color 120ms ease; }
+}
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color 600ms ease; }
+  .scrolling { scrollbar-color: var(--scrollbar) transparent; transition-duration: 120ms; }
 }
 
 button, input { font: inherit; color: inherit; }
@@ -113,6 +132,7 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .screen.welcome {
   display: grid; place-items: center; min-height: 100vh; min-height: 100dvh;
   padding: 24px 16px; text-align: center; cursor: pointer;
+  overflow-x: clip; /* the pressed dart may fly past the edge without a scrollbar */
 }
 .welcome .intro, .welcome .form { grid-area: 1 / 1; }
 /* Everything fades in from nothing and fades out again - no sliding, no
@@ -131,7 +151,12 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   visibility: hidden; opacity: 0; cursor: default;
   animation: form-in 700ms cubic-bezier(0.4, 0, 0.2, 1) 2450ms forwards;
 }
-.welcome .form h2 { font-size: 2rem; letter-spacing: 0.1em; margin: 0 0 20px; }
+/* "Welcome" is centred over the name box itself, not over the box and the dart
+   together: it leaves room on the right for the dart, as the row does. */
+.welcome .form h2 {
+  font-size: 2rem; letter-spacing: 0.1em; margin: 0 0 20px;
+  padding-right: calc(var(--dart-w) + var(--row-gap));
+}
 .welcome.skip .intro { display: none; }
 .welcome.skip .form { animation: none; visibility: visible; opacity: 1; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -141,7 +166,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   to   { opacity: 1; visibility: visible; }
 }
 
-.name-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.welcome { --dart-w: 84px; --row-gap: 10px; }
+.name-row { display: flex; align-items: center; justify-content: center; gap: var(--row-gap); }
 .name-input {
   width: min(70vw, 18em); height: 52px; padding: 0 14px;
   background: #0d0d0d; color: var(--fg);
@@ -154,12 +180,13 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* The Enter button is a stylised dart. */
 .dart-go {
   display: grid; place-items: center;
-  width: 84px; height: 52px; padding: 0;
+  width: var(--dart-w); height: 52px; padding: 0;
   background: none; border: 0; color: var(--fg);
   transition: transform 150ms ease;
 }
 .dart-go:hover { transform: translateX(5px); }
-.dart-go:active { transform: translateX(12px); }
+/* Pressed: the dart flies half a centimetre further than it used to (12px). */
+.dart-go:active { transform: translateX(calc(12px + 0.5cm)); }
 .dart-icon { width: 72px; height: 28px; }
 
 /* ---------- Menu ---------- */
@@ -457,18 +484,10 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   font-size: 1rem; font-weight: 700;
 }
 .modal-close:hover { background: var(--offwhite); }
-/* "Shoot more": a little dart and the words, in the middle under the routes
-   shown so far, with Close under it. */
-.shoot-more-row { display: flex; justify-content: center; margin: 14px 0 0; }
-.shoot-more {
-  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px;
-  border: 2px solid var(--line-strong); border-radius: 0; background: transparent; color: var(--fg);
-  font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em;
-}
-.shoot-more:hover { border-color: var(--fg); }
-.shoot-more .dart-icon { width: 36px; height: 14px; }
-.possibilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px 12px; }
-.modal .board-figure { flex: none; }
+/* Three boards to a row where there is room, two on a phone. Every row is
+   centred, so a last row with fewer boards sits in the middle. */
+.possibilities { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 12px; }
+.modal .board-figure { flex: 0 1 calc((100% - 24px) / 3); min-width: 140px; max-width: 200px; }
 
 /* ---------- Checkout input ---------- */
 .number-display { min-height: 1.1em; }

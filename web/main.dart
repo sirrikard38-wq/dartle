@@ -3,6 +3,7 @@ import 'package:dartle/ui/app.dart';
 import 'package:dartle/ui/install.dart';
 import 'package:dartle/ui/local_storage_service.dart';
 import 'package:dartle/ui/online_setup.dart';
+import 'package:dartle/ui/scrollbars.dart';
 import 'package:web/web.dart' as web;
 
 Future<void> main() async {
@@ -11,6 +12,7 @@ Future<void> main() async {
   final leaderboard = await buildLeaderboard(storage);
   final game = createGameController(storage, leaderboard: leaderboard);
   final root = web.document.querySelector('#app')!;
+  autoHideScrollbars(); // scrollbars show only while scrolling, then fade out
   final app = DartleApp(root, game);
   await game.init(); // loads saved history and the player name
   app.start(); // asks new players for a username, then starts a checkout
