@@ -5,6 +5,7 @@ import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 import 'dart_icon.dart';
+import 'dart_shot.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
@@ -27,15 +28,35 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     'value': game.needsPlayerName ? '' : game.playerName,
   }) as web.HTMLInputElement;
 
-  void submit() {
+  late final web.HTMLElement stage;
+  var shooting = false;
+  Future<void> submit() async {
+    if (shooting) return; // the dart is already on its way
     if (input.value.trim().isEmpty) {
       ctx.toast('Enter your name to continue');
       input.focus();
       return;
     }
-    game.setPlayerName(input.value); // saves in the background
-    ctx.showPage(MenuPage.home);
+    shooting = true;
+    final name = input.value;
+    await playDartShot(stage); // the dart pops the circle, sparks fly ...
+    game.setPlayerName(name); // saves in the background
+    ctx.showPage(MenuPage.home); // ... and then the next screen
   }
+
+  // The dart sits under the name box. In front of its tip is a tiny circle that
+  // appears when the dart is pressed (see playDartShot).
+  stage = el('div', cls: 'dart-stage', children: [
+    el('span', cls: 'target-spot', attrs: {'aria-hidden': 'true'}, children: [
+      el('span', cls: 'target-dot'),
+    ]),
+    button('',
+        cls: 'dart-go',
+        ariaLabel: 'Continue',
+        focusKey: 'go',
+        onPressed: (_) => submit())
+      ..appendChild(dartIcon() as web.Node),
+  ]);
 
   web.EventStreamProviders.keyDownEvent.forElement(input).listen((event) {
     if (event.key == 'Enter') {
@@ -52,15 +73,8 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     ]),
     el('div', cls: 'form', children: [
       el('h2', text: 'Welcome'),
-      el('div', cls: 'name-row', children: [
-        input,
-        button('',
-            cls: 'dart-go',
-            ariaLabel: 'Continue',
-            focusKey: 'go',
-            onPressed: (_) => submit())
-          ..appendChild(dartIcon() as web.Node),
-      ]),
+      el('div', cls: 'name-row', children: [input]),
+      stage,
     ]),
   ]);
 
