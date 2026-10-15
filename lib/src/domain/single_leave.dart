@@ -11,7 +11,7 @@ import 'dart_throw.dart';
 /// The same goes for the last two darts of a three-dart number whose first
 /// treble leaves 51 to 60: 109 is T19 and then S20 D16 as well as T19 S2 Bull.
 ///
-/// The outer bull counts as a single (57 is also S25 D16).
+/// The outer bull is not a single here: it is far too hard to hit.
 abstract final class SingleLeave {
   /// The numbers this applies to, 41 to 60.
   static const int minTarget = 41;
@@ -51,7 +51,7 @@ abstract final class SingleLeave {
     return routes;
   }
 
-  /// A single is S1..S20 or the outer bull (S25).
+  /// A single is S1..S20. The outer bull is not one: it is too hard to hit.
   static bool _isSingleOnBoard(int number) =>
-      (number >= 1 && number <= DartThrow.maxBoardNumber) || number == DartThrow.bullNumber;
+      number >= 1 && number <= DartThrow.maxBoardNumber;
 }

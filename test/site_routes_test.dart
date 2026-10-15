@@ -59,6 +59,11 @@ void main() {
       expect(optimal.isOptimal(116, r('T19 S19 D20')), isTrue);
     });
 
+    test('135: the site\'s Bull T15 D20 is accepted - the outer bull is not a single', () {
+      expect(optimal.isOptimal(135, r('Bull T15 D20')), isTrue);
+      expect(optimal.isOptimal(135, r('T20 T17 D12')), isTrue);
+    });
+
     test('130: the backup S20 T20 Bull is bull-safe, T19 T19 D8 is only an option', () {
       expect(optimal.isOptimal(130, r('S20 T20 Bull')), isTrue);
       expect(optimal.isOptimal(130, r('T19 T19 D8')), isFalse);
@@ -67,8 +72,6 @@ void main() {
     test('your rules win where they disagree with the site', () {
       // The site starts 50 with S10 D20, but one dart (the Bull) is fewer.
       expect(optimal.isOptimal(50, r('S10 D20')), isFalse);
-      // The site's 135 starts Bull T15 D20; a route with a single (25) is better.
-      expect(optimal.isOptimal(135, r('Bull T15 D20')), isFalse);
       // First box used on 62: only the bull-safe route, not the site's T10 D16.
       expect(optimal.isOptimal(62, r('T10 D16')), isFalse);
       expect(optimal.isOptimal(62, r('T12 D13')), isTrue);

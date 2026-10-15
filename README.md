@@ -92,9 +92,11 @@ leaderboard shows the scores on the device, as before.
      three-dart number that leaves 51-60, 109 is also `T19 S20 D16`
      (`SingleLeave`);
   3. otherwise the **most singles** (they are far easier to hit; the outer bull
-     counts), then setup doubles last, then fewer triples, using only sensible
-     aims (singles, T15-T20). 35 is `S15 D10` = `S3 D16` = `S17 D9`, never
-     `T5 D10`.
+     is **not** a single and never an aim - it is far too hard to hit), then
+     setup doubles last, then fewer triples, using only sensible aims (singles,
+     T15-T20, and the better doubles as setup darts when the route also finishes
+     on a better double). 35 is `S15 D10` = `S3 D16` = `S17 D9`, never `T5 D10`;
+     132 is `T20 T20 D6` = `T20 D20 D16` = `T20 T16 D12`..., never `T19 25 Bull`.
   Equal routes are all optimal, in any order of the setup darts. 120 stays
   `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
   equal route is shown first; tests verify every chart entry is legal and

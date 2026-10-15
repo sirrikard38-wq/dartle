@@ -4,17 +4,15 @@ How the routes on the "The Outs" pages of dartscheckoutassistant.com compare wit
 
 - Numbers with a checkout, all read from the site: 162
 - Site routes that are legal checkouts: 413
-- Optimal in the app: 282
-- Not optimal in the app: 131
+- Optimal in the app: 288
+- Not optimal in the app: 125
 
 The site's first-choice ("Throw") routes are accepted as optimal next to the chart routes, wherever they have the fewest darts and as many singles as the best routes (for three-dart numbers whenever they have the fewest darts). Two-dart numbers from 51 to 70 are only ever the bull-safe routes, plus (from 51 to 60) a single that leaves a better double.
 
 ## Numbers where no first-choice route of the site is optimal here
 
 - 50: site `S10 D20`, app `Bull` (uses 2 darts; the fewest is 1)
-- 75: site `T17 D12`, app `25 Bull` (fewer singles (1 are possible, e.g. 25 Bull))
-- 132: site `T20 T16 D12`, app `T19 25 Bull` (fewer singles (1 are possible, e.g. T19 25 Bull))
-- 135: site `Bull T15 D20`, app `T20 25 Bull` (fewer singles (1 are possible, e.g. T20 25 Bull))
+- 125: site `25 T20 D20`, app `T20 T15 D10` (a setup dart that is not a sensible aim)
 
 ## More darts than the fewest (64)
 
@@ -112,38 +110,27 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 70: `T18 D8` - two darts on 51 to 70: only the bull-safe T20 D5 / S20 Bull
 - 70: `T10 D20` - two darts on 51 to 70: only the bull-safe T20 D5 / S20 Bull
 
-## A setup dart that is not a sensible aim (19)
+## A setup dart that is not a sensible aim (17)
 
 - 72: `T12 D18` - a setup dart that is not a sensible aim
-- 72: `D18 D18` - a setup dart that is not a sensible aim
 - 73: `T11 D20` - a setup dart that is not a sensible aim
-- 76: `D18 D20` - a setup dart that is not a sensible aim
+- 75: `25 Bull` - a setup dart that is not a sensible aim
 - 79: `T13 D20` - a setup dart that is not a sensible aim
-- 80: `D20 D20` - a setup dart that is not a sensible aim
 - 84: `Bull D17` - a setup dart that is not a sensible aim
-- 105: `25 D20 D20` - a setup dart that is not a sensible aim
 - 120: `S20 Bull Bull` - a setup dart that is not a sensible aim
+- 122: `25 T19 D20` - a setup dart that is not a sensible aim
 - 122: `Bull T16 D12` - a setup dart that is not a sensible aim
-- 124: `T20 D16 D16` - a setup dart that is not a sensible aim
+- 125: `25 T20 D20` - a setup dart that is not a sensible aim
 - 125: `Bull 25 Bull` - a setup dart that is not a sensible aim
 - 125: `T18 T13 D16` - a setup dart that is not a sensible aim
-- 125: `T15 D20 D20` - a setup dart that is not a sensible aim
 - 129: `T19 T12 D18` - a setup dart that is not a sensible aim
-- 131: `T17 D20 D20` - a setup dart that is not a sensible aim
-- 136: `T20 D18 D20` - a setup dart that is not a sensible aim
+- 132: `Bull T14 D20` - a setup dart that is not a sensible aim
+- 132: `25 T19 Bull` - a setup dart that is not a sensible aim
+- 132: `Bull Bull D16` - a setup dart that is not a sensible aim
+- 135: `25 T20 Bull` - a setup dart that is not a sensible aim
 - 139: `T19 Bull D16` - a setup dart that is not a sensible aim
-- 140: `T20 D20 D20` - a setup dart that is not a sensible aim
 
-## Fewer singles than the best routes (6)
-
-- 75: `T17 D12` - fewer singles (1 are possible, e.g. 25 Bull)
-- 132: `T20 T16 D12` - fewer singles (1 are possible, e.g. T19 25 Bull)
-- 132: `Bull T14 D20` - fewer singles (1 are possible, e.g. T19 25 Bull)
-- 132: `Bull Bull D16` - fewer singles (1 are possible, e.g. T19 25 Bull)
-- 135: `Bull T15 D20` - fewer singles (1 are possible, e.g. T20 25 Bull)
-- 135: `T20 T17 D12` - fewer singles (1 are possible, e.g. T20 25 Bull)
-
-## Other (16)
+## Other (17)
 
 - 99: `S19 T20 D10` - not one of the routes the rules pick
 - 99: `T17 S16 D16` - not one of the routes the rules pick
@@ -158,6 +145,11 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 109: `T20 S17 D16` - not one of the routes the rules pick
 - 115: `S20 T19 D19` - not one of the routes the rules pick
 - 118: `S20 T20 D19` - not one of the routes the rules pick
-- 122: `25 T19 D20` - not one of the routes the rules pick
+- 124: `T20 D16 D16` - not one of the routes the rules pick
+- 125: `T15 D20 D20` - not one of the routes the rules pick
 - 128: `T18 T18 D10` - not one of the routes the rules pick
 - 130: `T19 T19 D8` - not one of the routes the rules pick
+
+## Fewer singles than the best routes (1)
+
+- 105: `25 D20 D20` - fewer singles (1 are possible, e.g. T18 S1 Bull)

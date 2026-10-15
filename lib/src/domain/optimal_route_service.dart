@@ -79,15 +79,24 @@ class OptimalRouteService {
   bool isOptimal(int target, CheckoutRoute route) =>
       optimalRoutes(target).any(route.isEquivalentTo);
 
-  /// How many of the setup darts are singles (the outer bull counts).
-  static int singles(CheckoutRoute route) =>
-      route.setupDarts.where((d) => d.multiplier == Multiplier.single).length;
+  /// How many of the setup darts are singles. The outer bull is not counted: it
+  /// is far too hard to hit to be an easy single.
+  static int singles(CheckoutRoute route) => route.setupDarts
+      .where((d) => d.multiplier == Multiplier.single && !d.isOuterBull)
+      .length;
+
+  /// How many of the setup darts are doubles (T20 D20 D16 has one).
+  static int _setupDoubles(CheckoutRoute route) =>
+      route.setupDarts.where((d) => d.multiplier == Multiplier.double).length;
 
   List<CheckoutRoute> _compute(int target, int minimum) {
     final routes = <CheckoutRoute>[];
-    bool add(CheckoutRoute? route) {
+    // A route that aims at the outer bull is never optimal; [force] is only for
+    // the last resort below, when nothing else exists.
+    bool add(CheckoutRoute? route, {bool force = false}) {
       if (route == null) return false;
       if (!_engine.isLegalRoute(target, route) || route.length != minimum) return false;
+      if (!force && route.setupDarts.any((d) => d.isOuterBull)) return false;
       if (routes.any(route.isEquivalentTo)) return false;
       routes.add(route);
       return true;
@@ -132,7 +141,7 @@ class OptimalRouteService {
     }
 
     if (routes.isEmpty) {
-      add(_strategy.best(_engine.legalRoutes(target, darts: minimum)));
+      add(_strategy.best(_engine.legalRoutes(target, darts: minimum)), force: true);
     }
     return routes;
   }
@@ -141,12 +150,19 @@ class OptimalRouteService {
   /// sensible aims, best-looking first.
   List<CheckoutRoute> _tierRoutes(int target, int minimum) {
     final legal = _engine.legalRoutes(target, darts: minimum);
-    final natural = legal.where((r) => r.setupDarts.every(NaturalAim.isNatural)).toList();
+    final natural = legal.where(_isSensible).toList();
     final pool = natural.isEmpty ? legal : natural;
     if (pool.isEmpty) return const [];
     final best = pool.map(singles).reduce((a, b) => a > b ? a : b);
     return pool.where((r) => singles(r) == best).toList()..sort(_compare);
   }
+
+  /// Made of sensible aims only (see [NaturalAim]); and a route that has a
+  /// double among its setup darts must also finish on a better double (T20 D20
+  /// D16, but not T20 D20 Bull or T18 D20 D19).
+  static bool _isSensible(CheckoutRoute route) =>
+      route.setupDarts.every(NaturalAim.isNatural) &&
+      (_setupDoubles(route) == 0 || BetterDoubles.leavesBetterDouble(route));
 
   /// Best-looking first: a finish on a better double, then the double the
   /// strategy prefers, then fewer triples, then the bigger first dart.
@@ -156,6 +172,8 @@ class OptimalRouteService {
     if (byBetter != 0) return byBetter;
     final byFinisher = _strategy.finisherRank(a).compareTo(_strategy.finisherRank(b));
     if (byFinisher != 0) return byFinisher;
+    final byDoubles = _setupDoubles(a).compareTo(_setupDoubles(b));
+    if (byDoubles != 0) return byDoubles;
     final byTrebles = a.trebleCount.compareTo(b.trebleCount);
     if (byTrebles != 0) return byTrebles;
     final byFirst = b.darts.first.score.compareTo(a.darts.first.score);

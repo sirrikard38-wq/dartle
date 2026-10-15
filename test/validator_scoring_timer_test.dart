@@ -88,13 +88,28 @@ void main() {
     test('57: the bull-safe routes and a single that leaves a better double are optimal', () {
       final c = catalog.forTarget(57)!;
       expect(c.dartsLeft, 2);
-      for (final text in ['T7 D18', 'S7 Bull', 'S17 D20', '25 D16']) {
+      for (final text in ['T7 D18', 'S7 Bull', 'S17 D20']) {
         expect(validator.validate(c, darts(text)).isOptimal, isTrue, reason: text);
       }
+      // The outer bull is too hard to hit to be an aim.
+      expect(validator.validate(c, darts('25 D16')).isOptimal, isFalse);
       // S19 D19 checks 57 out, but D19 is not one of the better doubles.
       final r = validator.validate(c, darts('S19 D19'));
       expect(r.isCorrect, isTrue);
       expect(r.isOptimal, isFalse);
+    });
+
+    test('132: T20 D20 D16 and T20 T20 D6 are optimal, T19 25 Bull is not', () {
+      final c = catalog.forTarget(132)!;
+      expect(c.dartsLeft, 3);
+      for (final text in ['T20 D20 D16', 'T20 T20 D6', 'D20 T20 D16']) {
+        final r = validator.validate(c, darts(text));
+        expect(r.isCorrect, isTrue, reason: text);
+        expect(r.isOptimal, isTrue, reason: text);
+      }
+      final outerBull = validator.validate(c, darts('T19 25 Bull'));
+      expect(outerBull.isCorrect, isTrue);
+      expect(outerBull.isOptimal, isFalse);
     });
 
     test('109: after T19 (52 left) a single and a better double is optimal too', () {

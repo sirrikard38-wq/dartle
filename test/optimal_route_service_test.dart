@@ -164,9 +164,9 @@ void main() {
   });
 
   group('two darts from 41 to 60: a single that leaves a better double is optimal too', () {
-    test('57: S17 D20 and S25 D16 next to the bull-safe T7 D18 and S7 Bull', () {
+    test('57: S17 D20 next to the bull-safe T7 D18 and S7 Bull (never the outer bull)', () {
       expect(optimal.optimalRoutes(57).map((x) => x.notation),
-          ['T7 D18', 'S7 Bull', 'S17 D20', '25 D16']);
+          ['T7 D18', 'S7 Bull', 'S17 D20']);
     });
 
     test('60 is S20 D20 as well as T10 D15 and S10 Bull', () {
@@ -214,7 +214,8 @@ void main() {
     });
 
     test('the routes are listed on the biggest double first', () {
-      expect(SingleLeave.twoDartRoutes(57).map((x) => x.notation), ['S17 D20', '25 D16']);
+      expect(SingleLeave.twoDartRoutes(52).map((x) => x.notation), ['S12 D20', 'S16 D18', 'S20 D16']);
+      expect(SingleLeave.twoDartRoutes(57).map((x) => x.notation), ['S17 D20']);
     });
 
     test('109: T19 leaves 52, then S20 D16 (or S12 D20, S16 D18) is optimal, in any order', () {
@@ -283,14 +284,56 @@ void main() {
       expect(optimal.isOptimal(150, r('T20 T18 D18')), isTrue);
     });
 
-    test('the outer bull is a single', () {
-      expect(optimal.isOptimal(135, r('T20 25 Bull')), isTrue);
-      expect(optimal.isOptimal(35, r('25 D5')), isTrue); // 25 + 10
+    test('the outer bull is never an aim: it is far too hard to hit', () {
+      // It used to count as a single and made T20 25 Bull the only way on 135.
+      expect(engine.isLegalRoute(135, r('T20 25 Bull')), isTrue);
+      expect(optimal.isOptimal(135, r('T20 25 Bull')), isFalse);
+      expect(optimal.isOptimal(35, r('25 D5')), isFalse); // 25 + 10
+      expect(optimal.isOptimal(132, r('T19 25 Bull')), isFalse);
+      for (final n in engine.checkoutableTargets) {
+        for (final route in optimal.optimalRoutes(n)) {
+          expect(route.darts.any((d) => d.isOuterBull), isFalse, reason: '$n $route');
+        }
+      }
     });
 
-    test('a chart route with fewer singles than the best is not optimal', () {
-      // 135's chart entry T20 T17 D12 has no single where T20 25 Bull has one.
-      expect(optimal.isOptimal(135, r('T20 T17 D12')), isFalse);
+    test('with no single to throw, the chart route is as good as any: 135', () {
+      // 135 has no route with a real single, so T20 T17 D12 is optimal.
+      expect(optimal.isOptimal(135, r('T20 T17 D12')), isTrue);
+      expect(optimal.isOptimal(135, r('T19 T18 D12')), isTrue);
+    });
+
+    test('132: T20 D20 D16 and T20 T20 D6 are optimal', () {
+      for (final text in ['T20 D20 D16', 'D20 T20 D16', 'T20 T20 D6', 'T20 T16 D12']) {
+        expect(engine.isLegalRoute(132, r(text)), isTrue, reason: text);
+        expect(optimal.isOptimal(132, r(text)), isTrue, reason: text);
+      }
+    });
+
+    test('a setup double only counts when the route finishes on a better double', () {
+      expect(optimal.isOptimal(132, r('T20 D20 D16')), isTrue); // D16 is a better double
+      expect(engine.isLegalRoute(150, r('T20 D20 Bull')), isTrue);
+      expect(optimal.isOptimal(150, r('T20 D20 Bull')), isFalse); // finishes on the Bull
+      expect(engine.isLegalRoute(132, r('T18 D20 D19')), isTrue);
+      expect(optimal.isOptimal(132, r('T18 D20 D19')), isFalse); // D19 is not a better double
+      // The same two-dart double-doubles for 72 and 80.
+      expect(notations(72), containsAll(['D20 D16', 'D16 D20', 'D18 D18']));
+      expect(notations(80), contains('D20 D20'));
+      // Never in the way of the classic route.
+      expect(optimal.optimalRoute(72)!.notation, 'T20 D6');
+      expect(optimal.optimalRoute(80)!.notation, 'T20 D10');
+    });
+
+    test('every optimal route with a double among its setup darts finishes on a better double', () {
+      for (final n in engine.checkoutableTargets) {
+        final routes = optimal.optimalRoutes(n);
+        for (final route in routes) {
+          final doubles = route.setupDarts.where((d) => d.multiplier == Multiplier.double).length;
+          if (doubles > 0 && !chartOnlyCheckouts.contains(n)) {
+            expect(BetterDoubles.leavesBetterDouble(route), isTrue, reason: '$n $route');
+          }
+        }
+      }
     });
   });
 
@@ -417,10 +460,10 @@ void main() {
     });
 
     test('when the player entered an optimal route, the primary can be an extra', () {
-      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull, S17 D20, 25 D16
+      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull, S17 D20
       final entered = routes[1];
       final extras = BetterDoubles.extras(routes, exclude: [entered]);
-      expect(extras.map((x) => x.notation), ['T7 D18', 'S17 D20', '25 D16']);
+      expect(extras.map((x) => x.notation), ['T7 D18', 'S17 D20']);
     });
 
     test('extras of a number with one optimal route is empty', () {
