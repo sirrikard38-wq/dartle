@@ -71,6 +71,45 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   final yourExtras = !showBest ? extraBoxes() : null;
   final bestExtras = showBest ? extraBoxes() : null;
 
+  // Every optimal route, each with its marked board and boxes, in a popup - one
+  // link in every mode, under the last combination on screen. A number with no
+  // checkout has no routes to show, and one with a single route says "Only
+  // possibility" instead.
+  web.HTMLElement? possibilitiesRow() {
+    final count = result.optimalRoutes.length;
+    if (count == 0) return null;
+    if (count == 1) return el('p', cls: 'hint only-one', text: 'Only possibility');
+    web.HTMLElement figureFor(CheckoutRoute route) => el('figure', cls: 'board-figure', children: [
+          buildDartboard(
+            linesOnly: true,
+            marks: spreadMarks(route.darts, const [], math.Random(_seed(route.notation))),
+            label: 'Route ${route.notation}',
+          ),
+          tileRow(route.darts,
+              slots: route.length,
+              small: true,
+              states: List.filled(route.length, TileState.correct),
+              label: route.notation),
+        ]);
+    return el('p', cls: 'why-row', children: [
+      button('All possibilities', cls: 'text-link', focusKey: 'all', onPressed: (_) {
+        // Every optimal route at once. The boards are centred, so a last row
+        // with fewer boards sits in the middle.
+        showModal(title: 'All possibilities', body: [
+          el('p', cls: 'modal-line top', text: 'Every optimal way to check out'),
+          // The number under it, in the middle of the popup, above all the boards.
+          el('p', cls: 'modal-number', text: '${challenge.target}'),
+          // In order of the dart they finish on: D1, D2 ... D20, then the Bull.
+          el('div', cls: 'possibilities', children: [
+            for (final route in RouteOrder.byFinisher(result.optimalRoutes)) figureFor(route),
+          ]),
+        ]);
+      }),
+    ]);
+  }
+
+  final possibilities = possibilitiesRow();
+
   return el('main', cls: 'screen result', children: [
     el('div', cls: 'play-area', children: [
       el('p', cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
@@ -92,44 +131,10 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
         el('p', cls: 'encourage', text: result.encouragement ?? ''),
       ],
 
-      // A number with just one optimal route has nothing to list: it says so.
-      if (result.optimalRoutes.length == 1)
-        el('p', cls: 'hint only-one', text: 'Only possibility'),
-
-      // Only one link under the number, in every mode: every optimal route,
-      // each with its marked board and boxes, in a popup. (A number with no
-      // checkout has no routes to show, and one with a single route says "Only
-      // possibility" instead.)
-      if (result.optimalRoutes.length > 1)
-        el('p', cls: 'why-row', children: [
-          button('All possibilities', cls: 'text-link', focusKey: 'all', onPressed: (_) {
-            web.HTMLElement figureFor(CheckoutRoute route) =>
-                el('figure', cls: 'board-figure', children: [
-                  buildDartboard(
-                    linesOnly: true,
-                    marks: spreadMarks(route.darts, const [], math.Random(_seed(route.notation))),
-                    label: 'Route ${route.notation}',
-                  ),
-                  tileRow(route.darts,
-                      slots: route.length,
-                      small: true,
-                      states: List.filled(route.length, TileState.correct),
-                      label: route.notation),
-                ]);
-
-            // Every optimal route at once. The boards are centred, so a last row
-            // with fewer boards sits in the middle.
-            showModal(title: 'All possibilities', body: [
-              el('p', cls: 'modal-line top', text: 'Every optimal way to check out ${challenge.target}.'),
-              el('div', cls: 'possibilities', children: [
-                for (final route in result.optimalRoutes) figureFor(route),
-              ]),
-            ]);
-          }),
-        ]),
-
       // The boards, small and side by side. Each has its route boxes directly
-      // underneath it (taps keep their exact position on the board).
+      // underneath it (taps keep their exact position on the board). The
+      // "All possibilities" link is under the last combination of the board that
+      // shows the optimal routes (under "Also optimal" when it has one).
       el('div', cls: 'result-boards', children: [
         if (noCheckoutRight)
           el('figure', cls: 'board-figure', children: [
@@ -154,6 +159,8 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
                 states: states,
                 label: 'Your darts'),
             if (yourExtras != null) yourExtras,
+            // Your route is the optimal one: the link goes under this board.
+            if (!showBest && possibilities != null) possibilities,
           ]),
         // Not optimal (or missed): the best route, marked and boxed the same
         // way, with more optimal routes as boxes.
@@ -173,6 +180,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
                 states: List.filled(best.length, TileState.correct),
                 label: 'Optimal route'),
             if (bestExtras != null) bestExtras,
+            if (possibilities != null) possibilities,
           ]),
       ]),
       ..._footer(ctx, result),

@@ -18,16 +18,46 @@ void main() {
         expect(optimal.optimalRoutes(one), hasLength(1), reason: '$one');
       }
       expect(optimal.optimalRoutes(132).length, greaterThan(1));
-      expect(screen, contains('optimalRoutes.length == 1'));
+      expect(screen, contains('if (count == 1) return el('));
       expect(screen, contains("text: 'Only possibility'"));
-      expect(screen, contains('optimalRoutes.length > 1'));
+      expect(screen, contains("button('All possibilities'"));
+    });
+
+    test('the link is under the last combination, under "Also optimal" - not under the number', () {
+      // The boards' own figures hold it: after the "Also optimal" boxes of the
+      // optimal route's board, and after those of your board when yours is optimal.
+      final bestExtras = screen.indexOf('if (bestExtras != null) bestExtras');
+      final link = screen.indexOf('if (possibilities != null) possibilities');
+      expect(bestExtras, greaterThan(0));
+      expect(link, greaterThan(bestExtras));
+      final yourExtras = screen.indexOf('if (yourExtras != null) yourExtras');
+      expect(screen.indexOf('if (!showBest && possibilities != null) possibilities'),
+          greaterThan(yourExtras));
+      // Between the number at the top and the boards there is no link any more.
+      final underNumber = screen.substring(
+          screen.indexOf("el('p', cls: 'target small'"), screen.indexOf("el('div', cls: 'result-boards'"));
+      expect(underNumber, isNot(contains("button('All possibilities'")));
+      expect(underNumber, isNot(contains('why-row')));
+      expect(underNumber, isNot(contains("'Only possibility'")));
     });
 
     test('the popup shows every route at once - no "Shoot more"', () {
-      expect(screen, contains('for (final route in result.optimalRoutes) figureFor(route)'));
+      expect(screen, contains('for (final route in RouteOrder.byFinisher(result.optimalRoutes)) figureFor(route)'));
       expect(screen, isNot(contains('Shoot more')));
       expect(File('lib/ui/result_screen.dart').readAsStringSync(), isNot(contains('RoutePages')));
       expect(css, isNot(contains('.shoot-more')));
+    });
+
+    test('the sentence is on the right, the number under it in the middle above the boards', () {
+      final sentence = screen.indexOf("text: 'Every optimal way to check out'");
+      final number = screen.indexOf("cls: 'modal-number', text: '\${challenge.target}'");
+      final boards = screen.indexOf("cls: 'possibilities'");
+      expect(sentence, greaterThan(0));
+      expect(number, greaterThan(sentence));
+      expect(boards, greaterThan(number));
+      expect(screen, isNot(contains('Every optimal way to check out \${challenge.target}')));
+      final rule = RegExp(r'\.modal-number \{[^}]*\}').firstMatch(css)!.group(0)!;
+      expect(rule, contains('text-align: center'));
     });
 
     test('the boards are centred, so a last row with fewer boards is in the middle', () {

@@ -118,15 +118,19 @@ web.HTMLElement timerLine(GameController game) => el('p',
     text: formatCountdown(game.remaining));
 
 /// What is left to checkout after the darts entered so far, e.g. "76 left".
-/// Just the result - no working shown.
+/// Just the result - no working shown. The number is centred under the big
+/// number above it; the word "left" hangs to its right and does not count (an
+/// invisible copy of the word on the left keeps the number in the middle).
 web.HTMLElement _remainingLine(int target, List<DartThrow> entered) {
   final left = target - entered.fold<int>(0, (sum, d) => sum + d.score);
   final state = left < 0 ? 'over' : (left == 0 ? 'zero' : '');
+  final word = left < 0 ? 'over' : 'left';
   return el('p', cls: 'remaining $state', attrs: {
     'aria-label': left < 0 ? 'Over by ${-left}' : '$left left',
   }, children: [
+    el('span', cls: 'left-note ghost', text: word, attrs: {'aria-hidden': 'true'}),
     el('strong', text: '${left.abs()}'),
-    el('span', cls: 'left-note', text: left < 0 ? 'over' : 'left'),
+    el('span', cls: 'left-note', text: word),
   ]);
 }
 
