@@ -4,6 +4,7 @@ import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 import 'choice_screen.dart';
+import 'dart_icon.dart';
 import 'dartboard.dart';
 import 'dom.dart';
 import 'modal.dart';
@@ -98,23 +99,48 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
       if (result.optimalRoutes.isNotEmpty)
         el('p', cls: 'why-row', children: [
           button('All possibilities', cls: 'text-link', focusKey: 'all', onPressed: (_) {
+            web.HTMLElement figureFor(CheckoutRoute route) =>
+                el('figure', cls: 'board-figure', children: [
+                  buildDartboard(
+                    linesOnly: true,
+                    marks: spreadMarks(route.darts, const [], math.Random(_seed(route.notation))),
+                    label: 'Route ${route.notation}',
+                  ),
+                  tileRow(route.darts,
+                      slots: route.length,
+                      small: true,
+                      states: List.filled(route.length, TileState.correct),
+                      label: route.notation),
+                ]);
+
+            // The first few routes, then a little dart with "Shoot more" for the
+            // rest (only when there are more than a handful).
+            final pages = RoutePages.split(result.optimalRoutes);
+            final list = el('div', cls: 'possibilities', children: [
+              for (final route in pages.first) figureFor(route),
+            ]);
+            web.HTMLElement? shootMore;
+            if (pages.rest.isNotEmpty) {
+              final more = button('',
+                  cls: 'shoot-more',
+                  ariaLabel: 'Shoot more: ${pages.rest.length} more optimal routes',
+                  onPressed: (_) {
+                for (final route in pages.rest) {
+                  list.appendChild(figureFor(route));
+                }
+                shootMore?.remove();
+                // The button is gone: hand the focus to Close, without scrolling.
+                (web.document.querySelector('.modal-close') as web.HTMLElement?)
+                    ?.focus(web.FocusOptions(preventScroll: true));
+              })
+                ..appendChild(dartIcon() as web.Node)
+                ..appendChild(el('span', text: 'Shoot more'));
+              shootMore = el('div', cls: 'shoot-more-row', children: [more]);
+            }
             showModal(title: 'All possibilities', body: [
-              el('p', cls: 'modal-line', text: 'Every optimal way to check out ${challenge.target}.'),
-              el('div', cls: 'possibilities', children: [
-                for (final route in result.optimalRoutes)
-                  el('figure', cls: 'board-figure', children: [
-                    buildDartboard(
-                      linesOnly: true,
-                      marks: spreadMarks(route.darts, const [], math.Random(_seed(route.notation))),
-                      label: 'Route ${route.notation}',
-                    ),
-                    tileRow(route.darts,
-                        slots: route.length,
-                        small: true,
-                        states: List.filled(route.length, TileState.correct),
-                        label: route.notation),
-                  ]),
-              ]),
+              el('p', cls: 'modal-line top', text: 'Every optimal way to check out ${challenge.target}.'),
+              list,
+              if (shootMore != null) shootMore,
             ]);
           }),
         ]),

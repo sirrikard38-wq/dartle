@@ -24,6 +24,7 @@ export 'src/domain/difficulty.dart';
 export 'src/domain/natural_aim.dart';
 export 'src/domain/optimal_route_service.dart';
 export 'src/domain/route_explainer.dart';
+export 'src/domain/route_pages.dart';
 export 'src/domain/single_leave.dart';
 export 'src/domain/site_routes.dart';
 export 'src/domain/tile_feedback.dart';

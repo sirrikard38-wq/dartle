@@ -4,21 +4,9 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
+import 'dart_icon.dart';
 import 'dom.dart';
 import 'view_context.dart';
-
-/// A small stylised dart pointing right. Drawn in the current text colour.
-web.Element _dartIcon() => svg('svg', cls: 'dart-icon', attrs: {
-      'viewBox': '0 0 72 28',
-      'aria-hidden': 'true',
-      'focusable': 'false',
-    }, children: [
-      // Flight (the two fins), shaft, barrel and tip.
-      svg('path', attrs: {'d': 'M2 3 L11 3 L19 14 L11 25 L2 25 L8 14 Z', 'fill': 'currentColor'}),
-      svg('rect', attrs: {'x': '18', 'y': '12', 'width': '16', 'height': '4', 'fill': 'currentColor'}),
-      svg('rect', attrs: {'x': '32', 'y': '8', 'width': '24', 'height': '12', 'rx': '3', 'fill': 'currentColor'}),
-      svg('path', attrs: {'d': 'M56 11 L70 14 L56 17 Z', 'fill': 'currentColor'}),
-    ]);
 
 /// Shown every time the app opens: DARTLE and "Checkout calculator by PK
 /// Normal" fade in one after another, then give way to "Welcome" with a name
@@ -71,7 +59,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
             ariaLabel: 'Continue',
             focusKey: 'go',
             onPressed: (_) => submit())
-          ..appendChild(_dartIcon() as web.Node),
+          ..appendChild(dartIcon() as web.Node),
       ]),
     ]),
   ]);

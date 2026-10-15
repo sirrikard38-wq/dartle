@@ -9,7 +9,7 @@
   --line-strong: #6a6a6a;
   --white: #ffffff;
   --offwhite: #e6e6e6;     /* undo button */
-  --board-off: #0c0c0c;    /* switched-off areas: near black, only the lines show */
+  --board-off: #262626;    /* switched-off areas: dark grey, the lines and marks show */
   --board-on-a: #8c8c8c;   /* active areas: mid grey, not white */
   --board-on-b: #767676;
   --board-line: #ffffff;   /* the "web" that divides the areas */
@@ -349,18 +349,23 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
    against them. */
 .dartboard.lines .zone,
 .dartboard.lines .zone.on,
-.dartboard.lines .zone.off { fill: #3a3a3a; }
-.dartboard.lines .zone.on.tone-a { fill: #444444; }
-.dartboard.lines .zone.on.tone-b { fill: #383838; }
-.dartboard.lines .bull-outer.on { fill: #4d4d4d; }
-.dartboard.lines .bull-inner.on { fill: #5c5c5c; }
+.dartboard.lines .zone.off { fill: #4c4c4c; }
+.dartboard.lines .zone.on.tone-a { fill: #565656; }
+.dartboard.lines .zone.on.tone-b { fill: #4a4a4a; }
+.dartboard.lines .bull-outer.on { fill: #5e5e5e; }
+.dartboard.lines .bull-inner.on { fill: #6c6c6c; }
+/* White with a thin dark edge: it stands out on any grey, light or dark. */
 .dartboard.lines .mark {
-  fill: rgba(255, 255, 255, 0.62); stroke: #fff; stroke-width: 2;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+  fill: rgba(255, 255, 255, 0.9); stroke: #fff; stroke-width: 2;
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 2px #000);
 }
 
-/* Where a dart landed: a see-through circle. */
-.dartboard .mark { fill: rgba(255, 255, 255, 0.28); stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.5; pointer-events: none; }
+/* Where a dart landed: a see-through circle with a thin dark edge, so it shows
+   on the dark areas and on the light (lit) ones. */
+.dartboard .mark {
+  fill: rgba(255, 255, 255, 0.35); stroke: #fff; stroke-width: 2; pointer-events: none;
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1.5px #000);
+}
 .dartboard .mark.newest { transform-box: fill-box; transform-origin: center; animation: drop 220ms ease-out; }
 @keyframes drop { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: scale(1); } }
 
@@ -439,9 +444,29 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   padding: 18px 18px 14px; text-align: left;
   background: #151515; border: 1px solid var(--line-strong); border-radius: 12px;
 }
-.modal-title { margin: 0 0 12px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+/* The topmost text of a popup sits on the right edge. */
+.modal-title { margin: 0 0 12px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: right; }
 .modal-line { margin: 0 0 10px; line-height: 1.45; }
-.modal-close { display: block; margin: 10px auto 0; height: 44px; min-width: 140px; }
+.modal-line.top { text-align: right; }
+/* Close sits under everything, in the middle: a white box like the answer boxes
+   (and the white of the marks on the boards). */
+.modal-close {
+  display: block; margin: 18px auto 4px; min-width: 130px; height: 46px; padding: 0 24px;
+  border: 2px solid var(--white); border-radius: 0;
+  background: var(--white); color: var(--ink);
+  font-size: 1rem; font-weight: 700;
+}
+.modal-close:hover { background: var(--offwhite); }
+/* "Shoot more": a little dart and the words, in the middle under the routes
+   shown so far, with Close under it. */
+.shoot-more-row { display: flex; justify-content: center; margin: 14px 0 0; }
+.shoot-more {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px;
+  border: 2px solid var(--line-strong); border-radius: 0; background: transparent; color: var(--fg);
+  font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em;
+}
+.shoot-more:hover { border-color: var(--fg); }
+.shoot-more .dart-icon { width: 36px; height: 14px; }
 .possibilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px 12px; }
 .modal .board-figure { flex: none; }
 

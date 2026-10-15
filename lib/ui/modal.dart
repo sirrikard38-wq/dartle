@@ -18,7 +18,7 @@ void closeModal() {
 /// the screen behind it can redraw without losing it.
 void showModal({required String title, required List<web.Node> body}) {
   closeModal();
-  final close = button('Close', cls: 'cta modal-close', onPressed: (_) => closeModal());
+  final close = button('Close', cls: 'modal-close', onPressed: (_) => closeModal());
   final backdrop = el('div', cls: 'modal-backdrop', attrs: {
     'role': 'dialog',
     'aria-modal': 'true',
@@ -35,7 +35,10 @@ void showModal({required String title, required List<web.Node> body}) {
   });
   web.document.body!.appendChild(backdrop);
   _open = backdrop;
-  close.focus();
+  // Focus Close for keyboard users, but without letting that scroll a long
+  // popup down to it: a popup always opens at its top.
+  close.focus(web.FocusOptions(preventScroll: true));
+  backdrop.querySelector('.modal')?.scrollTop = 0;
 }
 
 /// A plain paragraph for a popup.
