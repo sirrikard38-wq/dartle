@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
 
@@ -115,7 +116,8 @@ class DartleApp {
     // Fade a screen in only when it changes, not on every dart tapped. A popup
     // belongs to the screen it was opened on.
     final screenKey = '${_game.phase.name}-${_page.name}';
-    if (screenKey != _lastScreen) {
+    final screenChanged = screenKey != _lastScreen;
+    if (screenChanged) {
       screen.classList.add('enter');
       closeModal();
     }
@@ -136,6 +138,10 @@ class DartleApp {
         (target as web.HTMLElement).focus();
       }
     }
+    // A new screen (Next checkout, Replay checkout, a menu page ...) always
+    // starts at the top, not wherever the last, longer screen was scrolled to.
+    // After the focus above, which can scroll a button into view.
+    if (screenChanged) web.window.scrollTo(0.toJS, 0);
   }
 
   web.HTMLElement _buildHeader() {
