@@ -21,6 +21,7 @@
   --burgundy-soft: #c0506b;/* the dotted darts inside it */
   --focus: #ffffff;
   --scrollbar: #686868;    /* the scrollbar, while something scrolls */
+  --pad-key: #9a9a9a;      /* the number keys of Checkout input: grey, not white */
   --tile: clamp(58px, 17vw, 72px);
   --mode-h: 44px;
 }
@@ -522,7 +523,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
   width: min(100%, 360px); margin: 6px auto 14px; padding: 0 16px;
 }
-.pad-key { flex: none; height: 64px; font-size: 1.5rem; }
+/* The number keys are grey, not white. */
+.pad-key { flex: none; height: 64px; font-size: 1.5rem; background: var(--pad-key); color: var(--ink); }
 .pad-undo, .pad-enter { font-size: 0.85rem; letter-spacing: 0.04em; }
 .pad-undo { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
