@@ -133,6 +133,18 @@ void main() {
       await storage.write(HistoryRepository.storageKey, '{not json');
       expect(await repo.load(), isEmpty);
     });
+
+    test('two repositories under different keys are independent', () async {
+      final storage = InMemoryStorageService();
+      final stats = HistoryRepository(storage);
+      final board = HistoryRepository(storage, key: 'board');
+      expect(await board.loadIfSaved(), isNull, reason: 'nothing saved yet');
+      await stats.save([rec()]);
+      await board.save([rec(), rec(target: 40)]);
+      await stats.clear();
+      expect(await stats.loadIfSaved(), isNull);
+      expect((await board.load()).map((r) => r.target), [72, 40]);
+    });
   });
 
   group('Leaderboard', () {

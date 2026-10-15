@@ -102,6 +102,10 @@ class GameController {
   static const String playerNameKey = 'dartle.player.v1';
   static const String defaultPlayerName = 'Player';
 
+  /// Where the leaderboard's own record of attempts is saved. "Reset
+  /// statistics" never touches it, so a reset cannot change the leaderboard.
+  static const String leaderboardRecordKey = 'dartle.leaderboard-record.v1';
+
   /// Undo can be used this many times per session in Checkout calculator.
   static const int maxUndos = 3;
 
@@ -120,7 +124,15 @@ class GameController {
 
   final List<void Function()> _listeners = [];
   final List<DartThrow> _entered = [];
+
+  /// What the Statistics screen shows; "Reset statistics" clears it.
   List<AttemptRecord> _history = [];
+
+  /// What the leaderboard is worked out from. Separate from [_history], and
+  /// never cleared by a reset.
+  List<AttemptRecord> _leaderboardRecord = [];
+  late final HistoryRepository _leaderboardRecordRepo =
+      HistoryRepository(_storage, key: leaderboardRecordKey);
   AttemptTimer _timer;
 
   GamePhase _phase = GamePhase.menu;
@@ -245,6 +257,18 @@ class GameController {
     _history = (await _historyRepo.load())
         .where((r) => r.mode == GameMode.calculator)
         .toList();
+    // The leaderboard's record. The first time (no record yet, e.g. after an
+    // update) it starts as a copy of the attempts saved so far, so nobody loses
+    // their score; from then on a reset leaves it alone.
+    final record = await _leaderboardRecordRepo.loadIfSaved();
+    if (record == null) {
+      _leaderboardRecord = List.of(_history);
+      if (_leaderboardRecord.isNotEmpty) {
+        await _leaderboardRecordRepo.save(_leaderboardRecord);
+      }
+    } else {
+      _leaderboardRecord = record.where((r) => r.mode == GameMode.calculator).toList();
+    }
     final saved = await _storage.read(playerNameKey);
     _needsPlayerName = saved == null || saved.trim().isEmpty;
     _playerName = _needsPlayerName ? defaultPlayerName : saved!;
@@ -423,6 +447,8 @@ class GameController {
     _notify();
   }
 
+  /// Clears the statistics. The leaderboard is not touched in any way: its own
+  /// record of attempts stays, and nothing is sent to it.
   Future<void> resetStatistics() async {
     _history = [];
     await _historyRepo.clear();
@@ -463,29 +489,31 @@ class GameController {
       _sessionStreak = score.streakAfter;
     }
     if (recorded) {
-      _history = [
-        ..._history,
-        AttemptRecord(
-          sessionId: _sessionId,
-          timestampMs: _now().millisecondsSinceEpoch,
-          target: challenge.target,
-          dartCount: challenge.dartCount,
-          difficulty: challenge.difficulty,
-          mode: _mode,
-          correct: validation.isCorrect,
-          optimal: validation.isOptimal,
-          timeMs: elapsed.inMilliseconds,
-          points: score.total,
-          playerRoute: validation.playerRoute.notation,
-          optimalRoute: challenge.optimalRoute.notation,
-        ),
-      ];
+      final record = AttemptRecord(
+        sessionId: _sessionId,
+        timestampMs: _now().millisecondsSinceEpoch,
+        target: challenge.target,
+        dartCount: challenge.dartCount,
+        difficulty: challenge.difficulty,
+        mode: _mode,
+        correct: validation.isCorrect,
+        optimal: validation.isOptimal,
+        timeMs: elapsed.inMilliseconds,
+        points: score.total,
+        playerRoute: validation.playerRoute.notation,
+        optimalRoute: challenge.optimalRoute.notation,
+      );
+      _history = [..._history, record];
+      _leaderboardRecord = [..._leaderboardRecord, record];
     }
     _phase = GamePhase.result;
     _notify();
     if (recorded) {
       await _historyRepo.save(_history);
-      await _leaderboard.submit(_playerName, summary);
+      await _leaderboardRecordRepo.save(_leaderboardRecord);
+      // The leaderboard is worked out from its own record, not from the
+      // statistics (which the player can reset).
+      await _leaderboard.submit(_playerName, _statistics.summarize(_leaderboardRecord));
     }
   }
 

@@ -209,6 +209,76 @@ void main() {
     });
   });
 
+  group('Reset statistics never touches the leaderboard', () {
+    /// This player's row on the (local) leaderboard, as the board stores it.
+    Future<LeaderboardEntry> myRow() async =>
+        (await LocalLeaderboardRepository(storage).fetchEntries())
+            .firstWhere((e) => !e.isSample && e.playerName == game.playerName);
+
+    Future<void> playOptimal(int count) async {
+      for (var i = 0; i < count; i++) {
+        dealUntil((c) => c.hasCheckout);
+        await solveOptimally();
+      }
+    }
+
+    test('the row stays as it was, and keeps adding up afterwards', () async {
+      await playOptimal(3);
+      final before = await myRow();
+      expect(before.attempts, 3);
+      expect(before.totalPoints, greaterThan(0));
+
+      await game.resetStatistics();
+      expect(game.history, isEmpty);
+      expect(game.summary.totalAttempts, 0);
+      // Nothing was sent or deleted by the reset itself.
+      final after = await myRow();
+      expect(after.attempts, 3);
+      expect(after.totalPoints, before.totalPoints);
+
+      // The next result adds to the leaderboard totals, it does not restart them.
+      await playOptimal(1);
+      final next = await myRow();
+      expect(next.attempts, 4);
+      expect(next.totalPoints, greaterThan(before.totalPoints));
+      // ... while the statistics start from zero.
+      expect(game.summary.totalAttempts, 1);
+    });
+
+    test('also after the app is opened again', () async {
+      await playOptimal(2);
+      await game.resetStatistics();
+      final reopened = build();
+      await reopened.init();
+      expect(reopened.history, isEmpty);
+      game = reopened;
+      await playOptimal(1);
+      expect((await myRow()).attempts, 3);
+      expect(game.summary.totalAttempts, 1);
+    });
+
+    test('an older install (statistics only) keeps its score when the record is created', () async {
+      await playOptimal(2);
+      // As saved by a version from before the leaderboard had its own record.
+      await storage.remove(GameController.leaderboardRecordKey);
+      final updated = build();
+      await updated.init();
+      game = updated;
+      expect(game.history, hasLength(2));
+      await game.resetStatistics();
+      await playOptimal(1);
+      expect((await myRow()).attempts, 3, reason: 'the two earlier attempts still count');
+    });
+
+    test('the leaderboard record is saved apart from the statistics', () async {
+      await playOptimal(2);
+      expect(await storage.read(GameController.leaderboardRecordKey), isNotNull);
+      await game.resetStatistics();
+      expect(await storage.read(HistoryRepository.storageKey), isNull);
+      expect(await storage.read(GameController.leaderboardRecordKey), isNotNull);
+    });
+  });
+
   test('first visit needs a username; it is saved and remembered', () async {
     expect(game.needsPlayerName, isTrue);
     await game.setPlayerName('   '); // blank is ignored
