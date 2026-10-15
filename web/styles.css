@@ -510,6 +510,14 @@ summary { cursor: pointer; color: var(--muted); }
 
 /* ---------- Stats / leaderboard ---------- */
 .more-stats { width: 100%; text-align: left; font-size: 0.9rem; }
+/* Statistics: Reset on the far left, the title in the middle (like the header). */
+.stats-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; }
+.stats-head h2 { margin: 16px 0 12px; }
+.reset-box { justify-self: start; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+.reset-stats { padding: 0; text-align: left; font-size: 0.8rem; line-height: 1.2; min-height: 36px; }
+.reset-note { margin: 0; max-width: 16ch; color: var(--muted); font-size: 0.65rem; line-height: 1.25; }
+/* A screen title on the right edge (Leaderboard). */
+.screen-title-right { align-self: flex-end; text-align: right; }
 .weak-list, .rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
 .weak-list li, .rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
 .weak-list strong { font-size: 1.2rem; }
