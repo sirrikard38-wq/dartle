@@ -47,6 +47,11 @@ To switch the online board off again, empty both values.
   attempts. A failed upload is sent again with the next result.
 - The board shows the top 180 players by points, and the other rankings (average
   time, accuracy, optimal %) are computed from those same 180.
+- The screen always has 180 rows. Places that no real player has yet are filled
+  with made-up "sample" players (60 points down to 1, each tagged `sample`, never
+  stored or sent); they leave as real players join, best-scoring samples first.
+  For real players only, set `LeaderboardService.fillWithSamples` to `false`
+  (`lib/src/leaderboard/leaderboard_service.dart`).
 - Each request waits at most 6 seconds; after that the screen shows the scores on
   the device instead, with a note saying so.
 - Clearing the browser's data (or reinstalling the app) makes a new anonymous id,

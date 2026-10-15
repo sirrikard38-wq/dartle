@@ -24,19 +24,26 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
     // Online rows are told apart by id (two players may share a name); local
     // rows by name.
     bool isMe(LeaderboardEntry e) =>
-        e.id != null && myId != null ? e.id == myId : e.playerName == game.playerName;
+        !e.isSample &&
+        (e.id != null && myId != null ? e.id == myId : e.playerName == game.playerName);
 
+    final samples = entries.where((e) => e.isSample).length;
     status.textContent = entries.isEmpty ? 'No scores yet - be the first!' : '';
     for (final e in entries) {
-      list.appendChild(el('li', cls: isMe(e) ? 'me' : null, children: [
+      list.appendChild(el('li', cls: isMe(e) ? 'me' : (e.isSample ? 'sample' : null), children: [
         el('span', cls: 'name', text: e.playerName),
+        if (e.isSample) el('span', cls: 'sample-tag', text: 'sample'),
         el('strong', text: metric(e)),
       ]));
     }
+    final sampleNote = samples == 0
+        ? ''
+        : ' Players marked "sample" are made up; they only fill empty places and '
+            'leave as real players join.';
     note.textContent = online
         ? 'Online leaderboard: everyone who plays Dartle. Your name and scores '
-            'are visible to all players.'
-        : 'Scores on this device, plus sample players.';
+            'are visible to all players.$sampleNote'
+        : 'Scores on this device.$sampleNote';
   });
 
   return el('main', cls: 'screen leaderboard', children: [

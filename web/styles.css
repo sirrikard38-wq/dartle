@@ -517,6 +517,12 @@ summary { cursor: pointer; color: var(--muted); }
 .rank-list { counter-reset: rank; }
 .rank-list li::before { counter-increment: rank; content: counter(rank); width: 2em; color: var(--muted); text-align: left; }
 .rank-list .name { flex: 1; text-align: left; }
+/* A made-up player that only fills an empty place. */
+.rank-list li.sample { color: var(--muted); }
+.rank-list .sample-tag {
+  margin: 0 10px; padding: 1px 6px; border: 1px solid var(--line-strong);
+  font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
 .rank-list li.me { font-weight: 700; background: #1a1a1a; }
 .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
 .chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 20px; background: transparent; }
