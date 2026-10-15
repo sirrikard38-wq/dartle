@@ -123,8 +123,20 @@ class OptimalRouteService {
         safe.forEach(add);
         // A single that leaves a better double is as good: with two darts left
         // on 41-60, and for the last two darts after the first treble.
-        if (minimum == 2) SingleLeave.twoDartRoutes(target).forEach(add);
-        if (minimum == 3) SingleLeave.threeDartRoutes(target).forEach(add);
+        // These are vetted, so they may use the outer bull (61: 25 D18, 65: 25 D20).
+        if (minimum == 2) {
+          for (final route in [
+            ...SingleLeave.twoDartRoutes(target),
+            ...SingleLeave.outerBullRoutes(target),
+          ]) {
+            add(route, force: true);
+          }
+        }
+        if (minimum == 3) {
+          for (final route in SingleLeave.threeDartRoutes(target)) {
+            add(route, force: true);
+          }
+        }
         // A three-dart number also accepts its standard routes.
         if (minimum == 3) standard.forEach(add);
       } else {

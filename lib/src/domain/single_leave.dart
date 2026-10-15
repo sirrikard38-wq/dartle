@@ -11,7 +11,8 @@ import 'dart_throw.dart';
 /// The same goes for the last two darts of a three-dart number whose first
 /// treble leaves 51 to 60: 109 is T19 and then S20 D16 as well as T19 S2 Bull.
 ///
-/// The outer bull is not a single here: it is far too hard to hit.
+/// The outer bull is not a single here: it is far too hard to hit - except on
+/// 61 and 65, where nothing else can leave a better double ([outerBullRoutes]).
 abstract final class SingleLeave {
   /// The numbers this applies to, 41 to 60.
   static const int minTarget = 41;
@@ -36,15 +37,28 @@ abstract final class SingleLeave {
     return routes;
   }
 
+  /// Over 60 no ordinary single can leave a better double (S20 D20 is the most,
+  /// 60), so for 61 to 70 the outer bull is accepted as the single: 61 is
+  /// 25 D18 and 65 is 25 D20. This is the one place the outer bull is an aim.
+  static List<CheckoutRoute> outerBullRoutes(int target) {
+    if (target <= maxTarget || !BullSafeFinish.covers(target)) return const [];
+    final left = target - DartThrow.bullNumber;
+    if (left.isOdd || !BetterDoubles.numbers.contains(left ~/ 2)) return const [];
+    return [
+      CheckoutRoute([DartThrow.outerBull, DartThrow(Multiplier.double, left ~/ 2)]),
+    ];
+  }
+
   /// Three-dart routes for [target]: a first treble that leaves a bull-safe
-  /// number (51 to 70) which is also in 41 to 60 (so 51 to 60), then a single and
-  /// a better double. 109 -> T19 S20 D16. Highest first treble first.
+  /// number (51 to 70), then a single and a better double (for a leave of 51 to
+  /// 60) or the outer bull and a better double (61 and 65). 109 -> T19 S20 D16.
+  /// Highest first treble first.
   static List<CheckoutRoute> threeDartRoutes(int target) {
     final routes = <CheckoutRoute>[];
     for (var k = DartThrow.maxBoardNumber; k >= 1; k--) {
       final left = target - 3 * k;
       if (!BullSafeFinish.covers(left)) continue;
-      for (final finish in twoDartRoutes(left)) {
+      for (final finish in [...twoDartRoutes(left), ...outerBullRoutes(left)]) {
         routes.add(CheckoutRoute([DartThrow(Multiplier.treble, k), ...finish.darts]));
       }
     }

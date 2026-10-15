@@ -92,7 +92,9 @@ leaderboard shows the scores on the device, as before.
      three-dart number that leaves 51-60, 109 is also `T19 S20 D16`
      (`SingleLeave`);
   3. otherwise the **most singles** (they are far easier to hit; the outer bull
-     is **not** a single and never an aim - it is far too hard to hit), then
+     is **not** a single and hardly ever an aim - it is far too hard to hit; the
+     one exception is `25 D20` on 65 and `25 D18` on 61, where no ordinary single
+     can leave a better double), then
      setup doubles last, then fewer triples, using only sensible aims (singles,
      T15-T20, and the better doubles as setup darts when the route also finishes
      on a better double). 35 is `S15 D10` = `S3 D16` = `S17 D9`, never `T5 D10`;

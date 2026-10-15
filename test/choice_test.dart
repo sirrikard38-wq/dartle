@@ -49,8 +49,18 @@ void main() {
         expect(advisor.optimalDarts(57), isNot(contains(d('S19'))));
       });
 
-      test('over 60 only the bull-safe darts are lit (65)', () {
-        expect(advisor.optimalDarts(65), {d('T15'), d('S15')});
+      test('over 60 the bull-safe darts are lit, and the outer bull on 61 and 65', () {
+        expect(advisor.optimalDarts(65), {d('T15'), d('S15'), d('S25')});
+        expect(advisor.optimalDarts(61), {d('T11'), d('S11'), d('S25')});
+        expect(advisor.optimalDarts(67), {d('T17'), d('S17')}); // nothing extra here
+      });
+
+      test('65: the outer bull then D20 is optimal at every step', () {
+        final r = ChoiceRound(65, advisor, layout: BoxLayout.leftUsed)
+          ..throwDart(d('S25'))
+          ..throwDart(d('D20'));
+        expect(r.isCheckedOut, isTrue);
+        expect(r.isOptimal, isTrue);
       });
 
       test('singles come first: 35 lights singles only, never T5', () {

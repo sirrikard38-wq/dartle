@@ -99,6 +99,22 @@ void main() {
       expect(r.isOptimal, isFalse);
     });
 
+    test('65: the outer bull then D20 is optimal, with the bull-safe routes', () {
+      final c = catalog.forTarget(65)!;
+      expect(c.dartsLeft, 2);
+      for (final text in ['T15 D10', 'S15 Bull', '25 D20']) {
+        final r = validator.validate(c, darts(text));
+        expect(r.isCorrect, isTrue, reason: text);
+        expect(r.isOptimal, isTrue, reason: text);
+      }
+    });
+
+    test('119: T18 leaves 65, then the outer bull and D20 is optimal', () {
+      final r = validator.validate(catalog.forTarget(119)!, darts('T18 25 D20'));
+      expect(r.isCorrect, isTrue);
+      expect(r.isOptimal, isTrue);
+    });
+
     test('132: T20 D20 D16 and T20 T20 D6 are optimal, T19 25 Bull is not', () {
       final c = catalog.forTarget(132)!;
       expect(c.dartsLeft, 3);
