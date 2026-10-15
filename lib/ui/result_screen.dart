@@ -93,10 +93,15 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
         el('p', cls: 'encourage', text: result.encouragement ?? ''),
       ],
 
+      // A number with just one optimal route has nothing to list: it says so.
+      if (result.optimalRoutes.length == 1)
+        el('p', cls: 'hint only-one', text: 'Only possibility'),
+
       // Only one link under the number, in every mode: every optimal route,
       // each with its marked board and boxes, in a popup. (A number with no
-      // checkout has no routes to show.)
-      if (result.optimalRoutes.isNotEmpty)
+      // checkout has no routes to show, and one with a single route says "Only
+      // possibility" instead.)
+      if (result.optimalRoutes.length > 1)
         el('p', cls: 'why-row', children: [
           button('All possibilities', cls: 'text-link', focusKey: 'all', onPressed: (_) {
             web.HTMLElement figureFor(CheckoutRoute route) =>

@@ -33,6 +33,19 @@ void main() {
       expect(RoutePages.split(optimal.optimalRoutes(40)).rest, isEmpty);
     });
 
+    test('a number with one optimal route says "Only possibility", not "All possibilities"', () {
+      final engine = CheckoutEngine();
+      final optimal = OptimalRouteService(engine);
+      for (final one in [40, 50, 16, 170, 100]) {
+        expect(optimal.optimalRoutes(one), hasLength(1), reason: '$one');
+      }
+      expect(optimal.optimalRoutes(132).length, greaterThan(1));
+      final screen = File('lib/ui/result_screen.dart').readAsStringSync();
+      expect(screen, contains("optimalRoutes.length == 1"));
+      expect(screen, contains("text: 'Only possibility'"));
+      expect(screen, contains("optimalRoutes.length > 1"));
+    });
+
     test('the popup code uses it, and Close is not styled by the older .cta rule', () {
       final screen = File('lib/ui/result_screen.dart').readAsStringSync();
       expect(screen, contains('RoutePages.split'));
