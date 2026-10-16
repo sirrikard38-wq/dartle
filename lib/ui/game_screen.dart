@@ -59,9 +59,9 @@ web.HTMLElement buildEntryPanel(ViewContext ctx) {
     showNoCheckout: !practice,
     // Practice: light up the best darts before the player chooses.
     lit: practice ? game.choiceHints : null,
-    onPickMultiplier: (m, kb) {
+    onPickMultiplier: (m, kb, focusKey) {
       ctx.pickedMultiplier = m;
-      ctx.keepFocus(kb ? 'mode-${m.name}' : null);
+      ctx.keepFocus(kb ? focusKey : null);
       ctx.rerender();
     },
     onDart: (dart, point, kb) {

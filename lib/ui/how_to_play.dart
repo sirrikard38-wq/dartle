@@ -35,7 +35,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
           'dart already used, so it cannot be filled. A one-dart number has its '
           'first two boxes crossed out. A two-dart number has its left box '
           'crossed out. A three-dart number has nothing crossed out. '
-          'Pick Single, Double or Triple, then tap a number. The last free box is '
+          'Pick S, D or T (on either side of the board), then tap a number. The last free box is '
           'always a double or Bull. Your answer is checked the moment it is '
           'complete. Not every number can be checked out: if there is no checkout, '
           'press No checkout.'),
@@ -57,8 +57,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'still have the Bull. For three darts the first dart should leave 51 to '
         '70 (119: T19 leaves 62, then T12 D13 or S12 Bull).'),
     section('The board',
-        'Pick Single, Double or Triple and the matching rings of the board turn '
-        'grey; everything else goes dark. The board is drawn to real '
+        'Pick S, D or T (single, double or triple - the buttons on both sides of '
+        'the board are the same, use either hand) and the matching rings of the '
+        'board turn grey; everything else goes dark. The board is drawn to real '
         'proportions, so the doubles and triples are thin: press anywhere in a '
         'number\'s wedge and the ring you picked is thrown at that number. Each '
         'press leaves a see-through circle on that ring, so you can see how the '
@@ -67,7 +68,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'The boxes stay plain while you play. After the checkout, each dart '
         'flips to a colour: white means it belongs in the best route, light pink '
         'means it does not, and grey means the right dart in the wrong place. '
-        'All possibilities shows every optimal route on its own board.'),
+        'Press "Also optimal" to see every optimal route on its own board.'),
     if (game.mode.hasScore) ...[
       section('Score',
           'A correct checkout with time left on the clock scores as many points as '

@@ -20,8 +20,13 @@ web.Element undoIcon() => svg('svg', cls: 'undo-icon', attrs: {
       }),
     ]);
 
-/// The dart-entry panel: ring toggle (Single / Double / Triple) and the
-/// tappable dartboard, then Undo (and, in Checkout calculator, No checkout).
+/// The dart-entry panel: the tappable dartboard with the ring buttons S, D and T
+/// on both sides of it, then Undo (and, in Checkout calculator, No checkout).
+///
+/// The same three buttons are on the left and on the right of the board, so
+/// either hand can press them: pressing one lights up the same letter on the
+/// other side too (both sides show the one chosen ring) and switches the board
+/// to that ring.
 ///
 /// The finishing box is always a double, so while it is active the other rings
 /// are disabled and Double is selected for the player.
@@ -44,7 +49,9 @@ web.HTMLElement buildInputPanel({
 
   /// Darts to light up on the board as the best choices (practice modes).
   Set<DartThrow>? lit,
-  required void Function(Multiplier m, bool viaKeyboard) onPickMultiplier,
+  /// [focusKey] names the button that was pressed (the left and the right one of
+  /// the same ring are different buttons), to give it the focus back.
+  required void Function(Multiplier m, bool viaKeyboard, String focusKey) onPickMultiplier,
 
   /// [point] is where the board was tapped.
   required void Function(DartThrow dart, BoardPoint? point, bool viaKeyboard) onDart,
@@ -54,14 +61,25 @@ web.HTMLElement buildInputPanel({
   web.HTMLElement row(List<web.Node> keys, {String? cls}) =>
       el('div', cls: 'key-row ${cls ?? ''}', children: keys);
 
-  web.HTMLButtonElement modeKey(Multiplier m) => button(
-        m.label.toUpperCase(),
-        cls: 'key mode${m == multiplier ? ' selected' : ''}',
-        focusKey: 'mode-${m.name}',
-        disabled: finalBox && m != Multiplier.double,
-        attrs: {'aria-pressed': '${m == multiplier}'},
-        onPressed: (kb) => onPickMultiplier(m, kb),
-      );
+  /// One ring button: just the letter (S, D or T). The left and the right
+  /// column are built from the same state, so they always agree.
+  web.HTMLButtonElement modeKey(Multiplier m, {required bool right}) {
+    final focusKey = 'mode-${m.name}${right ? '-r' : ''}';
+    return button(
+      m.prefix,
+      cls: 'key mode side${m == multiplier ? ' selected' : ''}',
+      ariaLabel: m.label,
+      focusKey: focusKey,
+      disabled: finalBox && m != Multiplier.double,
+      attrs: {'aria-pressed': '${m == multiplier}'},
+      onPressed: (kb) => onPickMultiplier(m, kb, focusKey),
+    );
+  }
+
+  web.HTMLElement modeColumn({required bool right}) => el('div',
+      cls: 'mode-col ${right ? 'right' : 'left'}',
+      attrs: {'role': 'group', 'aria-label': right ? 'Ring, right side' : 'Ring, left side'},
+      children: [for (final m in Multiplier.values) modeKey(m, right: right)]);
 
   // A drawn arrow, not the "⌫" character: many fonts lack that glyph and show
   // an empty box instead.
@@ -82,11 +100,11 @@ web.HTMLElement buildInputPanel({
       focusKey: 'no-checkout',
       onPressed: (kb) => onNoCheckout?.call(kb));
 
-  final modeRow = row([for (final m in Multiplier.values) modeKey(m)], cls: 'mode-row');
-
   return el('div', cls: 'keyboard board-view', attrs: {'aria-label': 'Dart input'}, children: [
-    if (ringButtons) modeRow,
-    el('div', cls: 'board-wrap', children: [
+    // The ring buttons are a column on each side of the board (S, D, T from the
+    // top), so either hand can reach them.
+    el('div', cls: 'board-wrap${ringButtons ? ' sided' : ''}', children: [
+      if (ringButtons) modeColumn(right: false),
       buildDartboard(
         mode: ringButtons ? multiplier : null,
         byArea: !ringButtons,
@@ -95,6 +113,7 @@ web.HTMLElement buildInputPanel({
         animateLastMark: true,
         onDart: (dart, point, kb) => onDart(dart, point, kb),
       ),
+      if (ringButtons) modeColumn(right: true),
     ]),
     row([undoKey, if (showNoCheckout) noCheckoutKey], cls: 'action-row'),
   ]);

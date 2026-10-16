@@ -15,8 +15,9 @@ void closeModal() {
 
 /// A popup with a [title] and a [body]. It closes with the Close button, a
 /// press on the dark area around it, or Escape. It lives on the page itself, so
-/// the screen behind it can redraw without losing it.
-void showModal({required String title, required List<web.Node> body}) {
+/// the screen behind it can redraw without losing it. With [showTitle] false the
+/// title is not drawn (screen readers still hear it).
+void showModal({required String title, required List<web.Node> body, bool showTitle = true}) {
   closeModal();
   final close = button('Close', cls: 'modal-close', onPressed: (_) => closeModal());
   final backdrop = el('div', cls: 'modal-backdrop', attrs: {
@@ -25,7 +26,7 @@ void showModal({required String title, required List<web.Node> body}) {
     'aria-label': title,
   }, children: [
     el('div', cls: 'modal', children: [
-      el('h3', cls: 'modal-title', text: title),
+      if (showTitle) el('h3', cls: 'modal-title', text: title),
       el('div', cls: 'modal-body', children: body),
       close,
     ]),

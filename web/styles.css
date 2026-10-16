@@ -24,6 +24,8 @@
   --pad-key: #9a9a9a;      /* the number keys of Checkout input: grey, not white */
   --tile: clamp(58px, 17vw, 72px);
   --mode-h: 44px;
+  --side-w: 46px;          /* the S / D / T buttons beside the board */
+  --side-gap: 6px;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -344,6 +346,15 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 }
 .key.mode.selected { background: var(--white); color: var(--ink); box-shadow: none; }
 
+/* The ring buttons are just S, D and T, in a column on each side of the board
+   (the same three on both sides: the one chosen is white on both, so either hand
+   can press them). */
+.mode-col { display: flex; flex-direction: column; justify-content: center; gap: 10px; flex: none; }
+.key.mode.side {
+  flex: none; width: var(--side-w); height: var(--side-w);
+  font-size: 1.2rem; font-weight: 800; letter-spacing: 0;
+}
+
 /* Undo, and next to it No checkout: both plain text, no box. */
 .board-view .action-row { justify-content: center; gap: 18px; }
 .board-view .key.undo {
@@ -358,6 +369,12 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 
 /* ---------- Dartboard ---------- */
 .board-wrap { display: flex; justify-content: center; margin: 4px 0 10px; }
+/* With a button column on each side the board takes what is left between them. */
+.board-wrap.sided { align-items: center; gap: var(--side-gap); }
+.board-wrap.sided .dartboard {
+  width: min(calc(100vw - 2 * (var(--side-w) + var(--side-gap)) - 12px), 380px, 48vh);
+  min-width: 0;
+}
 .dartboard {
   display: block;
   width: min(92vw, 380px, 48vh);
@@ -451,7 +468,6 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .board-figure .tile-row.small .tile { width: 50px; height: 42px; font-size: 0.95rem; }
 .board-figure .tile .mark { font-size: 0.6rem; top: 0; right: 3px; }
 .board-figure .dartboard { width: 100%; min-width: 0; }
-.board-figure .why-row, .board-figure .only-one { margin-top: 4px; }
 .board-figure figcaption { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 6px 0 4px; }
 .big-stats { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0 6px; }
 .big-stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
@@ -485,9 +501,20 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* More optimal routes, as boxes only, under a board. */
 .extra-routes { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 10px; }
 .extra-title { color: var(--muted); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }
+/* "Also optimal" is the button that opens the popup with every optimal route:
+   styled as the link "All possibilities" was (underlined, normal case). */
+.extra-routes .extra-title.text-link {
+  color: var(--fg); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+  min-height: 34px; padding: 0 8px;
+}
 .extra-routes .tile-row { margin: 0; }
-.board-figure .extra-routes .tile-row.small .tile { width: 40px; height: 32px; font-size: 0.75rem; }
-.board-figure .extra-routes .tile .mark { display: none; }
+/* "Also optimal" (or "Only possibility") sits in the middle under the board or
+   boards. Its words are the size of the captions "Your darts" and "Optimal
+   route" (0.8rem), and its boxes the size of theirs (50 x 42, 0.95rem). */
+.result-more { width: 100%; display: flex; flex-direction: column; align-items: center; margin: 6px 0 0; }
+.result-more .extra-routes { margin-top: 0; }
+.result-more .tile-row.small .tile { width: 50px; height: 42px; font-size: 0.95rem; }
+.result-more .tile .mark { display: none; }
 
 /* ---------- Popups ---------- */
 .modal-backdrop {
@@ -505,7 +532,9 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* The topmost text of a popup sits on the right edge. */
 .modal-title { margin: 0 0 12px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: right; }
 .modal-line { margin: 0 0 10px; line-height: 1.45; }
-.modal-line.top { text-align: right; margin-bottom: 4px; }
+/* The topmost line of the All possibilities popup: right-aligned, in the grey the
+   popup's old title had, in its own font. */
+.modal-line.top { text-align: right; margin-bottom: 4px; color: var(--muted); }
 /* The checkout number, in the middle of the popup above all the boards. */
 .modal-number { margin: 0 0 16px; text-align: center; font-size: 2.6rem; font-weight: 800; line-height: 1; }
 /* Close sits under everything, in the middle: a white box like the answer boxes
@@ -622,6 +651,10 @@ summary { cursor: pointer; color: var(--muted); }
   opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 10; max-width: 90vw; text-align: center;
 }
 .toast.show { opacity: 1; }
+
+@media (max-width: 400px) {
+  :root { --side-w: 42px; }
+}
 
 @media (max-height: 640px) {
   .target { font-size: 3.4rem; margin-bottom: 4px; }
