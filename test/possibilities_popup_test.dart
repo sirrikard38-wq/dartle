@@ -146,7 +146,14 @@ void main() {
       expect(modal, isNot(contains("'cta modal-close'")));
       expect(modal, contains('preventScroll'));
       final rule = RegExp(r'\.modal-close \{[^}]*\}').firstMatch(css)!.group(0)!;
-      expect(rule, contains('margin: 18px auto'));
+      expect(rule, contains('margin: 32px auto'));
+    });
+
+    test('there is clear space between the last board and the Close button', () {
+      final rule = RegExp(r'\.modal-close \{[^}]*\}').firstMatch(css)!.group(0)!;
+      final top = int.parse(RegExp(r'margin: (\d+)px auto').firstMatch(rule)!.group(1)!);
+      // It was 18px, which sat too close under the last board; a little more now.
+      expect(top, inInclusiveRange(28, 40));
     });
   });
 
