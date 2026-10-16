@@ -17,6 +17,7 @@ import 'number_entry_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
 import 'stats_screen.dart';
+import 'to_top.dart';
 import 'view_context.dart';
 import 'welcome_screen.dart';
 
@@ -56,6 +57,7 @@ class DartleApp {
     watchForInstall(render);
     _toast = el('div', cls: 'toast', attrs: {'role': 'status', 'aria-live': 'polite'});
     web.document.body!.appendChild(_toast);
+    _toTop = ToTopDart();
     web.EventStreamProviders.keyDownEvent.forTarget(web.document).listen(_onKey);
     // Only the clock text is updated per tick, never the whole tree. The value
     // comes from the monotonic AttemptTimer, so re-renders can't skew it.
@@ -66,6 +68,7 @@ class DartleApp {
   final GameController _game;
   late final ViewContext _ctx;
   late final web.HTMLElement _toast;
+  late final ToTopDart _toTop;
   final SoundService _sound = SoundService();
   GamePhase _lastPhase = GamePhase.menu;
   MenuPage _page = MenuPage.welcome;
@@ -149,6 +152,11 @@ class DartleApp {
     // starts at the top, not wherever the last, longer screen was scrolled to.
     // After the focus above, which can scroll a button into view.
     if (screenChanged) web.window.scrollTo(0.toJS, 0);
+    // At the end of the Leaderboard and Statistics a little dart shoots you back
+    // to the top.
+    _toTop.enabled = !fullScreen &&
+        _game.phase == GamePhase.menu &&
+        (_page == MenuPage.stats || _page == MenuPage.leaderboard);
   }
 
   web.HTMLElement _buildHeader() {

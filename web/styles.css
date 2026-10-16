@@ -664,6 +664,27 @@ summary { cursor: pointer; color: var(--muted); }
 .footer-link:hover { color: var(--white); text-decoration: underline; }
 .modal-line a { color: var(--fg); }
 
+/* ---------- Back to the top ---------- */
+/* At the end of the Leaderboard and Statistics a little dart (the welcome screen's,
+   pointing up) shows at the right, level with the content's right edge. Pressed, it
+   is thrown up the screen while the page scrolls to the top, and fades away as the
+   scroll arrives (the script sets its transform and opacity while it flies). */
+.to-top {
+  position: fixed; z-index: 30;
+  right: max(10px, calc((100vw - 500px) / 2 + 10px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  width: 44px; height: 72px; padding: 0;
+  display: grid; place-items: center;
+  background: none; border: 0; color: var(--fg);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 250ms ease, visibility 0s linear 250ms;
+}
+.to-top.show { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 250ms ease; }
+.to-top.flying { opacity: 1; visibility: visible; pointer-events: none; transition: none; }
+.to-top .dart-icon { width: 56px; height: 22px; transform: rotate(-90deg); transition: transform 150ms ease; }
+/* The hover nudge, along the dart's own direction: up. */
+.to-top.show:hover .dart-icon { transform: rotate(-90deg) translateX(5px); }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; top: calc(80px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
@@ -693,4 +714,5 @@ summary { cursor: pointer; color: var(--muted); }
   .screen.enter, .tile.filled, .tile-row.shake, .dartboard .mark.newest { animation: none; }
   .fade { animation: none; opacity: 1; }
   .tile.reveal { animation-duration: 1ms; animation-delay: 0ms; }
+  .to-top, .to-top .dart-icon { transition: none; }
 }
