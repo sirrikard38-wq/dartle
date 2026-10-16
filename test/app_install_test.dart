@@ -176,7 +176,7 @@ void main() {
       expect(install, contains('hadOlderVersion'), reason: 'not on the very first install');
       expect(main, contains('registerServiceWorker(updateReady:'));
       expect(main, contains('game.phase == GamePhase.menu'), reason: 'never in the middle of a checkout');
-      expect(main, contains('web.window.location.reload()'));
+      expect(main, contains('reloadForUpdate()'));
       expect(main, contains('game.addListener(reloadIfIdle)'), reason: 'and later, when the checkout ends');
     });
 

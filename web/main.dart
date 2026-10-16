@@ -4,6 +4,7 @@ import 'package:dartle/ui/install.dart';
 import 'package:dartle/ui/local_storage_service.dart';
 import 'package:dartle/ui/online_setup.dart';
 import 'package:dartle/ui/scrollbars.dart';
+import 'package:dartle/ui/update_reload.dart';
 import 'package:web/web.dart' as web;
 
 Future<void> main() async {
@@ -21,7 +22,7 @@ Future<void> main() async {
   // being played (any menu page), never in the middle of a checkout.
   var updateWaiting = false;
   void reloadIfIdle() {
-    if (updateWaiting && game.phase == GamePhase.menu) web.window.location.reload();
+    if (updateWaiting && game.phase == GamePhase.menu) reloadForUpdate();
   }
 
   game.addListener(reloadIfIdle);

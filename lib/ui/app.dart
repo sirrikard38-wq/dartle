@@ -100,6 +100,16 @@ class DartleApp {
 
   void render() {
     if (!_started) return; // nothing to draw until saved data has loaded
+    final screenKey = '${_game.phase.name}-${_page.name}';
+    // The welcome screen is full-screen: no header, no footer.
+    final fullScreen = _game.phase == GamePhase.menu && _page == MenuPage.welcome;
+    // The welcome screen plays its intro once. Drawing it again while it is on
+    // screen (the browser offering to install the app a few seconds after it
+    // opened, say) would build it from scratch and play the intro a second time:
+    // DARTLE, Welcome, DARTLE again. So it is never redrawn while it shows.
+    if (fullScreen && screenKey == _lastScreen && _root.querySelector('.screen.welcome') != null) {
+      return;
+    }
     final screen = switch (_game.phase) {
       GamePhase.playing => buildGameScreen(_ctx),
       GamePhase.result => buildResultScreen(_ctx),
@@ -115,7 +125,6 @@ class DartleApp {
     };
     // Fade a screen in only when it changes, not on every dart tapped. A popup
     // belongs to the screen it was opened on.
-    final screenKey = '${_game.phase.name}-${_page.name}';
     final screenChanged = screenKey != _lastScreen;
     if (screenChanged) {
       screen.classList.add('enter');
@@ -124,8 +133,6 @@ class DartleApp {
     _lastScreen = screenKey;
 
     _root.textContent = '';
-    // The welcome screen is full-screen: no header, no footer.
-    final fullScreen = _game.phase == GamePhase.menu && _page == MenuPage.welcome;
     if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
     if (!fullScreen) _root.appendChild(buildFooter());

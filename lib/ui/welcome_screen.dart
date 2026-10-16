@@ -7,6 +7,7 @@ import '../dartle.dart';
 import 'dart_icon.dart';
 import 'dart_shot.dart';
 import 'dom.dart';
+import 'update_reload.dart';
 import 'view_context.dart';
 
 /// Shown every time the app opens: DARTLE and "Checkout calculator by PK
@@ -77,6 +78,13 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
       stage,
     ]),
   ]);
+
+  // After the app reloaded itself for a newer version there is no intro to sit
+  // through again: straight to the name box.
+  if (takeSkipIntro()) {
+    screen.classList.add('skip');
+    Timer(const Duration(milliseconds: 300), () => input.focus());
+  }
 
   // Tap anywhere during the intro to skip straight to the name box.
   final focusTimer = Timer(const Duration(milliseconds: 3200), () {
