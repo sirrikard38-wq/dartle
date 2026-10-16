@@ -41,20 +41,7 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen stats', children: [
     el('div', cls: 'play-area', children: [
-      // Reset statistics is at the left-most part of the title row.
-      el('div', cls: 'stats-head', children: [
-        el('div', cls: 'reset-box', children: [
-          button('Reset statistics', cls: 'text-btn reset-stats', onPressed: (_) {
-            if (web.window.confirm('Erase all saved statistics?\n\n'
-                'The leaderboard is not affected.')) {
-              game.resetStatistics();
-            }
-          }),
-          el('p', cls: 'reset-note', text: 'Does not affect the leaderboard'),
-        ]),
-        el('h2', text: 'Statistics'),
-        el('span'),
-      ]),
+      el('h2', text: 'Statistics'),
       el('div', cls: 'big-stats', children: [
         big('${s.totalAttempts}', 'PLAYED'),
         big(s.totalAttempts == 0 ? '0' : '${s.accuracyPercent.round()}', 'ACCURACY %'),
@@ -96,6 +83,16 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
             ]),
           ]),
         ]),
+      ]),
+      // Reset statistics is the last thing on the screen, against the right edge.
+      el('div', cls: 'reset-box', children: [
+        button('Reset statistics', cls: 'text-btn reset-stats', onPressed: (_) {
+          if (web.window.confirm('Erase all saved statistics?\n\n'
+              'The leaderboard is not affected.')) {
+            game.resetStatistics();
+          }
+        }),
+        el('p', cls: 'reset-note', text: 'Does not affect the leaderboard'),
       ]),
     ]),
   ]);
