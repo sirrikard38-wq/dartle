@@ -42,12 +42,14 @@ void enterDart(ViewContext ctx, DartThrow dart, [BoardPoint? point]) {
   if (game.isHandFull) game.submit();
 }
 
-/// The Single / Double / Triple toggle with the board, Undo and (in Checkout
-/// calculator) No checkout. Shared by every game mode.
-web.HTMLElement buildEntryPanel(ViewContext ctx) {
+/// The S / D / T buttons beside the board, Undo and (in Checkout calculator) No
+/// checkout. Shared by every game mode. [boardCenter] is drawn in the middle of
+/// the dartboard (the number that is left and the clock).
+web.HTMLElement buildEntryPanel(ViewContext ctx, {web.HTMLElement? boardCenter}) {
   final game = ctx.game;
   final practice = game.mode.isPractice;
   return buildInputPanel(
+    boardCenter: boardCenter,
     multiplier: ctx.activeMultiplier(),
     finalBox: ctx.isFinalBox,
     canUndo: game.canUndo,
@@ -99,14 +101,15 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
           showDarts: true),
       // The boxes stay plain while you play. The colours (white, grey, light
       // pink) only come on the result screen, next to the optimal examples.
-      _remainingLine(challenge.target, game.entered),
       // A replay has no clock.
-      if (game.isReplay)
-        el('p', cls: 'hint', text: 'Replay - no clock, no points.')
-      else
-        timerLine(game),
+      if (game.isReplay) el('p', cls: 'hint', text: 'Replay - no clock, no points.'),
     ]),
-    buildEntryPanel(ctx),
+    // The number that is left and the clock are in the middle of the dartboard.
+    buildEntryPanel(ctx,
+        boardCenter: el('div', cls: 'board-readout', children: [
+          _remainingLine(challenge.target, game.entered),
+          if (!game.isReplay) timerLine(game),
+        ])),
     buildHowToPlay(game),
   ]);
 }

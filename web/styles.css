@@ -371,6 +371,16 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 
 /* ---------- Dartboard ---------- */
 .board-wrap { display: flex; justify-content: center; margin: 4px 0 10px; }
+/* The number that is left and the clock sit in the middle of the dartboard. They
+   are only drawn on it: a press goes straight through them to the board. */
+.board-stack { position: relative; flex: none; line-height: 0; }
+.board-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.board-readout { display: flex; flex-direction: column; align-items: center; line-height: 1; text-shadow: 0 0 6px #000, 0 0 2px #000; }
+.board-readout .remaining { margin: 0; }
+.board-readout .remaining strong { font-size: 2.4rem; }
+.board-readout .remaining .left-note { font-size: 0.75rem; color: var(--fg); }
+.board-readout .timer { margin: 4px 0 0; font-size: 1.05rem; color: var(--fg); }
+.board-readout .timer.over { color: var(--danger); }
 /* With a button column on each side the board takes what is left between them. */
 .board-wrap.sided { align-items: center; gap: var(--side-gap); }
 .board-wrap.sided .dartboard {

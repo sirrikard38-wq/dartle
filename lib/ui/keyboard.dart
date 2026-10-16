@@ -49,6 +49,10 @@ web.HTMLElement buildInputPanel({
 
   /// Darts to light up on the board as the best choices (practice modes).
   Set<DartThrow>? lit,
+
+  /// Drawn in the middle of the dartboard (the calculator's number that is left
+  /// and its clock). It is only drawn there: presses go through it to the board.
+  web.HTMLElement? boardCenter,
   /// [focusKey] names the button that was pressed (the left and the right one of
   /// the same ring are different buttons), to give it the focus back.
   required void Function(Multiplier m, bool viaKeyboard, String focusKey) onPickMultiplier,
@@ -105,14 +109,17 @@ web.HTMLElement buildInputPanel({
     // top), so either hand can reach them.
     el('div', cls: 'board-wrap${ringButtons ? ' sided' : ''}', children: [
       if (ringButtons) modeColumn(right: false),
-      buildDartboard(
-        mode: ringButtons ? multiplier : null,
-        byArea: !ringButtons,
-        marks: marks,
-        lit: lit,
-        animateLastMark: true,
-        onDart: (dart, point, kb) => onDart(dart, point, kb),
-      ),
+      el('div', cls: 'board-stack', children: [
+        buildDartboard(
+          mode: ringButtons ? multiplier : null,
+          byArea: !ringButtons,
+          marks: marks,
+          lit: lit,
+          animateLastMark: true,
+          onDart: (dart, point, kb) => onDart(dart, point, kb),
+        ),
+        if (boardCenter != null) el('div', cls: 'board-center', children: [boardCenter]),
+      ]),
       if (ringButtons) modeColumn(right: true),
     ]),
     row([undoKey, if (showNoCheckout) noCheckoutKey], cls: 'action-row'),
