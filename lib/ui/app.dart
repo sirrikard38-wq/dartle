@@ -203,16 +203,15 @@ class DartleApp {
   }
 
   /// The Back button: the welcome screen's dart turned round to point left, with
-  /// no background. Pressed, it plays the same shot the other way (the circle
-  /// appears to its left, the dart flies left, sticks in it and wiggles), then
-  /// goes back to the menu.
+  /// no background. Pressed, it does not shoot: it slides half a centimetre left
+  /// and fades out smoothly (no circle, no wiggle), then goes back to the menu.
   web.HTMLElement _buildBackDart() {
     late final web.HTMLElement stage;
-    var shooting = false;
+    var leaving = false;
     Future<void> back() async {
-      if (shooting) return; // the dart is already on its way
-      shooting = true;
-      await playDartShot(stage);
+      if (leaving) return; // the dart is already on its way out
+      leaving = true;
+      await playDartFade(stage);
       _showPage(MenuPage.home);
     }
 
@@ -220,6 +219,7 @@ class DartleApp {
       label: 'Back to the menu',
       stageClass: 'back-stage',
       buttonClass: 'back-dart',
+      circle: false,
       onPressed: back,
     );
     return stage;

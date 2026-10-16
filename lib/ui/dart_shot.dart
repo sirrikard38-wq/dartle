@@ -6,22 +6,24 @@ import 'dart_icon.dart';
 import 'dart_shot_timing.dart';
 import 'dom.dart';
 
-/// A dart that is a button, with the tiny circle its tip will fly into (see
-/// [playDartShot]). It is the Enter button of the welcome screen, and, turned
-/// round (`back-stage` / `back-dart`), the Back button of the header.
-/// [stageClass] and [buttonClass] are added to the classes of the stage and of
-/// the button.
+/// A dart that is a button. It is the Enter button of the welcome screen, with the
+/// tiny circle its tip will fly into (see [playDartShot]), and, turned round
+/// (`back-stage` / `back-dart`) and without a [circle], the Back button of the
+/// header (see [playDartFade]). [stageClass] and [buttonClass] are added to the
+/// classes of the stage and of the button.
 web.HTMLElement buildDartStage({
   required String label,
   required void Function() onPressed,
   String stageClass = '',
   String buttonClass = '',
   String? focusKey,
+  bool circle = true,
 }) {
   return el('div', cls: 'dart-stage $stageClass'.trim(), children: [
-    el('span', cls: 'target-spot', attrs: {'aria-hidden': 'true'}, children: [
-      el('span', cls: 'target-dot'),
-    ]),
+    if (circle)
+      el('span', cls: 'target-spot', attrs: {'aria-hidden': 'true'}, children: [
+        el('span', cls: 'target-dot'),
+      ]),
     button('',
         cls: 'dart-go $buttonClass'.trim(),
         ariaLabel: label,
@@ -47,4 +49,16 @@ Future<void> playDartShot(web.HTMLElement stage) async {
   await Future<void>.delayed(const Duration(milliseconds: dartFlightMs));
   stage.classList.add('stuck');
   await Future<void>.delayed(const Duration(milliseconds: dartWiggleMs));
+}
+
+/// The press animation of the Back dart: no circle and no wiggle. The dart slides
+/// half a centimetre the way it points (the distance the welcome dart flies) and
+/// fades out smoothly: the `fading` class starts the CSS transition.
+///
+/// The future completes when the dart is gone, and the caller goes on to the menu.
+/// With reduced motion it completes at once.
+Future<void> playDartFade(web.HTMLElement stage) async {
+  if (web.window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  stage.classList.add('fading');
+  await Future<void>.delayed(const Duration(milliseconds: dartFadeMs));
 }

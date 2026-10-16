@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:dartle/ui/dart_shot_timing.dart';
 import 'package:test/test.dart';
 
 /// The Back button in the header is the welcome screen's dart turned round, with
-/// no background. Pinned from the source and the stylesheet (it is drawn and
-/// animated in the browser).
+/// no background. Pressed, it slides half a centimetre to the left and fades out
+/// smoothly (no circle, no wiggle). The welcome screen's own animation is not
+/// touched. Pinned from the source and the stylesheet (it is drawn and animated
+/// in the browser).
 void main() {
   final app = File('lib/ui/app.dart').readAsStringSync();
   final shot = File('lib/ui/dart_shot.dart').readAsStringSync();
@@ -15,18 +18,18 @@ void main() {
   String rule(String selector) =>
       RegExp('(^|\n)${RegExp.escape(selector)} \\{[^}]*\\}').firstMatch(css)!.group(0)!;
 
+  final back = app.substring(app.indexOf('web.HTMLElement _buildBackDart()'));
+
   group('the button', () {
     test('it is the dart, not an arrow', () {
       final header = app.substring(app.indexOf('web.HTMLElement _buildHeader()'));
       expect(header, contains('_buildBackDart()'));
       expect(app, isNot(contains("button('←'")));
-      expect(app, isNot(contains("cls: 'icon-btn',\n            ariaLabel: 'Back to the menu'")));
     });
 
     test('it is made by the same function as the welcome screen\'s dart', () {
       expect(shot, contains('web.HTMLElement buildDartStage('));
       expect(welcome, contains("buildDartStage(label: 'Continue'"));
-      final back = app.substring(app.indexOf('web.HTMLElement _buildBackDart()'));
       expect(back, contains('buildDartStage('));
       expect(back, contains("label: 'Back to the menu'"));
       expect(back, contains("stageClass: 'back-stage'"));
@@ -48,43 +51,75 @@ void main() {
     });
   });
 
-  group('turned round: everything goes from right to left', () {
+  group('pressed: it slides left and fades out smoothly', () {
     test('the dart is turned 180 degrees, and nudges left when hovered', () {
       expect(rule('.dart-go.back-dart'), contains('transform: rotate(180deg);'));
       expect(rule('.dart-go.back-dart:hover'), contains('transform: rotate(180deg) translateX(5px);'));
     });
 
-    test('pressed, it flies half a centimetre to the left, the same distance as the welcome dart', () {
-      expect(rule('.dart-stage.back-stage.shooting .dart-go'),
-          contains('transform: rotate(180deg) translateX(0.5cm);'));
+    test('it still moves, the same half centimetre as the welcome dart, and disappears', () {
+      final fading = rule('.dart-stage.back-stage.fading .dart-go');
+      expect(fading, contains('transform: rotate(180deg) translateX(0.5cm);'));
+      expect(fading, contains('opacity: 0;'));
+      // The welcome dart's flight is 0.5cm too.
       expect(css, contains('.dart-stage.shooting .dart-go { transform: translateX(0.5cm); }'));
     });
 
-    test('the circle is on the left of its tip, 0.5cm ahead of it', () {
-      final spot = rule('.back-stage .target-spot');
-      expect(spot, contains('left: calc(50% - 0.4722 * var(--back-w) - 0.5cm);'));
+    test('it is smooth: an eased transition on the slide and on the fade, as long as the script waits', () {
+      final fading = rule('.dart-stage.back-stage.fading .dart-go');
+      expect(fading, contains('transform ${dartFadeMs}ms cubic-bezier('));
+      expect(fading, contains('opacity ${dartFadeMs}ms cubic-bezier('));
+      // Not a flick and not a wait: between a fifth and just over half a second.
+      expect(dartFadeMs, inInclusiveRange(200, 600));
     });
 
-    test('the wiggle is the welcome dart\'s own, and turns round with the button', () {
-      // One rule for both: the icon inside the turned button wiggles about its tip.
-      expect(RegExp(r'\.dart-stage\.stuck \.dart-icon \{').allMatches(css), hasLength(1));
+    test('the script waits for the fade, then goes to the menu; a second press does nothing', () {
+      expect(back, contains('await playDartFade(stage);'));
+      expect(back.indexOf('await playDartFade(stage);'),
+          lessThan(back.indexOf('_showPage(MenuPage.home);')));
+      expect(back, contains('if (leaving) return;'));
+      expect(shot, contains("stage.classList.add('fading');"));
+      expect(shot, contains('Duration(milliseconds: dartFadeMs)'));
+      // Reduced motion: no animation, straight on.
+      expect(shot.substring(shot.indexOf('Future<void> playDartFade')),
+          contains('prefers-reduced-motion: reduce'));
+    });
+  });
+
+  group('no little circle and no wiggle on the Back dart', () {
+    test('the Back dart is built without the circle', () {
+      expect(back, contains('circle: false,'));
+      expect(shot, contains('bool circle = true,'));
+      expect(shot, contains('if (circle)'));
+    });
+
+    test('it does not play the welcome shot, and has no rule for the circle or the wiggle', () {
+      expect(back, isNot(contains('playDartShot')));
+      expect(css, isNot(contains('.back-stage .target-spot')));
+      expect(css, isNot(contains('.back-stage.shooting')));
+      expect(css, isNot(contains('.back-stage.stuck')));
       expect(css, isNot(contains('back-wiggle')));
     });
+  });
 
-    test('the same animation: the same shot, the same waiting for it, then the menu', () {
-      final back = app.substring(app.indexOf('web.HTMLElement _buildBackDart()'));
-      expect(back, contains('await playDartShot(stage);'));
-      expect(back.indexOf('await playDartShot(stage);'),
-          lessThan(back.indexOf('_showPage(MenuPage.home);')));
-      expect(back, contains('if (shooting) return;'));
+  group('the welcome screen keeps its animation, as it was', () {
+    test('the circle, the flight and the wiggle are all still there', () {
+      expect(welcome, contains('await playDartShot(stage);'));
+      expect(shot, contains("stage.classList.add('shooting');"));
+      expect(shot, contains("stage.classList.add('stuck');"));
+      expect(css, contains('.dart-stage.shooting .target-dot { opacity: 1;'));
+      expect(css, contains('.dart-stage.shooting .dart-go { transform: translateX(0.5cm); }'));
+      expect(RegExp(r'\.dart-stage\.stuck \.dart-icon \{[^}]*animation: dart-wiggle 550ms').hasMatch(css),
+          isTrue);
+      // The welcome dart is built with its circle (the default).
+      expect(welcome, isNot(contains('circle: false')));
     });
+  });
 
-    test('there is room on the left of the tip for the circle', () {
-      final stage = rule('.dart-stage.back-stage');
-      final margin = int.parse(RegExp(r'margin: 0 0 0 (\d+)px;').firstMatch(stage)!.group(1)!);
-      // Circle: 0.5cm (about 19px) + its 13px, from the tip.
-      expect(margin, greaterThanOrEqualTo(20));
-      expect(stage, contains('justify-self: start;'));
-    });
+  test('there is room on the left of the dart for it to slide', () {
+    final stage = rule('.dart-stage.back-stage');
+    final margin = int.parse(RegExp(r'margin: 0 0 0 (\d+)px;').firstMatch(stage)!.group(1)!);
+    expect(margin, greaterThanOrEqualTo(20)); // 0.5cm is about 19px
+    expect(stage, contains('justify-self: start;'));
   });
 }

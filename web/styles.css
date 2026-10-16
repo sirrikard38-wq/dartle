@@ -221,18 +221,19 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 }
 
 /* The Back button in the header is the same dart turned 180 degrees to point left,
-   with no background of its own. Turned round, everything the welcome dart does goes
-   from right to left: the circle appears in front of its tip (on the left), it flies
-   half a centimetre left, and its wiggle (the rule above, inside the turned button)
-   is mirrored with it. The icon is 48px wide, so its tip, at 70 of 72, is
-   0.4722 * 48px = 22.7px from its middle - on the left now. The 22px of margin
-   leaves room on the left of the tip for the circle. */
+   with no background of its own. Pressed, it does not shoot (no circle, no wiggle): it
+   slides half a centimetre left - the distance the welcome dart flies - and fades out
+   smoothly, and then the menu comes (lib/ui/dart_shot.dart, playDartFade; the
+   transition is dartFadeMs long). The 22px of margin keeps it off the edge of the
+   screen and leaves the room it slides into. */
 .dart-stage.back-stage { --back-w: 48px; justify-self: start; justify-content: flex-start; height: 44px; margin: 0 0 0 22px; }
-.back-stage .target-spot { left: calc(50% - 0.4722 * var(--back-w) - 0.5cm); }
 .dart-go.back-dart { width: var(--back-w); height: 44px; transform: rotate(180deg); }
 .back-dart .dart-icon { width: var(--back-w); height: calc(var(--back-w) * 28 / 72); }
 .dart-go.back-dart:hover { transform: rotate(180deg) translateX(5px); }
-.dart-stage.back-stage.shooting .dart-go { transform: rotate(180deg) translateX(0.5cm); }
+.dart-stage.back-stage.fading .dart-go {
+  transform: rotate(180deg) translateX(0.5cm); opacity: 0;
+  transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1), opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 /* ---------- Menu ---------- */
 .greeting { color: var(--muted); margin: 28px 0 18px; }
