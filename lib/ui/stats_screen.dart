@@ -25,19 +25,15 @@ web.HTMLElement _numberRow(GameController game, int n, TargetStats? t) {
 web.HTMLElement buildStatsScreen(ViewContext ctx) {
   final game = ctx.game;
   final s = game.summary;
-  final byTarget = game.statistics.byTarget(game.history).values.toList()
-    ..sort((a, b) {
-      final byAcc = a.accuracyPercent.compareTo(b.accuracyPercent);
-      return byAcc != 0 ? byAcc : b.attempts.compareTo(a.attempts);
-    });
+  final stats = game.statistics.byTarget(game.history);
 
   web.HTMLElement big(String value, String label) => el('div', cls: 'big-stat', children: [
         el('strong', text: value),
         el('span', text: label),
       ]);
 
-  final weakest = byTarget.where((t) => t.successes < t.attempts).take(5).toList();
-  final stats = {for (final t in byTarget) t.target: t};
+  // The weakest numbers, the largest number at the top.
+  final weakest = game.statistics.needsPractice(game.history);
 
   return el('main', cls: 'screen stats', children: [
     el('div', cls: 'play-area', children: [
@@ -59,8 +55,7 @@ web.HTMLElement buildStatsScreen(ViewContext ctx) {
               el('span', text: '${t.successes} of ${t.attempts} success'),
             ]),
         ]),
-      // Always open: the key figures, then every number's own record.
-      el('h3', text: 'More numbers'),
+      // The key figures, then every number's own record (no heading of its own).
       el('div', cls: 'more-stats', children: [
         el('dl', cls: 'kv', children: [
           for (final (k, v) in [

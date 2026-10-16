@@ -119,15 +119,23 @@ class StatisticsService {
     };
   }
 
+  /// Every number played, the weakest first: lowest accuracy, then most attempts.
+  List<TargetStats> _weakestFirst(List<AttemptRecord> history) =>
+      byTarget(history).values.toList()
+        ..sort((a, b) {
+          final byAcc = a.accuracyPercent.compareTo(b.accuracyPercent);
+          return byAcc != 0 ? byAcc : b.attempts.compareTo(a.attempts);
+        });
+
   /// Weakest numbers first: lowest accuracy, then most attempts.
-  List<TargetStats> weakestTargets(List<AttemptRecord> history, {int limit = 5}) {
-    final stats = byTarget(history).values.toList()
-      ..sort((a, b) {
-        final byAcc = a.accuracyPercent.compareTo(b.accuracyPercent);
-        return byAcc != 0 ? byAcc : b.attempts.compareTo(a.attempts);
-      });
-    return stats.take(limit).toList();
-  }
+  List<TargetStats> weakestTargets(List<AttemptRecord> history, {int limit = 5}) =>
+      _weakestFirst(history).take(limit).toList();
+
+  /// The numbers that need practice: the [limit] weakest numbers that were ever
+  /// missed, listed from the largest number to the smallest.
+  List<TargetStats> needsPractice(List<AttemptRecord> history, {int limit = 5}) =>
+      _weakestFirst(history).where((t) => t.successes < t.attempts).take(limit).toList()
+        ..sort((a, b) => b.target.compareTo(a.target));
 
   TargetStats _targetStats(int target, List<AttemptRecord> records) {
     final wins = records.where((r) => r.correct).toList();

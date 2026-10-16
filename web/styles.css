@@ -615,7 +615,8 @@ summary { cursor: pointer; color: var(--muted); }
 .how-section p { margin: 0; }
 
 /* ---------- Stats / leaderboard ---------- */
-.more-stats { width: 100%; text-align: left; font-size: 0.9rem; }
+/* No heading above it any more: the same space over it that a heading had. */
+.more-stats { width: 100%; margin-top: 22px; text-align: left; font-size: 0.9rem; }
 /* Statistics: Reset statistics is the last thing on the screen, against the right edge. */
 .reset-box { align-self: flex-end; margin-top: 24px; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
 .reset-stats { padding: 0; text-align: right; font-size: 0.8rem; line-height: 1.2; min-height: 36px; }

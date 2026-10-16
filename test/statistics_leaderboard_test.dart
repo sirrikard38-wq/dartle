@@ -115,6 +115,37 @@ void main() {
       expect(weak.map((t) => t.target), [72, 100, 40]);
     });
 
+    test('needs practice: the missed numbers, the largest number at the top', () {
+      final list = stats.needsPractice([
+        rec(target: 40), // never missed: not listed
+        rec(target: 72, correct: false),
+        rec(target: 100, correct: false),
+        rec(target: 100, correct: false),
+        rec(target: 100),
+        rec(target: 16, correct: false),
+        rec(target: 170, correct: false),
+      ]);
+      expect(list.map((t) => t.target), [170, 100, 72, 16]);
+    });
+
+    test('needs practice keeps the five weakest, then puts them largest to smallest', () {
+      // Seven numbers, each missed once; 50 and 60 were also won once, so they
+      // are the least weak and fall off the list of five.
+      final history = [
+        for (final t in [30, 90, 20, 110, 8, 50, 60]) rec(target: t, correct: false),
+        rec(target: 50),
+        rec(target: 60),
+      ];
+      final list = stats.needsPractice(history);
+      expect(list, hasLength(5));
+      expect(list.map((t) => t.target), [110, 90, 30, 20, 8]);
+    });
+
+    test('needs practice is empty until something has been missed', () {
+      expect(stats.needsPractice([]), isEmpty);
+      expect(stats.needsPractice([rec(target: 40), rec(target: 72)]), isEmpty);
+    });
+
     test('history records survive a JSON round trip', () {
       final r = rec(target: 170, darts: 3, level: DifficultyLevel.hard);
       final back = AttemptRecord.fromJson(r.toJson());
