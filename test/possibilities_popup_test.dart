@@ -63,14 +63,19 @@ void main() {
       expect(RegExp(r'\.text-link \{[^}]*\}').firstMatch(css)!.group(0)!, contains('text-decoration: underline'));
     });
 
-    test('its boxes are the size of the boxes of "Your darts" and "Optimal route"', () {
+    test('its boxes are small: the text in them is the size of the words "Also optimal"', () {
       const main = '.board-figure .tile-row.small .tile';
       const also = '.result-more .tile-row.small .tile';
-      for (final property in ['width', 'height', 'font-size']) {
-        expect(value(also, property), value(main, property), reason: property);
-      }
-      expect(value(also, 'width'), '50px');
-      expect(value(also, 'height'), '42px');
+      const label = '.extra-routes .extra-title.text-link';
+      // The text in the boxes is as big as the words "Also optimal" ...
+      expect(value(also, 'font-size'), value(label, 'font-size'));
+      expect(value(also, 'font-size'), '0.8rem');
+      // ... and the boxes are smaller than the boxes of "Your darts" / "Optimal route".
+      int px(String v) => int.parse(v.replaceAll('px', ''));
+      expect(px(value(also, 'width')), lessThan(px(value(main, 'width'))));
+      expect(px(value(also, 'height')), lessThan(px(value(main, 'height'))));
+      expect(value(also, 'width'), '40px');
+      expect(value(also, 'height'), '32px');
     });
 
     test('"Also optimal" is in the middle under the boards: under both after a miss', () {

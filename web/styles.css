@@ -509,10 +509,11 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .extra-routes .tile-row { margin: 0; }
 /* "Also optimal" (or "Only possibility") sits in the middle under the board or
    boards. Its words are the size of the captions "Your darts" and "Optimal
-   route" (0.8rem), and its boxes the size of theirs (50 x 42, 0.95rem). */
+   route" (0.8rem), and its boxes are small: the text in them is the size of the
+   words "Also optimal" (0.8rem) and the boxes are 40 x 32 around it. */
 .result-more { width: 100%; display: flex; flex-direction: column; align-items: center; margin: 6px 0 0; }
 .result-more .extra-routes { margin-top: 0; }
-.result-more .tile-row.small .tile { width: 50px; height: 42px; font-size: 0.95rem; }
+.result-more .tile-row.small .tile { width: 40px; height: 32px; font-size: 0.8rem; }
 .result-more .tile .mark { display: none; }
 
 /* ---------- Popups ---------- */
