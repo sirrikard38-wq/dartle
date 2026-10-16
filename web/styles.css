@@ -26,6 +26,8 @@
   --mode-h: 44px;
   --side-w: 46px;          /* the S / D / T buttons beside the board */
   --side-gap: 6px;
+  /* The calculator's board: what is left of the screen between the two columns. */
+  --board-w: min(calc(100vw - 2 * (var(--side-w) + var(--side-gap)) - 12px), 380px, 48vh);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -318,6 +320,17 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .remaining.over strong { color: var(--danger); }
 
 .timer { margin: 10px 0 2px; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+/* The clock is centred between the number that is left (above) and the dartboard
+   (below): the same space over it as under it - about 39px from the digits of the
+   number to the clock and 39px from the clock to the "20" at the top of the
+   board (measured from the drawing). The "20" sits lower on a bigger board
+   (5.3% of its width), so the clock moves down by half of that (2.6% of the
+   board's width): equal gaps at every screen size. The space under the clock is
+   made of paddings and margins further down, so its margin here is negative. */
+.clock-gap { display: flex; justify-content: center; }
+.clock-gap .timer {
+  margin: calc(13.95px + 0.0264 * var(--board-w)) 0 calc(5.05px - 0.0264 * var(--board-w));
+}
 .timer.over { color: var(--danger); }
 
 /* ---------- Dart input ---------- */
@@ -371,20 +384,10 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 
 /* ---------- Dartboard ---------- */
 .board-wrap { display: flex; justify-content: center; margin: 4px 0 10px; }
-/* The number that is left and the clock sit in the middle of the dartboard. They
-   are only drawn on it: a press goes straight through them to the board. */
-.board-stack { position: relative; flex: none; line-height: 0; }
-.board-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-.board-readout { display: flex; flex-direction: column; align-items: center; line-height: 1; text-shadow: 0 0 6px #000, 0 0 2px #000; }
-.board-readout .remaining { margin: 0; }
-.board-readout .remaining strong { font-size: 2.4rem; }
-.board-readout .remaining .left-note { font-size: 0.75rem; color: var(--fg); }
-.board-readout .timer { margin: 4px 0 0; font-size: 1.05rem; color: var(--fg); }
-.board-readout .timer.over { color: var(--danger); }
 /* With a button column on each side the board takes what is left between them. */
 .board-wrap.sided { align-items: center; gap: var(--side-gap); }
 .board-wrap.sided .dartboard {
-  width: min(calc(100vw - 2 * (var(--side-w) + var(--side-gap)) - 12px), 380px, 48vh);
+  width: var(--board-w);
   min-width: 0;
 }
 .dartboard {
@@ -675,6 +678,8 @@ summary { cursor: pointer; color: var(--muted); }
 @media (max-height: 640px) {
   .target { font-size: 3.4rem; margin-bottom: 4px; }
   .remaining strong { font-size: 3rem; }
+  /* The number that is left is smaller here, so its digits end 5px higher. */
+  .clock-gap .timer { margin-top: calc(18.95px + 0.0264 * var(--board-w)); }
   .key { height: 46px; }
   :root { --mode-h: 38px; }
   .key-row { margin-bottom: 5px; }

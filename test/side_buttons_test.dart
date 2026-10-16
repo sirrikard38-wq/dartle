@@ -58,8 +58,11 @@ void main() {
 
   test('the board takes the room between the columns and the columns stay inside the screen', () {
     final board = RegExp(r'\.board-wrap\.sided \.dartboard \{[^}]*\}').firstMatch(css)!.group(0)!;
-    expect(board, contains('100vw - 2 * (var(--side-w) + var(--side-gap))'));
+    expect(board, contains('width: var(--board-w)'));
     expect(board, contains('min-width: 0'));
+    // The width is what is left of the screen between the columns.
+    final token = RegExp(r'--board-w: [^;]*;').firstMatch(css)!.group(0)!;
+    expect(token, contains('100vw - 2 * (var(--side-w) + var(--side-gap))'));
     final col = RegExp(r'\.key\.mode\.side \{[^}]*\}').firstMatch(css)!.group(0)!;
     expect(col, contains('width: var(--side-w)'));
     expect(col, contains('height: var(--side-w)'));
