@@ -16,5 +16,17 @@ Future<void> main() async {
   final app = DartleApp(root, game);
   await game.init(); // loads saved history and the player name
   app.start(); // asks new players for a username, then starts a checkout
-  registerServiceWorker(); // lets the installed app work offline
+
+  // A newer version of the app arrives by itself; show it as soon as nothing is
+  // being played (any menu page), never in the middle of a checkout.
+  var updateWaiting = false;
+  void reloadIfIdle() {
+    if (updateWaiting && game.phase == GamePhase.menu) web.window.location.reload();
+  }
+
+  game.addListener(reloadIfIdle);
+  registerServiceWorker(updateReady: () {
+    updateWaiting = true;
+    reloadIfIdle();
+  }); // lets the installed app work offline
 }

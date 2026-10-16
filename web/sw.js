@@ -43,10 +43,12 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  // The page: network first, saved copy when offline.
+  // The page: network first, saved copy when offline. Always checked with the
+  // server (cache: 'no-cache'): GitHub Pages lets a browser keep the page for 10
+  // minutes, which would show an old version right after an update.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-cache' })
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put('index.html', copy));

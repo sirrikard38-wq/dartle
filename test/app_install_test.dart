@@ -164,6 +164,22 @@ void main() {
       expect(sw, contains("request.mode === 'navigate'"));
     });
 
+    test('the page is always checked with the server, so an update shows up at once', () {
+      final navigate = sw.substring(sw.indexOf("request.mode === 'navigate'"));
+      expect(navigate.substring(0, navigate.indexOf('return;')), contains("cache: 'no-cache'"));
+    });
+
+    test('a newer version reloads the app when nothing is being played', () {
+      final main = File('web/main.dart').readAsStringSync();
+      final install = File('lib/ui/install.dart').readAsStringSync();
+      expect(install, contains("'controllerchange'"));
+      expect(install, contains('hadOlderVersion'), reason: 'not on the very first install');
+      expect(main, contains('registerServiceWorker(updateReady:'));
+      expect(main, contains('game.phase == GamePhase.menu'), reason: 'never in the middle of a checkout');
+      expect(main, contains('web.window.location.reload()'));
+      expect(main, contains('game.addListener(reloadIfIdle)'), reason: 'and later, when the checkout ends');
+    });
+
     test('online.json is never stuck on a saved copy: network first, revalidated', () {
       expect(sw, contains("endsWith('/online.json')"));
       expect(sw, contains("cache: 'no-cache'"));

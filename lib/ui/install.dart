@@ -6,10 +6,23 @@ import 'package:web/web.dart' as web;
 /// Registers the service worker, which saves the app on the phone so it opens
 /// and plays with no connection. Quietly does nothing where it is not allowed
 /// (an address that is not https or localhost, or an old browser).
-Future<void> registerServiceWorker() async {
+///
+/// [updateReady] is called when a newer version of the app has taken over from
+/// the one this page is showing (never on the very first install, when there is
+/// nothing older to replace). The page then still shows the old version until it
+/// is reloaded, so the caller reloads it at a good moment.
+Future<void> registerServiceWorker({void Function()? updateReady}) async {
   if (isNativeShell) return; // the Android app already holds every file
   try {
-    await web.window.navigator.serviceWorker.register('sw.js'.toJS).toDart;
+    final container = web.window.navigator.serviceWorker;
+    final hadOlderVersion = container.controller != null;
+    if (hadOlderVersion && updateReady != null) {
+      container.addEventListener(
+        'controllerchange',
+        ((web.Event event) => updateReady()).toJS,
+      );
+    }
+    await container.register('sw.js'.toJS).toDart;
   } on Object {
     // The app works without it; it just cannot be used offline.
   }
