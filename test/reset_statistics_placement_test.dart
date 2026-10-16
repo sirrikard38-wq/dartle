@@ -40,7 +40,7 @@ void main() {
     expect(box, contains('align-items: flex-end;'));
     expect(box, contains('text-align: right;'));
     expect(rule('.reset-stats'), contains('text-align: right;'));
-    expect(css, isNot(contains('justify-self: start')));
+    expect(box, isNot(contains('justify-self')));
   });
 
   test('it still says it does not touch the leaderboard, and still asks first', () {

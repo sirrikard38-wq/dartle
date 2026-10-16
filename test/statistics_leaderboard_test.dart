@@ -204,15 +204,13 @@ void main() {
       expect(names(LeaderboardSort.optimalPercent), ['b', 'c', 'a']);
     });
 
-    test('local repository replaces a player entry and seeds rivals', () async {
+    test('local repository replaces a player entry, and adds no players of its own', () async {
       final service =
           LeaderboardService(LocalLeaderboardRepository(InMemoryStorageService()));
       await service.submit('Me', stats.summarize([rec(points: 9999)]));
       await service.submit('Me', stats.summarize([rec(points: 9999), rec(points: 1)]));
       final board = await service.ranked();
-      expect(board.where((x) => x.playerName == 'Me'), hasLength(1));
-      expect(board.first.playerName, 'Me');
-      expect(board.length, greaterThan(1));
+      expect(board.map((x) => x.playerName), ['Me']);
     });
   });
 }

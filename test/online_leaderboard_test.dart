@@ -330,14 +330,13 @@ void main() {
       expect((await repo().fetchEntries()).map((e) => e.id), ['good']);
     });
 
-    test('no connection: this device\'s scores and the sample players, offline', () async {
+    test('no connection: this device\'s scores, offline', () async {
       await local.submit(entry('Me', 40));
       firebase.offline = true;
       final r = repo();
       final entries = await r.fetchEntries();
       expect(r.isOnline, isFalse);
-      expect(entries.map((e) => e.playerName), contains('Me'));
-      expect(entries.length, greaterThan(1), reason: 'the sample players are there too');
+      expect(entries.map((e) => e.playerName), ['Me'], reason: 'no sample players');
     });
 
     test('a server error also falls back to this device', () async {

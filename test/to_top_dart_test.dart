@@ -29,10 +29,11 @@ void main() {
       expect(dart, contains("ariaLabel: 'Back to the top'"));
     });
 
-    test('it is fixed at the right, and pointing up', () {
+    test('it is fixed at the left, and pointing up', () {
       final to = rule('.to-top');
       expect(to, contains('position: fixed;'));
-      expect(to, contains('right: max(10px'));
+      expect(to, contains('left: max(10px'));
+      expect(to, isNot(contains('right:')));
       expect(rule('.to-top .dart-icon'), contains('rotate(-90deg)'));
     });
 

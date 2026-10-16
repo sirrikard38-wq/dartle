@@ -4,6 +4,7 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
+import 'dart_shot.dart';
 import 'dom.dart';
 import 'footer.dart';
 import 'game_screen.dart';
@@ -164,10 +165,7 @@ class DartleApp {
     // Back: stats/leaderboard -> menu; checkout/result -> menu; menu: none.
     final left = inMenu && _page == MenuPage.home
         ? el('span', cls: 'header-spacer')
-        : button('←',
-            cls: 'icon-btn',
-            ariaLabel: 'Back to the menu',
-            onPressed: (_) => _showPage(MenuPage.home));
+        : _buildBackDart();
 
     final soundButton = button(_sound.isMuted ? '🔇' : '🔊',
         cls: 'icon-btn',
@@ -202,6 +200,29 @@ class DartleApp {
       ]),
       right,
     ]);
+  }
+
+  /// The Back button: the welcome screen's dart turned round to point left, with
+  /// no background. Pressed, it plays the same shot the other way (the circle
+  /// appears to its left, the dart flies left, sticks in it and wiggles), then
+  /// goes back to the menu.
+  web.HTMLElement _buildBackDart() {
+    late final web.HTMLElement stage;
+    var shooting = false;
+    Future<void> back() async {
+      if (shooting) return; // the dart is already on its way
+      shooting = true;
+      await playDartShot(stage);
+      _showPage(MenuPage.home);
+    }
+
+    stage = buildDartStage(
+      label: 'Back to the menu',
+      stageClass: 'back-stage',
+      buttonClass: 'back-dart',
+      onPressed: back,
+    );
+    return stage;
   }
 
   void _showToast(String message) {

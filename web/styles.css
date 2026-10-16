@@ -220,6 +220,20 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   100% { transform: rotate(0deg); }
 }
 
+/* The Back button in the header is the same dart turned 180 degrees to point left,
+   with no background of its own. Turned round, everything the welcome dart does goes
+   from right to left: the circle appears in front of its tip (on the left), it flies
+   half a centimetre left, and its wiggle (the rule above, inside the turned button)
+   is mirrored with it. The icon is 48px wide, so its tip, at 70 of 72, is
+   0.4722 * 48px = 22.7px from its middle - on the left now. The 22px of margin
+   leaves room on the left of the tip for the circle. */
+.dart-stage.back-stage { --back-w: 48px; justify-self: start; justify-content: flex-start; height: 44px; margin: 0 0 0 22px; }
+.back-stage .target-spot { left: calc(50% - 0.4722 * var(--back-w) - 0.5cm); }
+.dart-go.back-dart { width: var(--back-w); height: 44px; transform: rotate(180deg); }
+.back-dart .dart-icon { width: var(--back-w); height: calc(var(--back-w) * 28 / 72); }
+.dart-go.back-dart:hover { transform: rotate(180deg) translateX(5px); }
+.dart-stage.back-stage.shooting .dart-go { transform: rotate(180deg) translateX(0.5cm); }
+
 /* ---------- Menu ---------- */
 .greeting { color: var(--muted); margin: 28px 0 18px; }
 .menu-list { display: grid; gap: 12px; width: min(100%, 340px); }
@@ -628,12 +642,8 @@ summary { cursor: pointer; color: var(--muted); }
 .rank-list { counter-reset: rank; }
 .rank-list li::before { counter-increment: rank; content: counter(rank); width: 2em; color: var(--muted); text-align: left; }
 .rank-list .name { flex: 1; text-align: left; }
-/* A made-up player that only fills an empty place. */
-.rank-list li.sample { color: var(--muted); }
-.rank-list .sample-tag {
-  margin: 0 10px; padding: 1px 6px; border: 1px solid var(--line-strong);
-  font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
-}
+/* A place nobody has taken yet: just its number, until a player joins. */
+.rank-list li.empty { color: var(--muted); }
 .rank-list li.me { font-weight: 700; background: #1a1a1a; }
 .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
 .chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 20px; background: transparent; }
@@ -666,12 +676,13 @@ summary { cursor: pointer; color: var(--muted); }
 
 /* ---------- Back to the top ---------- */
 /* At the end of the Leaderboard and Statistics a little dart (the welcome screen's,
-   pointing up) shows at the right, level with the content's right edge. Pressed, it
-   is thrown up the screen while the page scrolls to the top, and fades away as the
-   scroll arrives (the script sets its transform and opacity while it flies). */
+   pointing up) shows at the left, level with the content's left edge (on Statistics
+   the right is where Reset statistics is). Pressed, it is thrown up the screen while
+   the page scrolls to the top, and fades away as the scroll arrives (the script sets
+   its transform and opacity while it flies). */
 .to-top {
   position: fixed; z-index: 30;
-  right: max(10px, calc((100vw - 500px) / 2 + 10px));
+  left: max(10px, calc((100vw - 500px) / 2 + 10px));
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   width: 44px; height: 72px; padding: 0;
   display: grid; place-items: center;

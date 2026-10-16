@@ -4,7 +4,6 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
-import 'dart_icon.dart';
 import 'dart_shot.dart';
 import 'dom.dart';
 import 'update_reload.dart';
@@ -47,17 +46,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
 
   // The dart sits under the name box. In front of its tip is a tiny circle that
   // appears when the dart is pressed (see playDartShot).
-  stage = el('div', cls: 'dart-stage', children: [
-    el('span', cls: 'target-spot', attrs: {'aria-hidden': 'true'}, children: [
-      el('span', cls: 'target-dot'),
-    ]),
-    button('',
-        cls: 'dart-go',
-        ariaLabel: 'Continue',
-        focusKey: 'go',
-        onPressed: (_) => submit())
-      ..appendChild(dartIcon() as web.Node),
-  ]);
+  stage = buildDartStage(label: 'Continue', focusKey: 'go', onPressed: submit);
 
   web.EventStreamProviders.keyDownEvent.forElement(input).listen((event) {
     if (event.key == 'Enter') {

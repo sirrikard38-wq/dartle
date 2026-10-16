@@ -33,7 +33,6 @@ export 'src/game/game_controller.dart';
 export 'src/game/game_mode.dart';
 export 'src/leaderboard/leaderboard_service.dart';
 export 'src/leaderboard/online_leaderboard.dart';
-export 'src/leaderboard/sample_players.dart';
 export 'src/scoring/scoring_service.dart';
 export 'src/stats/attempt_record.dart';
 export 'src/stats/history_repository.dart';

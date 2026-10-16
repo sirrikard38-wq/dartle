@@ -213,7 +213,7 @@ void main() {
     /// This player's row on the (local) leaderboard, as the board stores it.
     Future<LeaderboardEntry> myRow() async =>
         (await LocalLeaderboardRepository(storage).fetchEntries())
-            .firstWhere((e) => !e.isSample && e.playerName == game.playerName);
+            .firstWhere((e) => e.playerName == game.playerName);
 
     Future<void> playOptimal(int count) async {
       for (var i = 0; i < count; i++) {
