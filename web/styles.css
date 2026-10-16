@@ -685,13 +685,11 @@ summary { cursor: pointer; color: var(--muted); }
 /* ---------- Back to the top ---------- */
 /* At the end of the Leaderboard and Statistics a little dart (the welcome screen's,
    pointing up) shows at the left, level with the content's left edge (on Statistics
-   the right is where Reset statistics is). Pressed, it is thrown up the screen while
-   the page scrolls to the top: it slides across to the middle of the page and goes up
-   through the middle of the numbers (the script sets its transform while it flies,
-   lib/ui/to_top.dart). At the top it does what the welcome dart does: the circle
-   (.to-top-spot) appears in front of its tip, it flies half a centimetre into it
-   (.shooting), sticks and wiggles (.stuck, the welcome dart's keyframes) - and then
-   fades away (.leaving). */
+   the right is where Reset statistics is). Pressed, it is thrown straight up from its
+   corner while the page scrolls to the top. It rises only part of the way up the screen
+   and fades away smoothly as the top of the page comes into view - no circle, no
+   wiggle, and it never goes to the top of the screen (the script sets its transform
+   and opacity while it flies, lib/ui/to_top.dart). */
 .to-top {
   position: fixed; z-index: 30;
   left: max(10px, calc((100vw - 500px) / 2 + 10px));
@@ -704,22 +702,9 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .to-top.show { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 250ms ease; }
 .to-top.flying { opacity: 1; visibility: visible; pointer-events: none; transition: none; }
-/* The last half centimetre: the dart flies into the circle (the welcome dart's flight). */
-.to-top.flying.shooting { transition: transform 150ms ease; }
-/* After the wiggle the stuck dart fades away. */
-.to-top.flying.leaving { opacity: 0; transition: opacity 250ms ease; }
-/* The dart is turned to point up by this wrapper, so that its wiggle runs inside the
-   turned frame, about its tip, like the welcome dart's. */
-.to-top-turn { display: grid; place-items: center; width: 56px; height: 22px; transform: rotate(-90deg); transition: transform 150ms ease; }
-.to-top .dart-icon { width: 56px; height: 22px; }
+.to-top .dart-icon { width: 56px; height: 22px; transform: rotate(-90deg); transition: transform 150ms ease; }
 /* The hover nudge, along the dart's own direction: up. */
-.to-top.show:hover .to-top-turn { transform: rotate(-90deg) translateX(5px); }
-.to-top.stuck .dart-icon { transform-origin: 97% 50%; animation: dart-wiggle 550ms ease-out; }
-/* The circle at the top that the dart sticks in: the welcome circle (.target-dot),
-   put at the middle of the page by the script. */
-.to-top-spot { position: fixed; z-index: 29; width: 0; height: 0; pointer-events: none; transition: opacity 250ms ease; }
-.to-top-spot.on .target-dot { opacity: 1; transform: scale(1); }
-.to-top-spot.leaving { opacity: 0; }
+.to-top.show:hover .dart-icon { transform: rotate(-90deg) translateX(5px); }
 
 /* ---------- Toast ---------- */
 .toast {
@@ -750,5 +735,5 @@ summary { cursor: pointer; color: var(--muted); }
   .screen.enter, .tile.filled, .tile-row.shake, .dartboard .mark.newest { animation: none; }
   .fade { animation: none; opacity: 1; }
   .tile.reveal { animation-duration: 1ms; animation-delay: 0ms; }
-  .to-top, .to-top-turn, .to-top-spot { transition: none; }
+  .to-top, .to-top .dart-icon { transition: none; }
 }

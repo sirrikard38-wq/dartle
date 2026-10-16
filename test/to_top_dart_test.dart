@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dartle/ui/dart_shot_timing.dart';
 import 'package:test/test.dart';
 
 /// The little dart at the end of the Leaderboard and Statistics. Pinned from the
@@ -35,9 +34,7 @@ void main() {
       expect(to, contains('position: fixed;'));
       expect(to, contains('left: max(10px'));
       expect(to, isNot(contains('right:')));
-      // Turned by a wrapper, so that the wiggle runs in the turned frame.
-      expect(rule('.to-top-turn'), contains('transform: rotate(-90deg);'));
-      expect(rule('.to-top .dart-icon'), isNot(contains('transform')));
+      expect(rule('.to-top .dart-icon'), contains('rotate(-90deg)'));
     });
 
     test('it is out of sight (and out of the tab order) until the end of the page', () {
@@ -50,7 +47,7 @@ void main() {
     });
   });
 
-  group('the flight: up through the middle of the numbers', () {
+  group('the flight', () {
     test('the page is scrolled by the script, frame by frame, to the top', () {
       expect(dart, contains('requestAnimationFrame'));
       expect(dart, contains('web.window.scrollTo(0.toJS, pageY(startY, progress))'));
@@ -58,18 +55,11 @@ void main() {
       expect(RegExp(r'(?<![\w-])scroll-behavior').hasMatch(css), isFalse);
     });
 
-    test('the dart slides across to the middle of the page and goes up along it', () {
-      expect(dart, contains('final middleX = page.clientWidth / 2;'));
-      expect(dart, contains('dartX(restX, middleX, progress)'));
-      expect(dart, contains('dartY(restY, stopY, progress)'));
-      // It is placed with a translate, from where it rests in the corner.
-      expect(dart, contains("'translate(\${dx.toStringAsFixed(1)}px"));
-    });
-
-    test('it does not fade on the way: it is there to stick', () {
-      expect(dart, isNot(contains('dartOpacity')));
-      expect(dart, isNot(contains("setProperty('opacity', dart")));
-      expect(rule('.to-top.flying'), contains('opacity: 1;'));
+    test('the dart climbs and fades with the same progress as the scroll', () {
+      expect(dart, contains("'translateY(\${(-dartLift(travel, progress))"));
+      expect(dart, contains('dartOpacity(progress)'));
+      // Landing is when the progress reaches 1.
+      expect(dart, contains('if (progress < 1)'));
     });
 
     test('while it flies it is shown whatever the page does, with no transition fighting the script', () {
@@ -84,7 +74,7 @@ void main() {
 
     test('reduced motion: straight to the top, no flight', () {
       expect(dart, contains('prefers-reduced-motion: reduce'));
-      expect(css, contains('.to-top, .to-top-turn, .to-top-spot { transition: none; }'));
+      expect(css, contains('.to-top, .to-top .dart-icon { transition: none; }'));
     });
 
     test('taking over the scroll yourself ends the flight', () {
@@ -94,60 +84,35 @@ void main() {
     });
   });
 
-  group('at the top it sticks and wiggles, like the welcome dart, and then fades away', () {
-    test('the circle is the welcome circle, put at the middle of the page near the top', () {
-      expect(dart, contains("el('span', cls: 'target-dot')"));
-      expect(dart, contains("cls: 'to-top-spot'"));
-      expect(dart, contains('final circleY = _statusBarPx() + stickBelowTopPx;'));
-      expect(dart, contains("setProperty('left', '\${middleX.toStringAsFixed(1)}px')"));
-      expect(dart, contains("setProperty('top', '\${circleY.toStringAsFixed(1)}px')"));
-      expect(rule('.to-top-spot'), contains('position: fixed;'));
-      expect(rule('.to-top-spot.on .target-dot'), contains('opacity: 1;'));
+  group('thrown straight up from its corner, fading, and never to the top of the screen', () {
+    test('it rises only a part of the screen\'s height', () {
+      expect(dart, contains('final travel = dartRisePx(web.document.documentElement!.clientHeight.toDouble());'));
+      expect(dart, isNot(contains('_roomPx')));
     });
 
-    test('in order: the circle and the shot, the wiggle, the fade - each as long as the CSS says', () {
-      final seq = dart.substring(dart.indexOf('Future<void> _stickAndLeave'));
-      final order = [
-        "spot.classList.add('on');",
-        "element.classList.add('shooting');",
-        'Duration(milliseconds: dartFlightMs)',
-        "element.classList.add('stuck');",
-        'Duration(milliseconds: dartWiggleMs)',
-        "element.classList.add('leaving');",
-        'Duration(milliseconds: dartLeaveMs)',
-        '_end();',
-      ];
-      var at = -1;
-      for (final step in order) {
-        final next = seq.indexOf(step);
-        expect(next, greaterThan(at), reason: step);
-        at = next;
+    test('it stays on the left, in its own corner: it only moves up', () {
+      expect(dart, contains("'translateY("));
+      expect(dart, isNot(contains('translate(')));
+      expect(dart, isNot(contains('clientWidth')));
+      expect(dart, isNot(contains('middleX')));
+    });
+
+    test('no circle, no sticking and no wiggle at the top', () {
+      for (final gone in ['to-top-spot', 'target-dot', "'stuck'", "'shooting'", "'leaving'", 'playDartShot', 'dartFlightMs', 'dartWiggleMs']) {
+        expect(dart, isNot(contains(gone)), reason: gone);
       }
-      expect(rule('.to-top.flying.shooting'), contains('transition: transform ${dartFlightMs}ms'));
-      expect(rule('.to-top.flying.leaving'), contains('opacity: 0;'));
-      expect(rule('.to-top.flying.leaving'), contains('opacity ${dartLeaveMs}ms'));
-    });
-
-    test('the wiggle is the welcome dart\'s own, about the tip', () {
-      final stuck = rule('.to-top.stuck .dart-icon');
-      expect(stuck, contains('transform-origin: 97% 50%;'));
-      expect(stuck, contains('animation: dart-wiggle ${dartWiggleMs}ms'));
-      // One set of keyframes, shared with the welcome dart.
-      expect(RegExp(r'@keyframes dart-wiggle').allMatches(css), hasLength(1));
-    });
-
-    test('the dart flies the last half centimetre into the circle: the same as the welcome dart', () {
-      expect(dart, contains('final stopY = dartStopY(circleY);'));
-      expect(dart, contains('dartStuckY(circleY) - restY'));
-      expect(css, contains('.dart-stage.shooting .dart-go { transform: translateX(0.5cm); }'));
-    });
-
-    test('it all ends cleanly: classes and circle reset, back in its corner', () {
-      final end = dart.substring(dart.indexOf('void _end()'));
-      for (final name in ['flying', 'shooting', 'stuck', 'leaving', 'show', 'on']) {
-        expect(end, contains("'$name'"), reason: name);
+      for (final gone in ['.to-top-spot', '.to-top-turn', '.to-top.stuck', '.to-top.flying.shooting', '.to-top.flying.leaving']) {
+        expect(css, isNot(contains(gone)), reason: gone);
       }
-      expect(end, contains("element.style.removeProperty('transform');"));
+      expect(rule('.to-top .dart-icon'), contains('transform: rotate(-90deg);'));
+      // The one wiggle in the stylesheet belongs to the welcome dart.
+      expect(RegExp(r'dart-wiggle 550ms').allMatches(css), hasLength(1));
+      expect(css, contains('.dart-stage.stuck .dart-icon'));
+    });
+
+    test('it fades smoothly as the top of the page comes into view, whole when it lands', () {
+      expect(dart, contains('dartOpacity(progress)'));
+      expect(dart, contains('if (progress < 1)'));
     });
   });
 }
