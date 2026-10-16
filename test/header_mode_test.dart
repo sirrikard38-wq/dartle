@@ -3,54 +3,44 @@ import 'dart:io';
 import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
-/// The game mode under "DARTLE", and the leaderboard title in the middle. Pinned
-/// from the source and the stylesheet (they are drawn in the browser).
+/// The header while a game is played: only the word DARTLE, with nothing written
+/// under it, and the leaderboard title in the middle. Pinned from the source and the
+/// stylesheet (they are drawn in the browser).
 void main() {
   final app = File('lib/ui/app.dart').readAsStringSync();
   final css = File('web/styles.css').readAsStringSync();
   final leaderboard = File('lib/ui/leaderboard_screen.dart').readAsStringSync();
-  final entry = File('lib/ui/number_entry_screen.dart').readAsStringSync();
 
-  /// The value of [property] in the first rule that matches [selector].
-  String value(String selector, String property) {
-    final rule = RegExp('${RegExp.escape(selector)} \\{[^}]*\\}').firstMatch(css)!.group(0)!;
-    return RegExp('$property: ([^;]+);').firstMatch(rule)!.group(1)!;
-  }
+  group('nothing under the word DARTLE while a game is played', () {
+    final header = app.substring(
+        app.indexOf('web.HTMLElement _buildHeader()'), app.indexOf('web.HTMLElement _buildBackDart()'));
 
-  group('the game mode under DARTLE', () {
-    test('the three modes are named exactly as they are to be written', () {
+    test('the header is just the back dart, the title and the actions', () {
+      expect(header, contains("el('div', cls: 'title', text: 'DARTLE')"));
+      expect(header, contains("el('header', cls: 'app-header', children: ["));
+      // The game mode is not written in it.
+      expect(header, isNot(contains('_game.mode.label')));
+      expect(header, isNot(contains('title-sub')));
+      expect(header, isNot(contains('title-block')));
+      expect(header, isNot(contains('has-sub')));
+    });
+
+    test('the stylesheet has nothing left of it, and the header is one height', () {
+      for (final gone in ['.title-sub', '.title-block', 'has-sub']) {
+        expect(css, isNot(contains(gone)), reason: gone);
+      }
+      final rule = RegExp(r'\.app-header \{[^}]*\}').firstMatch(css)!.group(0)!;
+      expect(rule, contains('height: calc(52px + env(safe-area-inset-top, 0px));'));
+    });
+
+    test('the message that pops up sits just under the header again', () {
+      final toast = RegExp(r'\.toast \{[^}]*\}').firstMatch(css)!.group(0)!;
+      expect(toast, contains('top: calc(64px + env(safe-area-inset-top, 0px));'));
+    });
+
+    test('the modes keep their names, which the menus and the buttons use', () {
       expect(GameMode.values.map((m) => m.label),
           ['Checkout calculator', 'Checkout practice', 'Checkout input']);
-    });
-
-    test('the header writes the mode of the game being played, and nothing in the menus', () {
-      final header = app.substring(app.indexOf('web.HTMLElement _buildHeader()'));
-      expect(header, contains('final mode = inMenu ? null : _game.mode.label;'));
-      expect(header, contains("if (mode != null) el('div', cls: 'title-sub', text: mode)"));
-      // Under the title, in the same block.
-      expect(header.indexOf("cls: 'title'"), lessThan(header.indexOf("cls: 'title-sub'")));
-      expect(header, contains("cls: 'title-block'"));
-    });
-
-    test('it is small and grey, the same as the byline on the first screen', () {
-      expect(value('.title-sub', 'font-size'), value('.welcome .i2', 'font-size'));
-      expect(value('.title-sub', 'font-size'), '0.9rem');
-      expect(value('.title-sub', 'color'), value('.welcome .i2', 'color'));
-      expect(value('.title-sub', 'color'), 'var(--muted)');
-      expect(value('.title-sub', 'text-align'), 'center');
-    });
-
-    test('the header has room for it', () {
-      final plain = int.parse(RegExp(r'height: calc\((\d+)px').firstMatch(
-              RegExp(r'\.app-header \{[^}]*\}').firstMatch(css)!.group(0)!)!.group(1)!);
-      final withSub = int.parse(RegExp(r'height: calc\((\d+)px').firstMatch(
-              RegExp(r'\.app-header\.has-sub \{[^}]*\}').firstMatch(css)!.group(0)!)!.group(1)!);
-      expect(withSub, greaterThan(plain));
-      expect(app, contains("'app-header\${mode == null ? '' : ' has-sub'}'"));
-    });
-
-    test('Checkout input does not write its name twice: the number screen has no line of its own', () {
-      expect(entry, isNot(contains("text: 'Checkout input'")));
     });
   });
 

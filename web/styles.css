@@ -96,11 +96,6 @@ button:disabled { cursor: default; }
   letter-spacing: 0.22em;
   text-align: center;
 }
-/* The game mode under the title: the size and grey of the byline on the first
-   screen ("Checkout calculator by PK Normal"). The header is taller with it. */
-.title-block { display: flex; flex-direction: column; align-items: center; }
-.title-sub { margin-top: 2px; font-size: 0.9rem; color: var(--muted); text-align: center; white-space: nowrap; line-height: 1.2; }
-.app-header.has-sub { height: calc(68px + env(safe-area-inset-top, 0px)); }
 .header-spacer { display: block; }
 .header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
 .icon-btn {
@@ -708,7 +703,7 @@ summary { cursor: pointer; color: var(--muted); }
 
 /* ---------- Toast ---------- */
 .toast {
-  position: fixed; top: calc(80px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   background: var(--white); color: var(--ink);
   padding: 12px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
   opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 10; max-width: 90vw; text-align: center;
