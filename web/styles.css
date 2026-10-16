@@ -203,11 +203,11 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .dart-stage.stuck .dart-icon { transform-origin: 97% 50%; animation: dart-wiggle 550ms ease-out; }
 @keyframes dart-wiggle {
   0%   { transform: rotate(0deg); }
-  14%  { transform: rotate(-7deg); }
-  32%  { transform: rotate(5deg); }
-  50%  { transform: rotate(-3.5deg); }
-  68%  { transform: rotate(2deg); }
-  84%  { transform: rotate(-1deg); }
+  14%  { transform: rotate(-4.5deg); }
+  32%  { transform: rotate(3.2deg); }
+  50%  { transform: rotate(-2.2deg); }
+  68%  { transform: rotate(1.3deg); }
+  84%  { transform: rotate(-0.6deg); }
   100% { transform: rotate(0deg); }
 }
 
@@ -441,6 +441,10 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .message { margin: 8px 0; max-width: 34ch; }
 /* The two result boards: small and side by side. */
 .result-boards { display: flex; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 12px; margin: 2px 0 6px; width: 100%; }
+/* Right under the number the board is pulled up into the empty margin of its
+   drawing, so the number is about as close to the ring as it is to the words
+   "Optimal!" above it - the "20" label stays clear of the number. */
+.target.small + .result-boards { margin-top: -11px; }
 .board-figure { margin: 0; flex: 0 1 200px; min-width: 0; }
 /* Each board has its route boxes directly under it, small enough to fit. */
 .board-figure .tile-row { margin: 4px 0 0; gap: 4px; }
