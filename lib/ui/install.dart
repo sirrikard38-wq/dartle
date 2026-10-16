@@ -3,14 +3,18 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
+import 'update_check.dart';
+
 /// Registers the service worker, which saves the app on the phone so it opens
 /// and plays with no connection. Quietly does nothing where it is not allowed
 /// (an address that is not https or localhost, or an old browser).
 ///
 /// [updateReady] is called when a newer version of the app has taken over from
 /// the one this page is showing (never on the very first install, when there is
-/// nothing older to replace). The page then still shows the old version until it
-/// is reloaded, so the caller reloads it at a good moment.
+/// nothing older to replace, and not when the page is already that newest version:
+/// after a deploy the page is fetched fresh, so only the worker is behind). The
+/// page then still shows the old version until it is reloaded, so the caller
+/// reloads it at a good moment.
 Future<void> registerServiceWorker({void Function()? updateReady}) async {
   if (isNativeShell) return; // the Android app already holds every file
   try {
@@ -19,13 +23,35 @@ Future<void> registerServiceWorker({void Function()? updateReady}) async {
     if (hadOlderVersion && updateReady != null) {
       container.addEventListener(
         'controllerchange',
-        ((web.Event event) => updateReady()).toJS,
+        ((web.Event event) {
+          _notifyIfNewer(updateReady); // checks in the background
+        }).toJS,
       );
     }
     await container.register('sw.js'.toJS).toDart;
   } on Object {
     // The app works without it; it just cannot be used offline.
   }
+}
+
+/// Calls [updateReady] if the app that has taken over is newer than this page. It
+/// looks for a cache of a newer build than the one in the address of this page's
+/// script (see [updateNeeded]). The new worker's cache is there from its install,
+/// and the older ones may still be there too: the worker cleans them up only after
+/// it has taken over.
+Future<void> _notifyIfNewer(void Function() updateReady) async {
+  var needed = true; // when in doubt, show the newest
+  try {
+    final keys = await web.window.caches.keys().toDart;
+    final script = web.document.querySelector('script[src*="main.dart.js"]');
+    needed = updateNeeded(
+      runningBuild: buildOfScriptSrc(script?.getAttribute('src')),
+      cacheNames: [for (final key in keys.toDart) key.toDart],
+    );
+  } on Object {
+    // The caches cannot be read: reload, as before.
+  }
+  if (needed) updateReady();
 }
 
 /// What the menu should offer to help install the app.
