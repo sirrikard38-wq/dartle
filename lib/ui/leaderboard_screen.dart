@@ -41,8 +41,7 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
         : ' Players marked "sample" are made up; they only fill empty places and '
             'leave as real players join.';
     note.textContent = online
-        ? 'Online leaderboard: everyone who plays Dartle. Your name and scores '
-            'are visible to all players.$sampleNote'
+        ? 'Online Dartle leaderboard. Your name and scores are visible to all players.'
         : 'Scores on this device.$sampleNote';
   });
 
