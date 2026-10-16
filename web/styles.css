@@ -205,11 +205,11 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .dart-stage.stuck .dart-icon { transform-origin: 97% 50%; animation: dart-wiggle 550ms ease-out; }
 @keyframes dart-wiggle {
   0%   { transform: rotate(0deg); }
-  14%  { transform: rotate(-4.5deg); }
-  32%  { transform: rotate(3.2deg); }
-  50%  { transform: rotate(-2.2deg); }
-  68%  { transform: rotate(1.3deg); }
-  84%  { transform: rotate(-0.6deg); }
+  14%  { transform: rotate(-2.5deg); }
+  32%  { transform: rotate(1.8deg); }
+  50%  { transform: rotate(-1.2deg); }
+  68%  { transform: rotate(0.7deg); }
+  84%  { transform: rotate(-0.3deg); }
   100% { transform: rotate(0deg); }
 }
 
@@ -231,8 +231,10 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   font-weight: 800; line-height: 1;
   font-variant-numeric: lining-nums;
 }
-/* On the result screen the number sits close to the dartboard under it. */
 .target.small { font-size: 2.6rem; margin: 2px 0 0; }
+/* On the result screen the number is spaced out a little from the words
+   "Optimal!" above it (11px, about 26px from the letters to the digits). */
+.screen.result .target.small { margin-top: 11px; }
 
 .tile-row { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
 .tile {
@@ -456,12 +458,9 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* ---------- Result ---------- */
 .headline { font-size: 1.5rem; font-weight: 700; margin: 12px 0 0; }
 .message { margin: 8px 0; max-width: 34ch; }
-/* The two result boards: small and side by side. */
+/* The two result boards: small and side by side. Under the number there is a
+   normal gap (about 12px to the "20" label, 29px to the ring). */
 .result-boards { display: flex; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 12px; margin: 2px 0 6px; width: 100%; }
-/* Right under the number the board is pulled up into the empty margin of its
-   drawing, so the number is about as close to the ring as it is to the words
-   "Optimal!" above it - the "20" label stays clear of the number. */
-.target.small + .result-boards { margin-top: -11px; }
 .board-figure { margin: 0; flex: 0 1 200px; min-width: 0; }
 /* Each board has its route boxes directly under it, small enough to fit. */
 .board-figure .tile-row { margin: 4px 0 0; gap: 4px; }
@@ -562,6 +561,12 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .pad-key { flex: none; height: 64px; font-size: 1.5rem; background: var(--pad-key); color: var(--ink); }
 .pad-undo, .pad-enter { font-size: 0.85rem; letter-spacing: 0.04em; }
 .pad-undo { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* The practice screens (Checkout practice and Checkout input): the number keys
+   stay grey, everything else is white - the words that are usually grey too. */
+.screen.entry .meta, .screen.entry .hint, .screen.entry .number-display.empty,
+.screen.entry .how-to summary,
+.screen.choice .hint, .screen.choice .how-to summary { color: var(--fg); }
 
 /* A number that cannot be checked out: the words fade in, the insult 1 s later,
    the Next checkout button 2 s after that. */

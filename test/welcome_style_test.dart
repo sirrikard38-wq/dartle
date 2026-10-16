@@ -65,8 +65,8 @@ void main() {
       expect(angles.first, 0);
       expect(angles.last, 0, reason: 'it settles back straight');
       expect(angles.any((a) => a < 0) && angles.any((a) => a > 0), isTrue, reason: 'it swings both ways');
-      expect(angles.every((a) => a.abs() <= 5), isTrue, reason: 'only a little: at most 5 degrees');
-      expect(angles.map((a) => a.abs()).reduce((a, b) => a > b ? a : b), 4.5, reason: 'the biggest swing');
+      expect(angles.every((a) => a.abs() <= 3), isTrue, reason: 'only a little: at most 3 degrees');
+      expect(angles.map((a) => a.abs()).reduce((a, b) => a > b ? a : b), 2.5, reason: 'the biggest swing');
       expect(dartWiggleMs, 550);
       // Each swing is smaller than the one before: it settles.
       final swings = angles.sublist(1, angles.length - 1).map((a) => a.abs()).toList();
