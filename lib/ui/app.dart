@@ -182,9 +182,16 @@ class DartleApp {
         ]),
     ]);
 
-    return el('header', cls: 'app-header', children: [
+    // While a game is being played its mode is written under the title, small
+    // and grey like the byline of the first screen: "Checkout calculator",
+    // "Checkout practice" or "Checkout input".
+    final mode = inMenu ? null : _game.mode.label;
+    return el('header', cls: 'app-header${mode == null ? '' : ' has-sub'}', children: [
       left,
-      el('div', cls: 'title', text: 'DARTLE'),
+      el('div', cls: 'title-block', children: [
+        el('div', cls: 'title', text: 'DARTLE'),
+        if (mode != null) el('div', cls: 'title-sub', text: mode),
+      ]),
       right,
     ]);
   }

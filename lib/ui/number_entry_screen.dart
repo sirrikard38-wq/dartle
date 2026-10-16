@@ -84,7 +84,6 @@ web.HTMLElement buildNumberEntryScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen entry', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'meta', text: 'Checkout input'),
       el('p', cls: 'target number-display${text.isEmpty ? ' empty' : ''}',
           text: text.isEmpty ? '–' : text,
           attrs: {'aria-label': text.isEmpty ? 'No number yet' : 'Number $text'}),

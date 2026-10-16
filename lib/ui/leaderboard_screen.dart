@@ -48,8 +48,8 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen leaderboard', children: [
     el('div', cls: 'play-area', children: [
-      // The title sits at the right edge (the style uppercases it).
-      el('h2', cls: 'screen-title-right', text: '180 Leaderboard'),
+      // The title is in the middle (the style uppercases it).
+      el('h2', text: '180 Leaderboard'),
       el('div', cls: 'chips', attrs: {'role': 'group', 'aria-label': 'Rank by'}, children: [
         for (final option in LeaderboardSort.values)
           button(option.label,

@@ -96,6 +96,11 @@ button:disabled { cursor: default; }
   letter-spacing: 0.22em;
   text-align: center;
 }
+/* The game mode under the title: the size and grey of the byline on the first
+   screen ("Checkout calculator by PK Normal"). The header is taller with it. */
+.title-block { display: flex; flex-direction: column; align-items: center; }
+.title-sub { margin-top: 2px; font-size: 0.9rem; color: var(--muted); text-align: center; white-space: nowrap; line-height: 1.2; }
+.app-header.has-sub { height: calc(68px + env(safe-area-inset-top, 0px)); }
 .header-spacer { display: block; }
 .header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
 .icon-btn {
@@ -617,8 +622,6 @@ summary { cursor: pointer; color: var(--muted); }
 .reset-box { justify-self: start; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
 .reset-stats { padding: 0; text-align: left; font-size: 0.8rem; line-height: 1.2; min-height: 36px; }
 .reset-note { margin: 0; max-width: 16ch; color: var(--muted); font-size: 0.65rem; line-height: 1.25; }
-/* A screen title on the right edge (Leaderboard). */
-.screen-title-right { align-self: flex-end; text-align: right; }
 .weak-list, .rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
 .weak-list li, .rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
 .weak-list strong { font-size: 1.2rem; }
@@ -664,7 +667,7 @@ summary { cursor: pointer; color: var(--muted); }
 
 /* ---------- Toast ---------- */
 .toast {
-  position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  position: fixed; top: calc(80px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   background: var(--white); color: var(--ink);
   padding: 12px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
   opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 10; max-width: 90vw; text-align: center;
