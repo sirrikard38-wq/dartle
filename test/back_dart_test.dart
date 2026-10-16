@@ -116,10 +116,18 @@ void main() {
     });
   });
 
-  test('there is room on the left of the dart for it to slide', () {
-    final stage = rule('.dart-stage.back-stage');
-    final margin = int.parse(RegExp(r'margin: 0 0 0 (\d+)px;').firstMatch(stage)!.group(1)!);
-    expect(margin, greaterThanOrEqualTo(20)); // 0.5cm is about 19px
-    expect(stage, contains('justify-self: start;'));
+  group('where it sits: 2cm to the left of the word DARTLE', () {
+    test('at the right end of the header\'s left cell, which ends where the title begins', () {
+      final stage = rule('.dart-stage.back-stage');
+      expect(stage, contains('justify-self: end;'));
+      expect(stage, isNot(contains('justify-self: start')));
+      expect(rule('.app-header'), contains('grid-template-columns: 1fr auto 1fr;'));
+    });
+
+    test('with 2cm of margin on its right, which never pushes it off the screen on a narrow phone', () {
+      final stage = rule('.dart-stage.back-stage');
+      expect(stage, contains('margin: 0 min(2cm, calc(100% - var(--back-w))) 0 0;'));
+      expect(stage, contains('--back-w: 48px;'));
+    });
   });
 }
