@@ -75,6 +75,23 @@ void main() {
             {d('T11'), d('T9'), d('T7'), d('T5'), d('T3'), d('T1')});
       });
 
+      test('43: the triple of 11 is a good starting dart, its single leaves a checkout too', () {
+        final r = ChoiceRound(43, advisor, layout: BoxLayout.leftUsed);
+        expect(r.optimalDarts, containsAll([d('T11'), d('S11')]));
+        expect(advisor.rate(remaining: 43, dartsLeft: 2, dart: d('T11')), DartQuality.optimal);
+        r.throwDart(d('T11')); // leaves 10
+        expect(r.remaining, 10);
+        expect(r.optimalDarts, {d('D5')});
+        r.throwDart(d('D5'));
+        expect(r.isCheckedOut, isTrue);
+        expect(r.isOptimal, isTrue);
+      });
+
+      test('a triple whose single leaves no checkout is not lit: 58 does not light T6', () {
+        expect(advisor.optimalDarts(58), isNot(contains(d('T6')))); // S6 would leave 52
+        expect(advisor.optimalDarts(58), contains(d('T8'))); // S8 leaves the Bull
+      });
+
       test('no treble can do it with a single: trebles of 15 and up are lit (85, 150)', () {
         expect(advisor.optimalDarts(100), {d('T20')});
         expect(advisor.optimalDarts(150), {d('T18'), d('T19'), d('T20')});

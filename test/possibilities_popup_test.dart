@@ -40,9 +40,10 @@ void main() {
       for (final n in engine.checkoutableTargets) {
         final routes = optimal.optimalRoutes(n);
         if (routes.length < 2) continue;
+        final listed = BetterDoubles.listed(routes);
         for (final shown in routes) {
           // Whichever route is on screen as the best or as yours, something is left.
-          expect(BetterDoubles.extras(routes, exclude: [shown]), isNotEmpty, reason: '$n without $shown');
+          expect(BetterDoubles.extras(listed, exclude: [shown]), isNotEmpty, reason: '$n without $shown');
         }
       }
     });
@@ -96,7 +97,7 @@ void main() {
     });
 
     test('the popup shows every route at once - no "Shoot more"', () {
-      expect(screen, contains('for (final route in RouteOrder.forPopup(result.optimalRoutes)) figureFor(route)'));
+      expect(screen, contains('for (final route in RouteOrder.forPopup(listed)) figureFor(route)'));
       expect(screen, isNot(contains('Shoot more')));
       expect(File('lib/ui/result_screen.dart').readAsStringSync(), isNot(contains('RoutePages')));
       expect(css, isNot(contains('.shoot-more')));

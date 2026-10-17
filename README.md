@@ -104,6 +104,11 @@ leaderboard shows the scores on the device, as before.
      43 is also `T11 D5` (T11 leaves D5, S11 leaves D16), 35 is also `T5 D10`
      (S5 leaves D15). The ones where both doubles are better doubles are shown
      first under "Also optimal" (`SingleLeave.trebleRoutes`).
+  The popup and the "Also optimal" boxes list every optimal route of a number
+  that has up to 6 (76 keeps `T18 D11`); a number with more lists only the
+  routes that finish on a better double, plus the Bull finishes and the first
+  route (`BetterDoubles.listed`). Every route is still accepted as optimal and
+  still lights up its darts in Checkout practice and Checkout input.
   Equal routes are all optimal, in any order of the setup darts. 120 stays
   `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
   equal route is shown first; tests verify every chart entry is legal and

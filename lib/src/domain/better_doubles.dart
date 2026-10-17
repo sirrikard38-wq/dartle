@@ -25,11 +25,32 @@ abstract final class BetterDoubles {
     return first.isTreble && isBetter(last) && numbers.contains(first.number + last.number);
   }
 
-  /// The routes to show as "also optimal", from the equally optimal [routes]:
-  /// first one more route that finishes on a better double (if there is one),
-  /// then up to [more] other equally optimal routes. Nothing in [exclude] (the
-  /// routes already on screen - the optimal route shown, and the one the player
-  /// entered) is repeated; every optimal route is still in "All possibilities".
+  /// A number with more optimal routes than this only lists the ones that
+  /// finish on a better double (see [listed]).
+  static const int listEverythingUpTo = 6;
+
+  /// The equally optimal [routes] that "Also optimal" and its popup list. A
+  /// number with up to [listEverythingUpTo] routes lists them all (76 keeps
+  /// T18 D11 even though D11 is not a better double). A number with more
+  /// leaves out the routes that finish on a double that is not a better one
+  /// (35 has no S17 D9 in the list), so poor finishes do not fill the popup.
+  /// Two kinds always stay: a finish on the Bull (S7 Bull belongs to the
+  /// bull-safe finish) and the first route, the one shown as the answer.
+  /// Every route is still accepted as optimal and still lights up its darts.
+  static List<CheckoutRoute> listed(List<CheckoutRoute> routes) {
+    if (routes.length <= listEverythingUpTo) return routes;
+    return [
+      for (var i = 0; i < routes.length; i++)
+        if (i == 0 || leavesBetterDouble(routes[i]) || routes[i].darts.last.isBull) routes[i],
+    ];
+  }
+
+  /// The routes to show as "also optimal", from the equally optimal [routes]
+  /// (the [listed] ones): first one more route that finishes on a better double
+  /// (if there is one), then up to [more] other equally optimal routes. Nothing
+  /// in [exclude] (the routes already on screen - the optimal route shown, and
+  /// the one the player entered) is repeated; every listed route is still in
+  /// the popup.
   static List<CheckoutRoute> extras(
     List<CheckoutRoute> routes, {
     List<CheckoutRoute> exclude = const [],

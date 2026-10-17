@@ -74,7 +74,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'The boxes stay plain while you play. After the checkout, each dart '
         'flips to a colour: white means it belongs in the best route, light pink '
         'means it does not, and grey means the right dart in the wrong place. '
-        'Press "Also optimal" to see every optimal route on its own board.'),
+        'Press "Also optimal" to see the optimal routes on their own boards. A '
+        'number with more than six of them only lists the ones that finish on a '
+        'good double (or the Bull).'),
     if (game.mode.hasScore) ...[
       section('Score',
           'A correct checkout with time left on the clock scores as many points as '

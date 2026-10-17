@@ -172,6 +172,6 @@ void main() {
 
   test('the All possibilities popup lists the routes in that order', () {
     final screen = File('lib/ui/result_screen.dart').readAsStringSync();
-    expect(screen, contains('for (final route in RouteOrder.forPopup(result.optimalRoutes)) figureFor(route)'));
+    expect(screen, contains('for (final route in RouteOrder.forPopup(listed)) figureFor(route)'));
   });
 }

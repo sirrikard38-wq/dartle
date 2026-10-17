@@ -63,9 +63,14 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
             label: route.notation),
       ]);
 
+  // A number with more than 6 optimal routes lists only the ones that finish on
+  // a better double (the Bull finishes and the first route always stay), in the
+  // popup and under "Also optimal" alike.
+  final listed = BetterDoubles.listed(result.optimalRoutes);
+
   void openPossibilities() {
-    // Every optimal route at once. The boards are centred, so a last row with
-    // fewer boards sits in the middle.
+    // Every listed optimal route at once. The boards are centred, so a last row
+    // with fewer boards sits in the middle.
     showModal(title: 'Every optimal way to check out ${challenge.target}', showTitle: false, body: [
       el('p', cls: 'modal-line top', text: 'Every optimal way to check out'),
       // The number under it, in the middle of the popup, above all the boards.
@@ -74,7 +79,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
       // a Bull finish sits right next to the route with the treble of its single
       // (T7 D18 and S7 Bull).
       el('div', cls: 'possibilities', children: [
-        for (final route in RouteOrder.forPopup(result.optimalRoutes)) figureFor(route),
+        for (final route in RouteOrder.forPopup(listed)) figureFor(route),
       ]),
     ]);
   }
@@ -85,7 +90,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   // "Also optimal" opens.
   final extras = best == null
       ? const <CheckoutRoute>[]
-      : BetterDoubles.extras(result.optimalRoutes, exclude: [
+      : BetterDoubles.extras(listed, exclude: [
           if (showBest) best,
           if (showYours) result.playerRoute,
         ]);
