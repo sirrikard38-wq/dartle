@@ -513,4 +513,12 @@ void trebleLeaveTests() {
     expect(optimal.isOptimal(43, CheckoutRoute.parse('T11 D5')), isTrue);
     expect(optimal.isOptimal(43, CheckoutRoute.parse('S11 D16')), isTrue);
   });
+
+  test('only for 20 to 60: 17 has S5 D6 but not T5 D1, 29 has T9 D1', () {
+    expect(engine.isLegalRoute(17, CheckoutRoute.parse('T5 D1')), isTrue);
+    expect(optimal.isOptimal(17, CheckoutRoute.parse('S5 D6')), isTrue);
+    expect(optimal.isOptimal(17, CheckoutRoute.parse('T5 D1')), isFalse);
+    expect(optimal.isOptimal(29, CheckoutRoute.parse('T9 D1')), isTrue);
+    expect(optimal.isOptimal(29, CheckoutRoute.parse('S9 D10')), isTrue);
+  });
 }

@@ -65,13 +65,16 @@ abstract final class SingleLeave {
     return routes;
   }
 
-  /// Two darts left on 2 to 60: a first dart at the treble of a number whose
+  /// The numbers [trebleRoutes] applies to, 20 to 60.
+  static const int minTrebleTarget = 20;
+
+  /// Two darts left on 20 to 60: a first dart at the treble of a number whose
   /// single also leaves a double. 43 is T11 D5 next to S11 D16 (33 and 11 both
   /// leave a better double). Only when both doubles are in [BetterDoubles]; the
   /// treble route is listed, the single one is an ordinary route already.
   /// Highest number first.
   static List<CheckoutRoute> trebleRoutes(int target) {
-    if (target < 2 || target > maxTarget) return const [];
+    if (target < minTrebleTarget || target > maxTarget) return const [];
     final routes = <CheckoutRoute>[];
     for (var k = DartThrow.maxBoardNumber; k >= 1; k--) {
       final afterTreble = target - 3 * k;
