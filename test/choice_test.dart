@@ -37,7 +37,7 @@ void main() {
 
     test('the bull-safe routes stay optimal even with low trebles (55 -> T5 D20, S5 Bull)', () {
       // 55 also has the singles that leave a better double: S15 D20, S19 D18.
-      expect(advisor.optimalDarts(55), {d('T5'), d('S5'), d('S15'), d('S19')});
+      expect(advisor.optimalDarts(55), {d('T5'), d('S5'), d('S15'), d('S19'), d('T15')});
     });
 
     group('priority: fewest darts, bull-safe, then the most singles', () {
@@ -63,10 +63,10 @@ void main() {
         expect(r.isOptimal, isTrue);
       });
 
-      test('singles come first: 35 lights singles only, never T5', () {
+      test('singles come first: 35 lights the singles, never T5 (only T11 D1, whose single also leaves a better double)', () {
         final lit = advisor.optimalDarts(35);
         expect(lit, isNotEmpty);
-        expect(lit.every((x) => x.multiplier == Multiplier.single), isTrue);
+        expect(lit.where((x) => x.multiplier != Multiplier.single), [d('T11')]);
         expect(lit, isNot(contains(d('T5'))));
         expect(lit, containsAll([d('S15'), d('S3'), d('S17')]));
       });

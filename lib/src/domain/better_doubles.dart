@@ -33,7 +33,19 @@ abstract final class BetterDoubles {
       result.add(better.first);
       others.remove(better.first);
     }
-    result.addAll(others.take(more));
+    // A treble that leaves a better double (43: T11 D5) is worth showing too.
+    final treble = others
+        .where((r) => r.setupDarts.length == 1 &&
+            r.setupDarts.first.multiplier == Multiplier.treble &&
+            leavesBetterDouble(r))
+        .toList();
+    var room = more;
+    if (treble.isNotEmpty) {
+      result.add(treble.first);
+      others.remove(treble.first);
+      room--;
+    }
+    result.addAll(others.take(room));
     return result;
   }
 }

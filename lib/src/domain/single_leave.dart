@@ -65,6 +65,33 @@ abstract final class SingleLeave {
     return routes;
   }
 
+  /// Two darts left on 2 to 60: a first dart at the treble of a number whose
+  /// single also leaves a double. 43 is T11 D5 next to S11 D16 (33 and 11 both
+  /// leave a better double). Only when both doubles are in [BetterDoubles]; the
+  /// treble route is listed, the single one is an ordinary route already.
+  /// Highest number first.
+  static List<CheckoutRoute> trebleRoutes(int target) {
+    if (target < 2 || target > maxTarget) return const [];
+    final routes = <CheckoutRoute>[];
+    for (var k = DartThrow.maxBoardNumber; k >= 1; k--) {
+      final afterTreble = target - 3 * k;
+      final afterSingle = target - k;
+      if (!_isBetter(afterTreble) || !_isBetter(afterSingle)) continue;
+      routes.add(CheckoutRoute([
+        DartThrow(Multiplier.treble, k),
+        DartThrow(Multiplier.double, afterTreble ~/ 2),
+      ]));
+      routes.add(CheckoutRoute([
+        DartThrow(Multiplier.single, k),
+        DartThrow(Multiplier.double, afterSingle ~/ 2),
+      ]));
+    }
+    return routes;
+  }
+
+  static bool _isBetter(int left) =>
+      left >= 2 && left.isEven && BetterDoubles.numbers.contains(left ~/ 2);
+
   /// A single is S1..S20. The outer bull is not one: it is too hard to hit.
   static bool _isSingleOnBoard(int number) =>
       number >= 1 && number <= DartThrow.maxBoardNumber;

@@ -35,8 +35,7 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 /// * [states] colours the tiles and plays the flip reveal (result screen only:
 ///   the boxes stay plain while you play).
 /// * [activeIndex] outlines the free box that will receive the next dart.
-/// * [showDarts] puts small darts in each box: one in the first box, two in
-///   the second, three in the third (the box's dart number).
+/// * [showDarts] puts small darts in each box: one in each box.
 /// * [used] are the boxes that are already used (crossed out in burgundy, with
 ///   their darts dotted). They cannot be filled: [darts], [states] and
 ///   [activeIndex] count only the free boxes, left to right.
@@ -102,10 +101,10 @@ web.HTMLElement _tile(DartThrow? dart,
   }, children: [
     textNode(dart?.notation ?? ''),
     if (state != null) el('span', cls: 'mark', text: _stateMarks[state]!, attrs: {'aria-hidden': 'true'}),
-    // Box 1 holds one dart, box 2 two, box 3 three - all the same size.
+    // Every box holds one dart.
     if (showDarts || usedBox)
       el('span', cls: 'tile-darts', attrs: {'aria-hidden': 'true'}, children: [
-        for (var k = 0; k <= index; k++) dartGlyph() as web.Node,
+        dartGlyph() as web.Node,
       ]),
   ]);
 }

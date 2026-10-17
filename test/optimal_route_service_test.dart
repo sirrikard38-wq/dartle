@@ -4,6 +4,7 @@ import 'package:test/test.dart';
 CheckoutRoute r(String text) => CheckoutRoute.parse(text);
 
 void main() {
+  trebleLeaveTests();
   final engine = CheckoutEngine();
   final optimal = OptimalRouteService(engine);
 
@@ -192,9 +193,9 @@ void main() {
       expect(notations(60), {'T10 D15', 'S10 Bull', 'S20 D20'});
     });
 
-    test('51 to 54 have no treble route, so the singles and the Bull are all there is', () {
-      expect(notations(51), {'S1 Bull', 'S11 D20', 'S15 D18', 'S19 D16'});
-      expect(notations(52), {'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16'});
+    test('51 to 54: the singles, the Bull and the trebles whose single also leaves a better double', () {
+      expect(notations(51), containsAll({'S1 Bull', 'S11 D20', 'S15 D18', 'S19 D16'}));
+      expect(notations(52), {'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16', 'T16 D2', 'T12 D8'});
     });
 
     test('the double has to be one of the better doubles: S19 D19 is not optimal', () {
@@ -289,11 +290,12 @@ void main() {
       expect(optimal.isOptimal(35, r('T5 D10')), isFalse);
     });
 
-    test('42: any single that leaves a double is optimal, a triple route is not', () {
+    test('42: any single that leaves a double is optimal, a triple route only when its single also leaves a better double', () {
       expect(optimal.isOptimal(42, r('S2 D20')), isTrue);
       expect(optimal.isOptimal(42, r('S10 D16')), isTrue);
-      expect(optimal.isOptimal(42, r('T2 D18')), isFalse);
-      expect(engine.isLegalRoute(42, r('T2 D18')), isTrue);
+      expect(optimal.isOptimal(42, r('T2 D18')), isTrue);
+      expect(optimal.isOptimal(42, r('T4 D15')), isFalse);
+      expect(engine.isLegalRoute(42, r('T4 D15')), isTrue);
     });
 
     test('where no single can do it, trebles of 15 and up are optimal', () {
@@ -501,5 +503,14 @@ void main() {
       final routes = optimal.optimalRoutes(170);
       expect(BetterDoubles.extras(routes, exclude: [routes.first]), isEmpty);
     });
+  });
+}
+
+void trebleLeaveTests() {
+  final engine = CheckoutEngine();
+  final optimal = OptimalRouteService(engine);
+  test('43: T11 D5 is optimal because T11 and S11 both leave a better double', () {
+    expect(optimal.isOptimal(43, CheckoutRoute.parse('T11 D5')), isTrue);
+    expect(optimal.isOptimal(43, CheckoutRoute.parse('S11 D16')), isTrue);
   });
 }

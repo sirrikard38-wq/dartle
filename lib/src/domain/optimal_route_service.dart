@@ -152,6 +152,14 @@ class OptimalRouteService {
       }
     }
 
+    // Two darts left on 2-60: the treble of a number whose single also leaves a
+    // double is as good (43: T11 D5, S11 D16).
+    if (minimum == 2) {
+      for (final route in SingleLeave.trebleRoutes(target)) {
+        add(route, force: true);
+      }
+    }
+
     if (routes.isEmpty) {
       add(_strategy.best(_engine.legalRoutes(target, darts: minimum)), force: true);
     }
