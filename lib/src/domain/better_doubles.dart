@@ -14,6 +14,17 @@ abstract final class BetterDoubles {
   static bool leavesBetterDouble(CheckoutRoute route) =>
       !route.isEmpty && isBetter(route.darts.last);
 
+  /// A two-dart route that starts on a treble and finishes on a better double,
+  /// where the single of that treble leaves a better double as well: aiming at
+  /// the treble is safe either way. 43 is T11 D5 (T11 leaves D5, S11 leaves
+  /// D16), but 52 is not T14 D5 (S14 leaves D19).
+  static bool isSafeTreble(CheckoutRoute route) {
+    if (route.length != 2) return false;
+    final first = route.darts.first;
+    final last = route.darts.last;
+    return first.isTreble && isBetter(last) && numbers.contains(first.number + last.number);
+  }
+
   /// The routes to show as "also optimal", from the equally optimal [routes]:
   /// first one more route that finishes on a better double (if there is one),
   /// then up to [more] other equally optimal routes. Nothing in [exclude] (the
@@ -33,12 +44,9 @@ abstract final class BetterDoubles {
       result.add(better.first);
       others.remove(better.first);
     }
-    // A treble that leaves a better double (43: T11 D5) is worth showing too.
-    final treble = others
-        .where((r) => r.setupDarts.length == 1 &&
-            r.setupDarts.first.multiplier == Multiplier.treble &&
-            leavesBetterDouble(r))
-        .toList();
+    // A treble whose single leaves a better double too (43: T11 D5) is worth
+    // showing as well.
+    final treble = others.where(isSafeTreble).toList();
     var room = more;
     if (treble.isNotEmpty) {
       result.add(treble.first);

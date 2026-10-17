@@ -186,16 +186,20 @@ void main() {
   group('two darts from 41 to 60: a single that leaves a better double is optimal too', () {
     test('57: S17 D20 next to the bull-safe T7 D18 and S7 Bull (never the outer bull)', () {
       expect(optimal.optimalRoutes(57).map((x) => x.notation),
-          ['T7 D18', 'S7 Bull', 'S17 D20']);
+          ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3']);
     });
 
     test('60 is S20 D20 as well as T10 D15 and S10 Bull', () {
       expect(notations(60), {'T10 D15', 'S10 Bull', 'S20 D20'});
     });
 
-    test('51 to 54: the singles, the Bull and the trebles whose single also leaves a better double', () {
+    test('51 to 54: the singles, the Bull and the trebles whose single also leaves a double', () {
       expect(notations(51), containsAll({'S1 Bull', 'S11 D20', 'S15 D18', 'S19 D16'}));
-      expect(notations(52), {'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16', 'T16 D2', 'T12 D8'});
+      expect(notations(52), {
+        'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16', // the usual ones
+        'T16 D2', 'T12 D8', // S16 leaves D18, S12 leaves D20
+        'T14 D5', 'S14 D19', // D19 is not a better double, still listed
+      });
     });
 
     test('the double has to be one of the better doubles: S19 D19 is not optimal', () {
@@ -282,20 +286,23 @@ void main() {
   });
 
   group('more singles win: never a treble or double where a single will do', () {
-    test('35: S15 D10, S3 D16, S17 D9 are all optimal - T5 D10 is not', () {
-      for (final text in ['S15 D10', 'S3 D16', 'S17 D9', 'S19 D8', 'S1 D17']) {
+    test('35: S15 D10, S3 D16, S17 D9 are all optimal - and T5 D10, as S5 leaves D15', () {
+      for (final text in ['S15 D10', 'S3 D16', 'S17 D9', 'S19 D8', 'S1 D17', 'T5 D10']) {
         expect(optimal.isOptimal(35, r(text)), isTrue, reason: text);
       }
-      expect(engine.isLegalRoute(35, r('T5 D10')), isTrue);
-      expect(optimal.isOptimal(35, r('T5 D10')), isFalse);
     });
 
-    test('42: any single that leaves a double is optimal, a triple route only when its single also leaves a better double', () {
+    test('42: any single that leaves a double is optimal, and so is a triple whose single does', () {
       expect(optimal.isOptimal(42, r('S2 D20')), isTrue);
       expect(optimal.isOptimal(42, r('S10 D16')), isTrue);
       expect(optimal.isOptimal(42, r('T2 D18')), isTrue);
-      expect(optimal.isOptimal(42, r('T4 D15')), isFalse);
-      expect(engine.isLegalRoute(42, r('T4 D15')), isTrue);
+      expect(optimal.isOptimal(42, r('T4 D15')), isTrue);
+    });
+
+    test('a triple is not optimal when its single leaves no double: 58 T6 D20', () {
+      // S6 would leave 52, which no single dart finishes.
+      expect(engine.isLegalRoute(58, r('T6 D20')), isTrue);
+      expect(optimal.isOptimal(58, r('T6 D20')), isFalse);
     });
 
     test('where no single can do it, trebles of 15 and up are optimal', () {
@@ -493,10 +500,24 @@ void main() {
     });
 
     test('when the player entered an optimal route, the primary can be an extra', () {
-      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull, S17 D20
+      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull, S17 D20, T17 D3
       final entered = routes[1];
       final extras = BetterDoubles.extras(routes, exclude: [entered]);
-      expect(extras.map((x) => x.notation), ['T7 D18', 'S17 D20']);
+      expect(extras.map((x) => x.notation), ['T7 D18', 'S17 D20', 'T17 D3']);
+    });
+
+    test('43: the treble whose single also leaves a better double is among the extras', () {
+      final routes = optimal.optimalRoutes(43);
+      final extras = BetterDoubles.extras(routes, exclude: [routes.first]);
+      expect(extras.map((x) => x.notation), contains('T11 D5'));
+      expect(extras, hasLength(3));
+    });
+
+    test('isSafeTreble: T11 D5 yes (S11 leaves D16); T14 D5 and T7 D18 no', () {
+      expect(BetterDoubles.isSafeTreble(r('T11 D5')), isTrue);
+      expect(BetterDoubles.isSafeTreble(r('T14 D5')), isFalse); // S14 leaves D19
+      expect(BetterDoubles.isSafeTreble(r('T7 D18')), isFalse); // S7 leaves the Bull
+      expect(BetterDoubles.isSafeTreble(r('S11 D16')), isFalse);
     });
 
     test('extras of a number with one optimal route is empty', () {

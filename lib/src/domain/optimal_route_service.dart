@@ -28,9 +28,12 @@ import 'site_routes.dart';
 ///     109: T19 S20 D16), see [SingleLeave].
 ///  3. **More singles.** It is far easier to hit a single than a double or a
 ///     treble, so the routes with the most single setup darts win (the outer
-///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9 - never T5 D10.
+///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9.
 ///  4. **Setup doubles last, then fewer triples.** Only sensible aims are
 ///     used (singles and T15-T20, see [NaturalAim]).
+///  5. **Triple first**, with two darts left on 20 to 60: the triple of a number
+///     whose single also leaves a double is as good (43: T11 D5, S11 D16; 35:
+///     T5 D10, S5 D15), whatever the doubles are. See [SingleLeave.trebleRoutes].
 ///
 /// [chartOnlyCheckouts] (120) always keep their classic chart route. A chart
 /// route is shown first when it is one of the optimal routes. A chart entry

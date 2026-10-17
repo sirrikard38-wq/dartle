@@ -81,9 +81,9 @@ void main() {
         RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
 
     test('57: S7 Bull moves up next to T7 D18, the rest stays as it was', () {
-      // By finisher it would be T7 D18, S17 D20, S7 Bull.
-      expect(order(optimal.optimalRoutes(57)), ['T7 D18', 'S17 D20', 'S7 Bull']);
-      expect(popup(57), ['T7 D18', 'S7 Bull', 'S17 D20']);
+      // By finisher it would be T17 D3, T7 D18, S17 D20, S7 Bull.
+      expect(order(optimal.optimalRoutes(57)), ['T17 D3', 'T7 D18', 'S17 D20', 'S7 Bull']);
+      expect(popup(57), ['T17 D3', 'T7 D18', 'S7 Bull', 'S17 D20']);
     });
 
     test('130: T20 S20 Bull is next to T20 T20 D5', () {

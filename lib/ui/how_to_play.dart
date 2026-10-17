@@ -46,9 +46,15 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'The fewest darts comes first. A single is far easier to hit than a '
         'double or a triple, so with the same number of darts the route with the '
         'most singles wins, and a double as a setup dart is the worst. So 35 is '
-        'S15 D10, S3 D16 or S17 D9 - never T5 D10 - and they are all equally '
-        'optimal. The outer bull (25) counts as a single. Where no single can do '
-        'it, triples T15 to T20 are used.'),
+        'S15 D10, S3 D16 or S17 D9, and they are all equally optimal. The outer '
+        'bull (25) counts as a single. Where no single can do it, triples T15 to '
+        'T20 are used.'),
+    section('Triple first',
+        'With two darts left on 20 to 60, the triple of a number is optimal too '
+        'when its single also leaves a double. Say 43 is left: T11 leaves D5 and '
+        'S11 leaves D16, so T11 D5 is as good as S11 D16. Every such pair is '
+        'listed, also when one of the two doubles is not one of the good ones '
+        '(35: T5 D10 and S5 D15).'),
     section('Bull safety',
         'With two darts left on 51 to 70, aim at the number that is 50 less than '
         'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '

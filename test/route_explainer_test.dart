@@ -87,7 +87,7 @@ void main() {
     });
 
     test('a route that is not optimal says why: fewer singles', () {
-      final out = text(explain(35, player: 'T5 D10'));
+      final out = text(explain(47, player: 'T5 D16')); // S5 would leave 42: no treble route here
       expect(out, contains('checks out, but it is not optimal'));
       expect(out, contains('0 singles where the best routes have 1'));
       expect(out, contains('T5 is not a sensible aim'));
