@@ -60,6 +60,52 @@ void main() {
     });
   });
 
+  group('a number with only one optimal route', () {
+    late InMemoryStorageService storage;
+    late Favorites favorites;
+
+    setUp(() async {
+      storage = InMemoryStorageService();
+      favorites = Favorites(storage, defaults: {
+        170: [r('T20 T20 Bull')],
+        98: [r('T18 S4 D20')],
+      });
+      await favorites.load();
+    });
+
+    test('has it as a favorite from the start', () {
+      expect(favorites.isFavorite(170, r('T20 T20 Bull')), isTrue);
+      expect(favorites.hasAny(170), isTrue);
+      expect(favorites.routesFor(170).map((x) => x.notation), ['T20 T20 Bull']);
+      expect(favorites.isFavorite(98, r('S4 T18 D20')), isTrue); // any order
+      expect(favorites.hasAny(97), isFalse);
+    });
+
+    test('the mark can be taken away, and that is remembered', () async {
+      expect(await favorites.toggle(170, r('T20 T20 Bull')), isFalse);
+      expect(favorites.hasAny(170), isFalse);
+      final again = Favorites(storage, defaults: {170: [r('T20 T20 Bull')]});
+      await again.load();
+      expect(again.isFavorite(170, r('T20 T20 Bull')), isFalse);
+      expect(await again.toggle(170, r('T20 T20 Bull')), isTrue);
+      expect(again.isFavorite(170, r('T20 T20 Bull')), isTrue);
+    });
+
+    test('it comes first, then the marked ones', () async {
+      await favorites.toggle(98, r('T20 D19'));
+      expect(favorites.routesFor(98).map((x) => x.notation), ['T18 S4 D20', 'T20 D19']);
+      expect(favorites.dartCountsFor(98), [2, 3]);
+    });
+  });
+
+  test('the game makes every only route a favorite: 170, 40, and none on 57', () async {
+    final game = createGameController(InMemoryStorageService());
+    await game.init();
+    expect(game.favorites.isFavorite(170, r('T20 T20 Bull')), isTrue);
+    expect(game.favorites.isFavorite(40, r('D20')), isTrue);
+    expect(game.favorites.hasAny(57), isFalse); // several optimal routes
+  });
+
   test('the game loads them and keeps them across starts', () async {
     final storage = InMemoryStorageService();
     final game = createGameController(storage);

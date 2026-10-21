@@ -86,7 +86,8 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'number with more than six of them only lists the ones that finish on a '
         'good double (or the Bull). Press the little dart in the corner of a '
         'board to make that route a favorite: it fills in white, comes first '
-        'next time, and is kept under Favorites in the menu.'),
+        'next time, and is kept under Favorites in the menu. A number with only '
+        'one optimal route has it as a favorite from the start.'),
     if (game.mode.hasScore) ...[
       section('Score',
           'A correct checkout with time left on the clock scores as many points as '

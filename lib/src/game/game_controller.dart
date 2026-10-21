@@ -135,8 +135,24 @@ class GameController {
   late final HistoryRepository _leaderboardRecordRepo =
       HistoryRepository(_storage, key: leaderboardRecordKey);
 
-  /// The routes the player marked with the dart icon, saved on this device.
-  late final Favorites favorites = Favorites(_storage);
+  /// The routes the player marked with the dart icon, saved on this device. A
+  /// number with only one optimal route has it as a favorite from the start.
+  late final Favorites favorites = Favorites(_storage, defaults: _onlyRoutes());
+
+  /// Every number's only optimal route, for the numbers (and numbers of darts)
+  /// that have just one.
+  Map<int, List<CheckoutRoute>> _onlyRoutes() {
+    final only = <int, List<CheckoutRoute>>{};
+    for (var n = CheckoutEngine.minCheckout; n <= CheckoutEngine.maxCheckout; n++) {
+      for (final routes in [
+        _optimal.optimalRoutes(n),
+        if (_optimal.hasThreeDartOption(n)) _optimal.optimalRoutesIn(n, 3),
+      ]) {
+        if (routes.length == 1) only.putIfAbsent(n, () => []).add(routes.single);
+      }
+    }
+    return only;
+  }
   AttemptTimer _timer;
 
   GamePhase _phase = GamePhase.menu;

@@ -146,7 +146,9 @@ leaderboard shows the scores on the device, as before.
   popup marks that route as a favorite (filled white) for its number and
   number of darts; favorites come first in that popup. The menu's Favorites
   screen lists 170 down to 2 (white = has favorites) and opens a popup per
-  number with "2 Darts" / "3 Darts" pages to swipe between. Saved on the device
+  number with "2 Darts" / "3 Darts" pages to swipe between. A number with only
+  one optimal route (for its number of darts) has it as a favorite from the
+  start - 40 of them, 170 to 2 - until it is unmarked. Saved on the device
   (`Favorites`, key `dartle.favorites.v1`).
 - Difficulty is a data-driven complexity band (`difficulty.dart`):
   `(darts-1) + trebles + (bull?1:0) + (target>=100?1:0)`.
