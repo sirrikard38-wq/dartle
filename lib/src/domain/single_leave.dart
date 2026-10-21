@@ -65,37 +65,6 @@ abstract final class SingleLeave {
     return routes;
   }
 
-  /// The numbers [trebleRoutes] applies to, 20 to 60.
-  static const int minTrebleTarget = 20;
-
-  /// Two darts left on 20 to 60: a first dart at the treble of a number whose
-  /// single also leaves a double. 43 is T11 D5 next to S11 D16 (33 and 11 both
-  /// leave a better double). Every such pair is listed, both routes, also when
-  /// one of the two doubles is not a [BetterDoubles] one (52: T14 D5 and S14
-  /// D19), so "All possibilities" shows them all. The pairs that leave better
-  /// doubles on both sides are the ones shown first, see
-  /// [BetterDoubles.isSafeTreble]. Highest number first.
-  static List<CheckoutRoute> trebleRoutes(int target) {
-    if (target < minTrebleTarget || target > maxTarget) return const [];
-    final routes = <CheckoutRoute>[];
-    for (var k = DartThrow.maxBoardNumber; k >= 1; k--) {
-      final afterTreble = _finisherFor(target - 3 * k);
-      final afterSingle = _finisherFor(target - k);
-      if (afterTreble == null || afterSingle == null) continue;
-      routes.add(CheckoutRoute([DartThrow(Multiplier.treble, k), afterTreble]));
-      routes.add(CheckoutRoute([DartThrow(Multiplier.single, k), afterSingle]));
-    }
-    return routes;
-  }
-
-  /// The double that finishes on [left] (D1 to D20, or the Bull on 50), or null
-  /// when no single dart finishes it.
-  static DartThrow? _finisherFor(int left) {
-    if (left == BullSafeFinish.bullScore) return DartThrow.bull;
-    if (left < 2 || left.isOdd || left > 2 * DartThrow.maxBoardNumber) return null;
-    return DartThrow(Multiplier.double, left ~/ 2);
-  }
-
   /// A single is S1..S20. The outer bull is not one: it is too hard to hit.
   static bool _isSingleOnBoard(int number) =>
       number >= 1 && number <= DartThrow.maxBoardNumber;

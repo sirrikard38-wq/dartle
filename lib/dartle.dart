@@ -7,6 +7,7 @@ library;
 export 'src/board/board_geometry.dart';
 export 'src/content/contact.dart';
 export 'src/content/phrases.dart';
+export 'src/domain/aim_pairs.dart';
 export 'src/domain/better_doubles.dart';
 export 'src/domain/bull_safe_finish.dart';
 export 'src/domain/canonical_checkouts.dart';

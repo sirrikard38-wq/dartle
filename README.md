@@ -99,11 +99,20 @@ leaderboard shows the scores on the device, as before.
      T15-T20, and the better doubles as setup darts when the route also finishes
      on a better double). 35 is `S15 D10` = `S3 D16` = `S17 D9`;
      132 is `T20 T20 D6` = `T20 D20 D16` = `T20 T16 D12`..., never `T19 25 Bull`;
-  4. **triple first**, with two darts left on 20 to 60: the triple of a number
-     whose single also leaves a double is as good, whatever the doubles are -
-     43 is also `T11 D5` (T11 leaves D5, S11 leaves D16), 35 is also `T5 D10`
-     (S5 leaves D15). The ones where both doubles are better doubles are shown
-     first under "Also optimal" (`SingleLeave.trebleRoutes`).
+  4. **aims**, with two darts left on 20 or more (`AimPairs`): a first dart
+     whose two possible hits - the single and triple of a number, or two
+     neighbours on the board (single/single or triple/triple) - each leave a
+     double is as good. 43 is also `T11 D5` (S11 leaves D16); 64 is also
+     `T16 D8` and `T8 D20`. Only the best group counts: aims with a better
+     double whatever is hit, else those with at least one, else the rest. The
+     same better double twice is optimal too (64: `D16 D16`).
+  A two-dart number over 40 can come with three darts (50% in the calculator
+  and in practice; the player chooses in practice and input). Then all three
+  darts must be used and the optimal routes are two setup darts from one aim -
+  neighbours, the single and triple of a number, one of each, or the same
+  number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20` ... (only
+  better doubles when there are any, then the most singles;
+  `AimPairs.threeDartRoutes`).
   The popup and the "Also optimal" boxes list every optimal route of a number
   that has up to 6 (76 keeps `T18 D11`); a number with more lists only the
   routes that finish on a better double, plus the Bull finishes and the first

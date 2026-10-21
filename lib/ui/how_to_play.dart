@@ -49,12 +49,14 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'S15 D10, S3 D16 or S17 D9, and they are all equally optimal. The outer '
         'bull (25) counts as a single. Where no single can do it, triples T15 to '
         'T20 are used.'),
-    section('Triple first',
-        'With two darts left on 20 to 60, the triple of a number is optimal too '
-        'when its single also leaves a double. Say 43 is left: T11 leaves D5 and '
-        'S11 leaves D16, so T11 D5 is as good as S11 D16. Every such pair is '
-        'listed, also when one of the two doubles is not one of the good ones '
-        '(35: T5 D10 and S5 D15).'),
+    section('Aim',
+        'With two darts left on 20 or more, a first dart is optimal too when '
+        'both darts you might hit leave a double: the single and the triple of a '
+        'number, or two neighbours on the board. Say 43 is left: T11 leaves D5 '
+        'and S11 leaves D16. On 64, T16 leaves D8 and its neighbour T8 leaves '
+        'D20. When some aims leave a good double whatever you hit, only those '
+        'count; otherwise the ones where at least one does. The same good double '
+        'twice counts too (64: D16 D16).'),
     section('Bull safety',
         'With two darts left on 51 to 70, aim at the number that is 50 less than '
         'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '

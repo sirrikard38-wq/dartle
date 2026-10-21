@@ -1,3 +1,4 @@
+import 'aim_pairs.dart';
 import 'better_doubles.dart';
 import 'bull_safe_finish.dart';
 import 'canonical_checkouts.dart';
@@ -31,9 +32,14 @@ import 'site_routes.dart';
 ///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9.
 ///  4. **Setup doubles last, then fewer triples.** Only sensible aims are
 ///     used (singles and T15-T20, see [NaturalAim]).
-///  5. **Triple first**, with two darts left on 20 to 60: the triple of a number
-///     whose single also leaves a double is as good (43: T11 D5, S11 D16; 35:
-///     T5 D10, S5 D15), whatever the doubles are. See [SingleLeave.trebleRoutes].
+///  5. **Aims**, with two darts left on 20 or more: a first dart whose two
+///     possible hits (the single and triple of a number, or two neighbours on
+///     the board) each leave a double is as good (43: T11 D5, S11 D16; 64: T16
+///     D8, T8 D20), from the best group only; and the same better double twice
+///     (64: D16 D16). See [AimPairs].
+///
+/// A two-dart number over 40 can also be played with three darts; its optimal
+/// routes are then [AimPairs.threeDartRoutes] (see [optimalRoutesIn]).
 ///
 /// [chartOnlyCheckouts] (120) always keep their classic chart route. A chart
 /// route is shown first when it is one of the optimal routes. A chart entry
@@ -59,6 +65,38 @@ class OptimalRouteService {
   /// chart: standard routes that are accepted next to the rules' own routes.
   final Map<int, List<String>> _siteThrows;
   final Map<int, List<CheckoutRoute>> _cache = {};
+  final Map<(int, int), List<CheckoutRoute>> _cacheIn = {};
+
+  /// The optimal routes for [target] played with exactly [darts] darts (all of
+  /// them have to be used). With the fewest darts it needs that is
+  /// [optimalRoutes]; a two-dart number over 40 with three darts uses
+  /// [AimPairs.threeDartRoutes]; anything else that has to use more darts than
+  /// it needs (after a dart that was not optimal) gets the routes with the most
+  /// singles. Empty when it cannot be done in exactly [darts].
+  List<CheckoutRoute> optimalRoutesIn(int target, int darts) {
+    final minimum = _engine.minimumDarts(target);
+    if (minimum == null || darts < minimum || !_engine.canCheckoutIn(target, darts)) {
+      return const [];
+    }
+    if (darts == minimum) return optimalRoutes(target);
+    return _cacheIn.putIfAbsent((target, darts), () {
+      if (minimum == 2 && darts == 3) {
+        final aims = AimPairs.threeDartRoutes(target);
+        if (aims.isNotEmpty) return List.unmodifiable(aims);
+      }
+      final tier = _tierRoutes(target, darts);
+      return List.unmodifiable(tier.isEmpty ? _engine.legalRoutes(target, darts: darts) : tier);
+    });
+  }
+
+  /// True when [target] is a two-dart number over 40 that can also be played
+  /// with three darts (it has three-dart aim routes).
+  bool hasThreeDartOption(int target) =>
+      _engine.minimumDarts(target) == 2 && AimPairs.threeDartRoutes(target).isNotEmpty;
+
+  /// Whether [route] is optimal for [target] played with exactly [darts] darts.
+  bool isOptimalIn(int target, int darts, CheckoutRoute route) =>
+      route.length == darts && optimalRoutesIn(target, darts).any(route.isEquivalentTo);
 
   /// The primary optimal route, or null when [target] is not checkoutable.
   CheckoutRoute? optimalRoute(int target) {
@@ -155,10 +193,14 @@ class OptimalRouteService {
       }
     }
 
-    // Two darts left on 20-60: the treble of a number whose single also leaves a
-    // double is as good (43: T11 D5, S11 D16).
+    // Two darts left: a first dart whose two possible hits each leave a double
+    // is as good (43: T11 D5, S11 D16; 64: T16 D8, T8 D20), and so is the same
+    // better double twice (64: D16 D16).
     if (minimum == 2) {
-      for (final route in SingleLeave.trebleRoutes(target)) {
+      for (final route in [
+        ...AimPairs.twoDartRoutes(target),
+        if (AimPairs.sameDoubleTwice(target) case final twice?) twice,
+      ]) {
         add(route, force: true);
       }
     }
