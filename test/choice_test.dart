@@ -37,8 +37,9 @@ void main() {
 
     test('the bull-safe routes stay optimal even with low trebles (55 -> T5 D20, S5 Bull)', () {
       // 55 also has the singles that leave a better double: S15 D20, S19 D18,
-      // and T15 D5 (S15 leaves D20: a better double either way).
-      expect(advisor.optimalDarts(55), {d('T5'), d('S5'), d('S15'), d('S19'), d('T15')});
+      // and the trebles whose single leaves a double too: T15 D5 (S15 D20) and
+      // T17 D2 (S17 D19).
+      expect(advisor.optimalDarts(55), {d('T5'), d('S5'), d('S15'), d('S19'), d('T15'), d('T17'), d('S17')});
     });
 
     group('priority: fewest darts, bull-safe, then the most singles', () {
@@ -66,12 +67,13 @@ void main() {
         expect(r.isOptimal, isTrue);
       });
 
-      test('35 lights the singles, and T11 (T11 leaves D1, S11 leaves D12)', () {
+      test('35 lights the singles, and the trebles whose single also leaves a double', () {
         final lit = advisor.optimalDarts(35);
         expect(lit, isNotEmpty);
         expect(lit, containsAll([d('S15'), d('S3'), d('S17')]));
-        // T5 is not: S5 would leave D15, and T11 leaves a better double either way.
-        expect(lit.where((x) => x.multiplier != Multiplier.single).toSet(), {d('T11')});
+        // T5 D10 with S5 D15: one of the two doubles is not a better one, still lit.
+        expect(lit.where((x) => x.multiplier != Multiplier.single).toSet(),
+            {d('T11'), d('T9'), d('T7'), d('T5'), d('T3'), d('T1')});
       });
 
       test('43: the triple of 11 is a good starting dart, its single leaves a checkout too', () {

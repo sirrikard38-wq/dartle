@@ -199,16 +199,14 @@ void main() {
       expect(notations(60), {'T10 D15', 'S10 Bull', 'S20 D20', 'T16 D6', 'T8 D18'});
     });
 
-    test('51 to 54: the singles, the Bull and the aims that leave better doubles both ways', () {
+    test('51 to 54: the singles, the Bull, the trebles whose single leaves a double, and the aims', () {
       expect(notations(51), containsAll({'S1 Bull', 'S11 D20', 'S15 D18', 'S19 D16'}));
       expect(notations(52), {
         'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16', // the usual ones
         'T16 D2', 'T12 D8', // S16 leaves D18, S12 leaves D20
+        'T14 D5', 'S14 D19', // D19 is not a better double, still listed
         'T8 D14', // T16 and T8 are neighbours: D2 or D14
       });
-      // T14 D5 is not: its single S14 would leave D19, and 52 has aims with a
-      // better double whatever is hit.
-      expect(notations(52), isNot(contains('T14 D5')));
     });
 
     test('the double has to be one of the better doubles: S19 D19 is not optimal', () {
@@ -295,20 +293,17 @@ void main() {
   });
 
   group('more singles win: never a treble or double where a single will do', () {
-    test('35: S15 D10, S3 D16, S17 D9 are all optimal, and T11 D1 - not T5 D10', () {
-      for (final text in ['S15 D10', 'S3 D16', 'S17 D9', 'S19 D8', 'S1 D17', 'T11 D1']) {
+    test('35: S15 D10, S3 D16, S17 D9 are all optimal, and T11 D1 and T5 D10', () {
+      for (final text in ['S15 D10', 'S3 D16', 'S17 D9', 'S19 D8', 'S1 D17', 'T11 D1', 'T5 D10']) {
         expect(optimal.isOptimal(35, r(text)), isTrue, reason: text);
       }
-      // S5 would leave D15; T11 / S11 leave better doubles both ways, so only
-      // that aim counts.
-      expect(optimal.isOptimal(35, r('T5 D10')), isFalse);
     });
 
-    test('42: any single that leaves a double is optimal, and a triple whose single leaves a better double', () {
+    test('42: any single that leaves a double is optimal, and so is a triple whose single does', () {
       expect(optimal.isOptimal(42, r('S2 D20')), isTrue);
       expect(optimal.isOptimal(42, r('S10 D16')), isTrue);
       expect(optimal.isOptimal(42, r('T2 D18')), isTrue); // S2 leaves D20
-      expect(optimal.isOptimal(42, r('T4 D15')), isFalse); // S4 leaves D19
+      expect(optimal.isOptimal(42, r('T4 D15')), isTrue); // S4 leaves D19
     });
 
     test('a triple is not optimal when no hit next to it leaves a double: 58 T14 D8', () {

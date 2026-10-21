@@ -105,7 +105,11 @@ leaderboard shows the scores on the device, as before.
      double is as good. 43 is also `T11 D5` (S11 leaves D16); 64 is also
      `T16 D8` and `T8 D20`. Only the best group counts: aims with a better
      double whatever is hit, else those with at least one, else the rest. The
-     same better double twice is optimal too (64: `D16 D16`).
+     older rule stays as well: on 20 to 60 both routes of every single/triple
+     pair of a number that leave a double, whatever the doubles (35: `T5 D10`,
+     `S5 D15`; `AimPairs.sameNumberRoutes`) - no route that was optimal
+     before is taken away. The same better double twice is optimal too (64:
+     `D16 D16`).
   A two-dart number over 40 can come with three darts (50% in the calculator
   and in practice; the player chooses in practice and input). Then all three
   darts must be used and the optimal routes are two setup darts from one aim -

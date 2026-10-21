@@ -59,8 +59,10 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'number, or two neighbours on the board. Say 43 is left: T11 leaves D5 '
         'and S11 leaves D16. On 64, T16 leaves D8 and its neighbour T8 leaves '
         'D20. When some aims leave a good double whatever you hit, only those '
-        'count; otherwise the ones where at least one does. The same good double '
-        'twice counts too (64: D16 D16).'),
+        'count; otherwise the ones where at least one does. On 20 to 60 the '
+        'single and triple of a number always count when both leave a double, '
+        'whatever double (35: T5 D10 and S5 D15). The same good double twice '
+        'counts too (64: D16 D16).'),
     section('Bull safety',
         'With two darts left on 51 to 70, aim at the number that is 50 less than '
         'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '

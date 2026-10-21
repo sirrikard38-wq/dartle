@@ -195,10 +195,12 @@ class OptimalRouteService {
 
     // Two darts left: a first dart whose two possible hits each leave a double
     // is as good (43: T11 D5, S11 D16; 64: T16 D8, T8 D20), and so is the same
-    // better double twice (64: D16 D16).
+    // better double twice (64: D16 D16). On 20 to 60 every single/triple pair
+    // of a number stays optimal too, whatever its doubles (35: T5 D10).
     if (minimum == 2) {
       for (final route in [
         ...AimPairs.twoDartRoutes(target),
+        ...AimPairs.sameNumberRoutes(target),
         if (AimPairs.sameDoubleTwice(target) case final twice?) twice,
       ]) {
         add(route, force: true);

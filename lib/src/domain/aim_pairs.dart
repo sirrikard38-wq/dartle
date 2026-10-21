@@ -112,6 +112,27 @@ abstract final class AimPairs {
     return _unique(byBetter[best]!);
   }
 
+  /// The highest two-dart number [sameNumberRoutes] is used for.
+  static const int maxSameNumberTarget = 60;
+
+  /// Two darts left on 20 to 60: both routes of the single and the triple of
+  /// every number whose two hits each leave a finish, whatever the doubles are
+  /// (35: T5 D10 and S5 D15; 52: T14 D5 and S14 D19). These were optimal
+  /// before the groups of [twoDartRoutes] came in, and they stay optimal.
+  static List<CheckoutRoute> sameNumberRoutes(int target) {
+    if (target < minTwoDartTarget || target > maxSameNumberTarget) return const [];
+    final routes = <CheckoutRoute>[];
+    for (var n = DartThrow.maxBoardNumber; n >= 1; n--) {
+      final afterTreble = finisherFor(target - 3 * n);
+      final afterSingle = finisherFor(target - n);
+      if (afterTreble == null || afterSingle == null) continue;
+      routes
+        ..add(CheckoutRoute([_t(n), afterTreble]))
+        ..add(CheckoutRoute([_s(n), afterSingle]));
+    }
+    return routes;
+  }
+
   /// The same better double twice, when that is exactly [target]: 64 is D16
   /// D16 (aim at the double you finish on). Null otherwise.
   static CheckoutRoute? sameDoubleTwice(int target) {

@@ -40,6 +40,17 @@ void main() {
       expect(routes, isNot(contains('T5 D10')));
     });
 
+    test('the old routes stay: every single/triple pair of a number on 20 to 60, any doubles', () {
+      expect(optimal.isOptimal(35, r('T5 D10')), isTrue); // S5 leaves D15
+      expect(optimal.isOptimal(52, r('S14 D19')), isTrue); // T14 leaves D5
+      for (var t = AimPairs.minTwoDartTarget; t <= AimPairs.maxSameNumberTarget; t++) {
+        if (engine.minimumDarts(t) != 2) continue;
+        for (final route in AimPairs.sameNumberRoutes(t)) {
+          expect(optimal.isOptimal(t, route), isTrue, reason: '$t ${route.notation}');
+        }
+      }
+    });
+
     test('the same better double twice: 64 D16 D16, not 76 D19 D19', () {
       expect(AimPairs.sameDoubleTwice(64)?.notation, 'D16 D16');
       expect(AimPairs.sameDoubleTwice(76), isNull);
