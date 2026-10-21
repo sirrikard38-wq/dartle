@@ -95,13 +95,24 @@ class CheckoutValidator {
       );
     }
 
-    // Up to the free darts of the visit.
-    if (route.isEmpty || route.length > challenge.dartsLeft) {
+    // Reaching the number without a double is never a checkout.
+    if (route.total == target && !route.endsOnDouble) {
+      return fail(
+        AttemptOutcome.invalidFinish,
+        'Invalid checkout — the final dart must be a double or Bull.',
+      );
+    }
+
+    // Exactly the free darts of the visit: all of them have to be used.
+    if (route.length != challenge.dartsLeft) {
       final left = challenge.dartsLeft;
       return fail(
         AttemptOutcome.wrongDartCount,
-        'This checkout needs exactly $left '
-        '${left == 1 ? 'dart' : 'darts'}, but you entered ${route.length}.',
+        route.total == target
+            ? 'Checked out in ${route.length} ${route.length == 1 ? 'dart' : 'darts'}, '
+                'but all $left darts have to be used.'
+            : 'This checkout needs exactly $left '
+                '${left == 1 ? 'dart' : 'darts'}, but you entered ${route.length}.',
       );
     }
 
@@ -127,7 +138,7 @@ class CheckoutValidator {
       outcome: AttemptOutcome.correct,
       playerRoute: route,
       message: '${route.arithmetic}. Correct!',
-      isOptimal: _optimal.isOptimal(target, route),
+      isOptimal: _optimal.isOptimalIn(target, challenge.darts, route),
     );
   }
 }

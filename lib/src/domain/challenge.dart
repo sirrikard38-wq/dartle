@@ -6,7 +6,8 @@ import 'difficulty.dart';
 /// the other boxes can be filled. The last free box is always the finishing
 /// double.
 ///
-/// The layout follows from the fewest darts a number needs:
+/// The layout follows from the darts a number is played with - the fewest it
+/// needs, or three for a two-dart number over 40 that comes with three:
 ///
 ///  * 1 dart: the first two boxes are used ([leftTwoUsed]);
 ///  * 2 darts: the left box is used ([leftUsed]);
@@ -61,8 +62,10 @@ final class Challenge {
     required this.difficulty,
     required this.complexity,
     int? fewestDarts,
+    int? darts,
     this.hasCheckout = true,
-  }) : _fewestDarts = fewestDarts;
+  })  : _fewestDarts = fewestDarts,
+        _darts = darts;
 
   /// A number with no checkout (159, 162, 163, 165, 166, 168, 169): all three
   /// darts are free, and the right answer is "No checkout".
@@ -84,20 +87,45 @@ final class Challenge {
   final bool hasCheckout;
 
   final int? _fewestDarts;
+  final int? _darts;
 
   /// The fewest darts that can check [target] out (0 when impossible).
   int get dartCount => _fewestDarts ?? optimalRoute.length;
 
+  /// How many darts this checkout is played with, all of which have to be
+  /// used: normally the fewest, but a two-dart number over 40 can come with
+  /// three.
+  int get darts => _darts ?? dartCount;
+
+  /// True when it is played with more darts than it needs (a two-dart number
+  /// with three darts).
+  bool get hasExtraDart => darts > dartCount;
+
   /// Which boxes are used.
-  BoxLayout get layout => BoxLayout.defaultFor(dartCount);
+  BoxLayout get layout => BoxLayout.defaultFor(darts);
 
   /// How many darts can still be thrown.
   int get dartsLeft => layout.freeCount;
 
-  @override
-  bool operator ==(Object other) =>
-      other is Challenge && other.target == target && other.dartCount == dartCount;
+  /// The same number played with [darts] darts, [optimalRoute] being its first
+  /// optimal route with that many.
+  Challenge withDarts(int darts, CheckoutRoute optimalRoute) => Challenge(
+        target: target,
+        optimalRoute: optimalRoute,
+        difficulty: difficulty,
+        complexity: complexity,
+        fewestDarts: dartCount,
+        darts: darts,
+        hasCheckout: hasCheckout,
+      );
 
   @override
-  int get hashCode => Object.hash(target, dartCount);
+  bool operator ==(Object other) =>
+      other is Challenge &&
+      other.target == target &&
+      other.dartCount == dartCount &&
+      other.darts == darts;
+
+  @override
+  int get hashCode => Object.hash(target, dartCount, darts);
 }

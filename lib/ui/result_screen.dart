@@ -207,6 +207,19 @@ List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
         el('span', text: label),
       ]);
 
+  // Every undo used, then a miss: the session is over. Only the total score
+  // and Replay session, which starts a new session (and a new score).
+  if (game.isSessionOver) {
+    return [
+      el('p', cls: 'session-score', text: 'Score: ${formatScore(game.sessionPoints)}'),
+      el('p', cls: 'hint session-over', text: 'No undos left, so the session is over.'),
+      button('Replay session',
+          cls: 'cta',
+          focusKey: 'replay-session',
+          onPressed: (_) => game.replaySession()),
+    ];
+  }
+
   return [
     if (scored)
       el('div', cls: 'big-stats', children: [

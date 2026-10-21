@@ -261,6 +261,12 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .screen.result .target.small { margin-top: 11px; }
 
 .tile-row { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
+/* Practice and Checkout input: on a number that can be played with two or
+   three darts the boxes are one button that switches between them. */
+.dart-count-toggle { display: block; margin: 0 auto; padding: 0; border: 0; background: none; border-radius: 6px; }
+.dart-count-toggle:hover .tile { border-color: var(--fg); }
+.dart-count-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
+.hint.darts-hint { margin-top: 0; }
 .tile {
   position: relative;
   width: calc(var(--tile) * 1.15); height: var(--tile);
@@ -291,9 +297,9 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .tile-row.small .tile { width: 62px; height: 52px; font-size: 1.15rem; }
 .tile .mark { position: absolute; top: 1px; right: 4px; font-size: 0.7rem; opacity: 0.9; }
 
-/* Small darts in the game boxes: 1 in the first box, 2 in the second, 3 in the
-   third - always the same size. Empty boxes show them in the middle; once a
-   dart is entered they sit along the bottom under its name. */
+/* Small darts in the game boxes: one in every box, always the same size. Empty
+   boxes show it in the middle; once a dart is entered it sits along the bottom
+   under its name. */
 .tile.has-darts { padding-bottom: 26px; }
 .tile-darts {
   position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
@@ -503,6 +509,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .board-figure .tile .mark { font-size: 0.6rem; top: 0; right: 3px; }
 .board-figure .dartboard { width: 100%; min-width: 0; }
 .board-figure figcaption { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 6px 0 4px; }
+/* The session is over (no undos left, then a miss): the total score, big. */
+.session-score { margin: 22px 0 2px; font-size: 1.9rem; font-variant-numeric: tabular-nums; }
 .big-stats { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0 6px; }
 .big-stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
 .big-stat strong { font-size: 1.9rem; font-weight: 400; font-variant-numeric: tabular-nums; }

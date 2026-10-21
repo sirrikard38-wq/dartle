@@ -57,12 +57,52 @@ class ChoiceAdvisor {
   List<CheckoutRoute> optimalRoutes(int remaining) =>
       _optimal.optimalRoutes(remaining);
 
+  /// The optimal routes for [remaining] with exactly [darts] darts, all of
+  /// which have to be used (see [OptimalRouteService.optimalRoutesIn]).
+  List<CheckoutRoute> optimalRoutesIn(int remaining, int darts) =>
+      _optimal.optimalRoutesIn(remaining, darts);
+
   /// The darts that are an equally optimal NEXT throw for [remaining]: the
   /// setup darts of every optimal route, or just the finishing double when one
   /// dart finishes it. The order of the setup darts does not matter, so any of
   /// them can be thrown first.
-  Set<DartThrow> optimalDarts(int remaining) {
-    final routes = optimalRoutes(remaining);
+  Set<DartThrow> optimalDarts(int remaining) => _nextDarts(optimalRoutes(remaining));
+
+  /// Like [optimalDarts], with exactly [darts] darts still to throw.
+  Set<DartThrow> optimalDartsIn(int remaining, int darts) =>
+      _nextDarts(optimalRoutesIn(remaining, darts));
+
+  /// The equally optimal next darts for [target] played with exactly [darts]
+  /// darts, once [thrown] are in: the rest of every optimal route that has the
+  /// darts thrown so far among its setup darts (in any order) - on 85 with three
+  /// darts, S15 is followed by T10 (T10 S15 D20). After a dart that is in none
+  /// of them, the optimal darts for what is left.
+  Set<DartThrow> nextOptimalDarts(int target, int darts, List<DartThrow> thrown) {
+    final left = darts - thrown.length;
+    final remaining = target - thrown.fold<int>(0, (sum, d) => sum + d.score);
+    if (left <= 0 || remaining <= 0) return const <DartThrow>{};
+    final next = <DartThrow>{};
+    for (final route in optimalRoutesIn(target, darts)) {
+      final rest = _rest(route, thrown);
+      if (rest == null) continue;
+      next.addAll(rest.length == 1 ? rest : rest.sublist(0, rest.length - 1));
+    }
+    return next.isEmpty
+        ? optimalDartsIn(remaining, left)
+        : Set<DartThrow>.unmodifiable(next);
+  }
+
+  /// [route] without [thrown] (taken from its setup darts), or null when they
+  /// are not all among them.
+  static List<DartThrow>? _rest(CheckoutRoute route, List<DartThrow> thrown) {
+    final setup = route.setupDarts.toList();
+    for (final dart in thrown) {
+      if (!setup.remove(dart)) return null;
+    }
+    return [...setup, route.darts.last];
+  }
+
+  static Set<DartThrow> _nextDarts(List<CheckoutRoute> routes) {
     if (routes.isEmpty) return const <DartThrow>{};
     if (routes.first.length == 1) {
       return Set<DartThrow>.unmodifiable({for (final r in routes) r.darts.first});
@@ -85,20 +125,22 @@ class ChoiceAdvisor {
   }
 
   /// Rates throwing [dart] with [remaining] left and [dartsLeft] darts
-  /// (counting this one) still to throw.
+  /// (counting this one) still to throw. Every dart has to be used: checking
+  /// out with darts still in hand is wrong (a bust). [best] are the optimal
+  /// darts at this point when the caller knows them (see [nextOptimalDarts]).
   DartQuality rate({
     required int remaining,
     required int dartsLeft,
     required DartThrow dart,
+    Set<DartThrow>? best,
   }) {
     final after = remaining - dart.score;
     if (after < 0 || after == 1) return DartQuality.bust;
     if (after == 0) {
-      return dart.isFinishingDart ? DartQuality.optimal : DartQuality.bust;
+      return dart.isFinishingDart && dartsLeft == 1 ? DartQuality.optimal : DartQuality.bust;
     }
-    final needed = _engine.minimumDarts(after);
-    if (needed == null || needed > dartsLeft - 1) return DartQuality.poor;
-    if (optimalDarts(remaining).contains(dart)) {
+    if (dartsLeft <= 1 || !_engine.canCheckoutIn(after, dartsLeft - 1)) return DartQuality.poor;
+    if ((best ?? optimalDartsIn(remaining, dartsLeft)).contains(dart)) {
       return DartQuality.optimal;
     }
     return isNaturalAim(dart) ? DartQuality.fine : DartQuality.poor;

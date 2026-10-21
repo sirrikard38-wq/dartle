@@ -25,20 +25,24 @@ web.HTMLElement buildHowToPlay(GameController game) {
           'on a number that has one lit area and it counts as that lit dart. When a '
           'number has two lit areas (say the triple and the single), press the '
           'exact area you want. Other numbers count as the exact area you press. '
-          'You must finish on a double or Bull; going below zero or leaving 1 is a '
-          'bust. When a round is over, Replay checkout plays the same number again '
-          'and Next checkout moves on. There is no clock and no score, and nothing '
-          'is saved.')
+          'You must finish on a double or Bull with the last of your darts; going '
+          'below zero, leaving 1 or checking out with a dart still in hand is a '
+          'miss. A two-dart number over 40 can be played with two or three darts: '
+          'before your first dart, press the boxes to choose. When a round is over, '
+          'Replay checkout plays the same number again and Next checkout moves on. '
+          'There is no clock and no score, and nothing is saved.')
     else
       section('The basics',
           'You get a number and always three boxes. A box that is crossed out is a '
           'dart already used, so it cannot be filled. A one-dart number has its '
           'first two boxes crossed out. A two-dart number has its left box '
-          'crossed out. A three-dart number has nothing crossed out. '
-          'Pick S, D or T (on either side of the board), then tap a number. The last free box is '
-          'always a double or Bull. Your answer is checked the moment it is '
-          'complete. Not every number can be checked out: if there is no checkout, '
-          'press No checkout.'),
+          'crossed out - but half the time a two-dart number over 40 comes with '
+          'all three boxes free. A three-dart number has nothing crossed out. '
+          'Every free box has to be used: checking out with a box still free is '
+          'a miss. Pick S, D or T (on either side of the board), then tap a '
+          'number. The last free box is always a double or Bull. Your answer is '
+          'checked the moment it is complete. Not every number can be checked '
+          'out: if there is no checkout, press No checkout.'),
     section('Order',
         'The darts before the finisher are a combination: T20 T19 D8 is the same '
         'as T19 T20 D8. Only the last dart has a fixed place.'),
@@ -92,7 +96,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
       section('Undo',
           'Undo can be used ${GameController.maxUndos} times in a session. The number '
           'in brackets is how many are left. Choose the game again for '
-          '${GameController.maxUndos} more.'),
+          '${GameController.maxUndos} more. Once all of them are used, the next miss '
+          'ends the session: you see your score, and Replay session starts a new '
+          'one from 0.'),
     ],
   ]);
 }

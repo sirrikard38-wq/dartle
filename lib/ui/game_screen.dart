@@ -85,7 +85,7 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen game', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'meta', text: 'Finish on a double or Bull.'),
+      el('p', cls: 'meta', text: 'Finish on a double or Bull in the given number of darts.'),
       el('p', cls: 'target', text: '${challenge.target}', attrs: {
         'aria-label': 'Checkout ${challenge.target}, '
             '${challenge.dartsLeft} ${challenge.dartsLeft == 1 ? 'dart' : 'darts'} left',

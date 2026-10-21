@@ -2,7 +2,9 @@ import 'challenge.dart';
 import 'choice_advisor.dart';
 import 'dart_throw.dart';
 
-enum RoundStatus { inProgress, checkedOut, bust, outOfDarts }
+/// [finishedEarly]: checked out with darts still in hand - every dart has to be
+/// used, so that is a miss.
+enum RoundStatus { inProgress, checkedOut, bust, outOfDarts, finishedEarly }
 
 /// One dart in a "Checkout practice" round, with what the advisor said.
 class ChoiceStep {
@@ -32,6 +34,9 @@ class ChoiceStep {
     final after = remainingBefore - dart.score;
     if (after < 0) return 'that goes below zero';
     if (after == 1) return 'that leaves 1, which cannot be finished';
+    if (after == 0 && dart.isFinishingDart) {
+      return 'that checks out with darts still to throw - all of them have to be used';
+    }
     return 'the last dart must be a double or Bull';
   }
 }
@@ -64,9 +69,13 @@ class ChoiceRound {
 
   int get dartsLeft => maxDarts - _steps.length;
 
-  /// The equally optimal darts to throw next (empty once the round is over).
-  Set<DartThrow> get optimalDarts =>
-      isFinished ? const {} : _advisor.optimalDarts(remaining);
+  /// The equally optimal darts to throw next: the rest of the optimal routes
+  /// that the darts so far belong to, using up exactly the darts left (empty
+  /// once the round is over).
+  Set<DartThrow> get optimalDarts => isFinished ? const {} : _next();
+
+  Set<DartThrow> _next() =>
+      _advisor.nextOptimalDarts(target, maxDarts, [for (final s in _steps) s.dart]);
 
   /// Checked out using only equally optimal choices.
   bool get isOptimal =>
@@ -76,10 +85,12 @@ class ChoiceRound {
   void throwDart(DartThrow dart) {
     if (isFinished) return;
     final before = remaining;
+    final best = _next();
     final quality = _advisor.rate(
       remaining: before,
       dartsLeft: dartsLeft,
       dart: dart,
+      best: best,
     );
     final scored = before - dart.score;
     final step = ChoiceStep(
@@ -88,11 +99,14 @@ class ChoiceRound {
       remainingAfter: quality == DartQuality.bust ? before : scored,
       dartsLeftBefore: dartsLeft,
       quality: quality,
-      optimalChoices: _advisor.optimalDarts(before),
+      optimalChoices: best,
     );
     _steps.add(step);
     if (quality == DartQuality.bust) {
-      _status = RoundStatus.bust;
+      // Checking out with a dart still to throw is its own kind of miss.
+      _status = scored == 0 && dart.isFinishingDart
+          ? RoundStatus.finishedEarly
+          : RoundStatus.bust;
     } else if (scored == 0) {
       _status = RoundStatus.checkedOut;
     } else if (dartsLeft == 0) {

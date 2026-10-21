@@ -135,7 +135,9 @@ leaderboard shows the scores on the device, as before.
 - **Score** (calculator only): a right answer with time left on the 30 s clock
   scores the streak length (1st = 1, 2nd = 2, ... 10th = 10); a right answer
   after the clock ran out scores 0 and keeps the streak; a miss costs nothing
-  and resets the streak. Undo: 3 per session.
+  and resets the streak. Undo: 3 per session; once all 3 are used, the next
+  miss ends the session (the result shows "Score: N" and only Replay session,
+  which starts a new one).
 - Difficulty is a data-driven complexity band (`difficulty.dart`):
   `(darts-1) + trebles + (bull?1:0) + (target>=100?1:0)`.
 

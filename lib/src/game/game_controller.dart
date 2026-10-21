@@ -148,6 +148,10 @@ class GameController {
   int _sessionStreak = 0;
   int _undosLeft = maxUndos;
 
+  /// Checkout calculator: every undo was used and then a checkout was missed,
+  /// so the session is over - only Replay session is left.
+  bool _sessionOver = false;
+
   /// True while a checkout is being replayed: no clock, no score, no saving.
   bool _replay = false;
 
@@ -173,6 +177,11 @@ class GameController {
   int get sessionPoints => _sessionPoints;
   int get sessionStreak => _sessionStreak;
   bool get isReplay => _replay;
+
+  /// Checkout calculator: all the undos of the session were used and then a
+  /// checkout was missed. The session is over: the result screen offers only
+  /// Replay session, which starts a new one (and a new score).
+  bool get isSessionOver => _sessionOver;
 
   /// Checkout input: the number with no checkout, and the insult shown for it.
   int? get impossibleNumber => _impossibleNumber;
@@ -210,12 +219,31 @@ class GameController {
         _advisor.hasOnlyOneCheckout(challenge.target);
   }
 
-  /// Optimal routes for the checkout on screen. Empty when no checkout is
-  /// showing (or the number has none).
+  /// Optimal routes for the checkout on screen, with exactly the darts it is
+  /// played with. Empty when no checkout is showing (or the number has none).
   List<CheckoutRoute> get currentOptimalRoutes {
     final challenge = _challenge;
     if (challenge == null) return const [];
-    return _optimal.optimalRoutes(challenge.target);
+    return _optimal.optimalRoutesIn(challenge.target, challenge.darts);
+  }
+
+  /// Practice and Checkout input: the number on screen can be played with two
+  /// or three darts and no dart has been thrown yet, so pressing the boxes
+  /// switches between them.
+  bool get canChooseDarts {
+    final challenge = _challenge;
+    return _mode.isPractice &&
+        _phase == GamePhase.playing &&
+        _entered.isEmpty &&
+        challenge != null &&
+        _generator.otherDarts(challenge) != null;
+  }
+
+  /// Switches the number on screen between two and three darts (see
+  /// [canChooseDarts]).
+  void chooseOtherDarts() {
+    if (!canChooseDarts) return;
+    _begin(_generator.otherDarts(_challenge!)!);
   }
 
   /// The countdown starts here (30s by default).
@@ -225,14 +253,18 @@ class GameController {
   /// time is up, e.g. 30s limit and 38.33s elapsed shows -8.33s.
   Duration get remaining => timeLimit - elapsed;
 
-  /// Calculator: every free box is filled. Practice: the round is over
-  /// (checked out, bust, or out of darts). Either way the answer is ready to
-  /// be judged.
+  /// Calculator: every free box is filled, or the darts entered already add up
+  /// to the number (with boxes still free that is a miss: every dart has to be
+  /// used). Practice: the round is over (checked out, bust, or out of darts).
+  /// Either way the answer is ready to be judged.
   bool get isHandFull {
     final round = _round;
     if (round != null) return round.isFinished;
     final challenge = _challenge;
-    return challenge != null && _entered.length >= challenge.dartsLeft;
+    if (challenge == null) return false;
+    final total = _entered.fold<int>(0, (sum, d) => sum + d.score);
+    return _entered.length >= challenge.dartsLeft ||
+        (challenge.hasCheckout && total == challenge.target);
   }
 
   bool get canUndo =>
@@ -300,6 +332,7 @@ class GameController {
     _sessionPoints = 0;
     _sessionStreak = 0;
     _undosLeft = maxUndos; // a fresh session: undo can be used 3 more times
+    _sessionOver = false;
     _replay = false;
     _generator.reset();
     if (mode == GameMode.input) {
@@ -403,6 +436,15 @@ class GameController {
           message: 'Bust: ${last.dart.notation} on ${last.remainingBefore} - '
               '${last.bustReason}.',
         );
+      case RoundStatus.finishedEarly:
+        return ValidationResult(
+          outcome: AttemptOutcome.wrongDartCount,
+          playerRoute: route,
+          isOptimal: false,
+          message: 'Checked out in ${steps.length} '
+              '${steps.length == 1 ? 'dart' : 'darts'}, but all ${round.maxDarts} '
+              'darts have to be used.',
+        );
       case RoundStatus.outOfDarts:
       case RoundStatus.inProgress:
         return ValidationResult(
@@ -414,9 +456,15 @@ class GameController {
     }
   }
 
+  /// Starts the session again from the beginning: score 0 and 3 undos (the way
+  /// on after [isSessionOver]).
+  void replaySession() => startGame(_difficulty, _mode);
+
   /// Continues: the next number (Checkout input: back to typing a number).
+  /// Not once the session is over.
   void nextCheckout() {
     if (_phase != GamePhase.result && _phase != GamePhase.impossible) return;
+    if (_sessionOver) return;
     _replay = false;
     if (_mode == GameMode.input) {
       _waitForNumber();
@@ -428,7 +476,7 @@ class GameController {
   /// Plays the number just finished again from the start. A replay has no
   /// clock, no points and is not saved; Next checkout then carries on normally.
   void replayCheckout() {
-    if (_phase != GamePhase.result || _challenge == null) return;
+    if (_phase != GamePhase.result || _challenge == null || _sessionOver) return;
     _replay = true;
     _begin(_challenge!);
   }
@@ -487,6 +535,8 @@ class GameController {
     if (scored) {
       _sessionPoints += score.total;
       _sessionStreak = score.streakAfter;
+      // No undos left and a miss: the session is over.
+      if (!validation.isCorrect && _undosLeft == 0) _sessionOver = true;
     }
     if (recorded) {
       final record = AttemptRecord(

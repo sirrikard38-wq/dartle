@@ -25,8 +25,21 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
   final steps = round.steps;
   ctx.syncMarks();
 
+  final boxes = tileRow(game.entered,
+      slots: Visit.darts,
+      used: round.layout.used,
+      activeIndex: game.entered.length,
+      // Plain boxes while you play: each dart's rating colour (white,
+      // grey, light pink) only shows on the result screen.
+      showDarts: true);
+  // A two-dart number over 40 can be played with three darts: before the first
+  // dart, pressing the boxes switches between two and three.
+  final choose = game.canChooseDarts;
+  final other = round.maxDarts == 3 ? 2 : 3;
+
   return el('main', cls: 'screen game choice', children: [
     el('div', cls: 'play-area', children: [
+      el('p', cls: 'meta', text: 'Finish on a double or Bull in the chosen number of darts.'),
       el('p', cls: 'target', text: '${round.remaining}', attrs: {
         'aria-label': '${round.remaining} to checkout, ${round.dartsLeft} darts left',
       }),
@@ -36,13 +49,16 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
           text: steps.isEmpty
               ? 'The lit areas are the optimal darts.'
               : 'Started on ${round.target}. The lit areas are the optimal darts.'),
-      tileRow(game.entered,
-          slots: Visit.darts,
-          used: round.layout.used,
-          activeIndex: game.entered.length,
-          // Plain boxes while you play: each dart's rating colour (white,
-          // grey, light pink) only shows on the result screen.
-          showDarts: true),
+      if (choose)
+        button('',
+            cls: 'dart-count-toggle',
+            focusKey: 'darts',
+            ariaLabel: 'Play ${round.target} with $other darts',
+            onPressed: (_) => game.chooseOtherDarts())
+          ..appendChild(boxes)
+      else
+        boxes,
+      if (choose) el('p', cls: 'hint darts-hint', text: 'Press the darts to choose 2 or 3 darts.'),
       if (game.isReplay) el('p', cls: 'hint', text: 'Replay - the same number again.'),
     ]),
     buildEntryPanel(ctx),

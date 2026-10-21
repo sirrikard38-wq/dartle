@@ -76,15 +76,26 @@ void main() {
     }
   });
 
-  test('a number that can be done in 2 darts is never played in 3', () {
+  test('a number that can be done in 2 darts is played in 3 only over 40, about half the time', () {
     final gen = ChallengeGenerator(catalog, random: Random(3));
+    var twoDartOver40 = 0, withThree = 0;
     for (var i = 0; i < 5000; i++) {
       final c = gen.next();
       if (!c.hasCheckout) continue;
       expect(c.dartCount, engine.minimumDarts(c.target), reason: '${c.target}');
-      expect(optimal.isOptimal(c.target, c.optimalRoute), isTrue);
+      expect(optimal.isOptimalIn(c.target, c.darts, c.optimalRoute), isTrue);
       expect(c.optimalRoute.length, c.dartsLeft);
+      if (c.hasExtraDart) {
+        expect(c.dartCount, 2, reason: '${c.target}');
+        expect(c.target, greaterThan(40));
+        expect(c.darts, 3);
+      }
+      if (c.dartCount == 2 && c.target > 40) {
+        twoDartOver40++;
+        if (c.hasExtraDart) withThree++;
+      }
     }
+    expect(withThree / twoDartOver40, closeTo(0.5, 0.05));
   });
 
   group('the calculator: all one-dart numbers together 2%, every other number equal', () {
@@ -187,13 +198,14 @@ void main() {
           seen.add('none');
           continue;
         }
-        expect(c.dartsLeft, c.dartCount, reason: 'free boxes = fewest darts');
+        expect(c.dartsLeft, c.darts, reason: 'free boxes = the darts it is played with');
         expect(c.layout.free.length, c.dartsLeft);
         expect(c.optimalRoute.total, c.target);
         expect(c.optimalRoute.length, c.dartsLeft);
         seen.add('${c.dartCount}-${c.layout.name}');
       }
-      expect(seen, {'none', '1-leftTwoUsed', '2-leftUsed', '3-all'});
+      // A two-dart number over 40 can come with all three boxes free.
+      expect(seen, {'none', '1-leftTwoUsed', '2-leftUsed', '2-all', '3-all'});
     });
 
     test('57 is always the bull-safe T7 D18 with the left box used', () {

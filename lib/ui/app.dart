@@ -257,7 +257,11 @@ class DartleApp {
       case GamePhase.result:
         if (event.key == 'Enter' && !onButton) {
           event.preventDefault();
-          _game.nextCheckout();
+          if (_game.isSessionOver) {
+            _game.replaySession();
+          } else {
+            _game.nextCheckout();
+          }
         }
       case GamePhase.entering:
         _onEntryKey(event, onButton);

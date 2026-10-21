@@ -731,4 +731,120 @@ void main() {
     expect(game.summary.totalAttempts, 0);
     expect(game.sessionPoints, 0);
   });
+
+  group('A two-dart number over 40 with three darts', () {
+    test('the calculator deals it with all three boxes free and three-dart answers', () async {
+      dealUntil((c) => c.hasExtraDart);
+      final c = game.challenge!;
+      expect(c.dartCount, 2);
+      expect(c.target, greaterThan(40));
+      expect(c.layout, BoxLayout.all);
+      expect(c.dartsLeft, 3);
+      expect(game.currentOptimalRoutes, isNotEmpty);
+      expect(game.currentOptimalRoutes.every((r) => r.length == 3), isTrue);
+      await solveOptimally();
+      expect(game.lastResult!.isCorrect, isTrue);
+      expect(game.lastResult!.isOptimal, isTrue);
+      expect(game.lastResult!.optimalRoutes.every((r) => r.length == 3), isTrue);
+    });
+
+    test('checking out in two darts ends the attempt at once, as a miss', () async {
+      dealUntil((c) => c.hasExtraDart);
+      final c = game.challenge!;
+      final two = optimalService.optimalRoute(c.target)!;
+      for (final d in two.darts) {
+        game.selectDart(d);
+      }
+      expect(game.isHandFull, isTrue, reason: 'the number is reached with a box still free');
+      await game.submit();
+      final result = game.lastResult!;
+      expect(result.isCorrect, isFalse);
+      expect(result.validation.outcome, AttemptOutcome.wrongDartCount);
+      expect(result.validation.message, contains('all 3 darts have to be used'));
+    });
+
+    test('practice and input: pressing the boxes switches between two and three darts', () {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(64);
+      expect(game.challenge!.darts, 2, reason: 'a typed number starts on its fewest darts');
+      expect(game.canChooseDarts, isTrue);
+      game.chooseOtherDarts();
+      expect(game.challenge!.darts, 3);
+      expect(game.round!.maxDarts, 3);
+      expect(game.choiceHints, contains(DartThrow.parse('S16')));
+      game.chooseOtherDarts();
+      expect(game.challenge!.darts, 2);
+      // Not once a dart is thrown.
+      game.selectDart(DartThrow.parse('T16'));
+      expect(game.canChooseDarts, isFalse);
+    });
+
+    test('numbers of 40 or less, one- and three-dart numbers have no choice', () {
+      for (final n in [39, 40, 150]) {
+        game.startGame(null, GameMode.input);
+        game.enterNumber(n);
+        expect(game.canChooseDarts, isFalse, reason: '$n');
+      }
+    });
+
+    test('there is no choosing in the calculator', () {
+      dealUntil((c) => c.dartCount == 2 && c.target > 40);
+      expect(game.canChooseDarts, isFalse);
+    });
+  });
+
+  group('Every undo used and then a miss: the session is over', () {
+    Future<void> useAllUndos() async {
+      for (var i = 0; i < GameController.maxUndos; i++) {
+        game.selectDart(DartThrow.parse('S1'));
+        game.undo();
+      }
+      expect(game.undosLeft, 0);
+    }
+
+    test('only Replay session is left, which starts a new session', () async {
+      dealUntil((c) => c.hasCheckout);
+      await solveOptimally();
+      final points = game.sessionPoints;
+      expect(points, greaterThan(0));
+      game.nextCheckout();
+      await useAllUndos();
+      await missOnPurpose();
+      expect(game.isSessionOver, isTrue);
+      expect(game.sessionPoints, points, reason: 'the total stays on screen');
+      final target = game.challenge!.target;
+      game.nextCheckout(); // ignored
+      game.replayCheckout(); // ignored
+      expect(game.phase, GamePhase.result);
+      expect(game.challenge!.target, target);
+      game.replaySession();
+      expect(game.isSessionOver, isFalse);
+      expect(game.phase, GamePhase.playing);
+      expect(game.sessionPoints, 0);
+      expect(game.undosLeft, 3);
+    });
+
+    test('a miss with undos left, or a right answer with none, carries on', () async {
+      dealUntil((c) => c.hasCheckout);
+      await missOnPurpose();
+      expect(game.isSessionOver, isFalse);
+      game.nextCheckout();
+      await useAllUndos();
+      await solveOptimally();
+      expect(game.isSessionOver, isFalse);
+    });
+
+    test('not in a replay, and not in the practice modes', () async {
+      dealUntil((c) => c.hasCheckout);
+      await useAllUndos();
+      await solveOptimally();
+      game.replayCheckout();
+      await missOnPurpose();
+      expect(game.isSessionOver, isFalse);
+      game.startGame(null, GameMode.choice);
+      game.selectDart(DartThrow.parse('S1'));
+      game.undo();
+      expect(game.isSessionOver, isFalse);
+    });
+  });
 }
