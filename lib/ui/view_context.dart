@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import '../dartle.dart';
 
 /// The pages shown while the game phase is `menu` (i.e. away from a checkout).
-enum MenuPage { welcome, home, modes, stats, leaderboard }
+enum MenuPage { welcome, home, modes, favorites, stats, leaderboard }
 
 /// What every screen builder needs from the app shell.
 class ViewContext {

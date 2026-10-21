@@ -595,6 +595,47 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .possibilities { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 12px; }
 .modal .board-figure { flex: 0 1 calc((100% - 24px) / 3); min-width: 140px; max-width: 200px; }
 
+/* ---------- Favorites ---------- */
+/* The favorite dart in the top corner of each board in a popup: an outline,
+   filled white once it is a favorite. */
+.modal .board-figure { position: relative; }
+.fav-btn {
+  position: absolute; top: -4px; right: -4px;
+  width: 36px; height: 44px; padding: 0;
+  display: grid; place-items: center;
+  border: 0; background: none; color: var(--muted);
+}
+.fav-btn:hover { color: var(--fg); }
+.fav-btn:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+.fav-icon { width: 14px; height: 32px; display: block; }
+.fav-shape { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linejoin: round; }
+.fav-btn.on { color: var(--white); }
+.fav-btn.on .fav-shape { fill: var(--white); }
+/* The Favorites screen: every number from 170 down to 2. */
+.fav-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px; width: 100%; max-width: 520px; margin: 8px 0 24px;
+}
+.fav-number {
+  height: 44px; padding: 0;
+  border: 2px solid var(--line-strong); background: none;
+  color: var(--line-strong); font-size: 1rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.fav-number.has { border-color: var(--white); background: var(--white); color: var(--ink); }
+.fav-number.has:hover { background: var(--offwhite); }
+/* Its popup: "2 Darts" / "3 Darts" at the top, the pages side by side to swipe. */
+.fav-tabs { display: flex; justify-content: center; gap: 8px; margin: 0 0 10px; }
+.fav-tab {
+  min-height: 36px; padding: 0 14px; border: 0; background: none;
+  color: var(--muted); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+}
+.fav-tab.active { color: var(--fg); border-bottom-color: var(--fg); }
+.fav-pages { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.fav-pages::-webkit-scrollbar { display: none; }
+.fav-page { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; padding-top: 4px; }
+
 /* ---------- Checkout input ---------- */
 .number-display { min-height: 1.1em; }
 .number-display.empty { color: var(--line-strong); }

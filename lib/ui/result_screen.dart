@@ -6,14 +6,10 @@ import '../dartle.dart';
 import 'choice_screen.dart';
 import 'dartboard.dart';
 import 'dom.dart';
+import 'favorites_ui.dart';
 import 'modal.dart';
 import 'tiles.dart';
 import 'view_context.dart';
-
-/// A stable number from a route's text, so "random" placement is the same on
-/// every redraw of the same result.
-int _seed(String text) =>
-    text.codeUnits.fold<int>(17, (hash, unit) => (hash * 31 + unit) & 0x7fffffff);
 
 web.HTMLElement buildResultScreen(ViewContext ctx) {
   final game = ctx.game;
@@ -47,27 +43,14 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   final showYours = entered.isNotEmpty;
   final showBest = best != null && !result.isOptimal;
 
-  // Every optimal route, each with its marked board and boxes, in a popup. It
-  // opens from "Also optimal" (there is no separate link and the popup has no
-  // title of its own).
-  web.HTMLElement figureFor(CheckoutRoute route) => el('figure', cls: 'board-figure', children: [
-        buildDartboard(
-          linesOnly: true,
-          marks: spreadMarks(route.darts, const [], math.Random(_seed(route.notation))),
-          label: 'Route ${route.notation}',
-        ),
-        tileRow(route.darts,
-            slots: route.length,
-            small: true,
-            states: List.filled(route.length, TileState.correct),
-            label: route.notation),
-      ]);
-
   // A number with more than 6 optimal routes lists only the ones that finish on
   // a better double (the Bull finishes and the first route always stay), in the
   // popup and under "Also optimal" alike.
   final listed = BetterDoubles.listed(result.optimalRoutes);
 
+  // Every optimal route, each with its marked board and boxes, in a popup. It
+  // opens from "Also optimal" (there is no separate link and the popup has no
+  // title of its own). Each board has the favorite dart in its corner.
   void openPossibilities() {
     // Every listed optimal route at once. The boards are centred, so a last row
     // with fewer boards sits in the middle.
@@ -75,11 +58,13 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
       el('p', cls: 'modal-line top', text: 'Every optimal way to check out'),
       // The number under it, in the middle of the popup, above all the boards.
       el('p', cls: 'modal-number', text: '${challenge.target}'),
-      // In order of the dart they finish on: D1, D2 ... D20, then the Bull - but
-      // a Bull finish sits right next to the route with the treble of its single
-      // (T7 D18 and S7 Bull).
+      // The favorites first. Then in order of the dart they finish on: D1, D2 ...
+      // D20, then the Bull - but a Bull finish sits right next to the route with
+      // the treble of its single (T7 D18 and S7 Bull).
       el('div', cls: 'possibilities', children: [
-        for (final route in RouteOrder.forPopup(listed)) figureFor(route),
+        for (final route in favoritesFirst(game.favorites, challenge.target,
+            result.optimalRoutes, RouteOrder.forPopup(listed)))
+          routeFigure(ctx, challenge.target, route),
       ]),
     ]);
   }
@@ -156,7 +141,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
               // Marks stored when each dart was entered; any missing ones are
               // placed beside earlier marks of the same dart.
               marks: spreadMarks(entered, ctx.marks,
-                  math.Random(_seed(result.playerRoute.notation))),
+                  math.Random(routeSeed(result.playerRoute.notation))),
               label: 'Your darts: ${result.playerRoute.notation}',
             ),
             el('figcaption', text: 'Your darts'),
@@ -174,7 +159,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
               linesOnly: true,
               // A repeated dart (T20 T20) sits side by side in its area. The
               // seed comes from the route, so it looks the same on every redraw.
-              marks: spreadMarks(best.darts, const [], math.Random(_seed(best.notation))),
+              marks: spreadMarks(best.darts, const [], math.Random(routeSeed(best.notation))),
               label: 'Optimal route: ${best.notation}',
             ),
             el('figcaption', text: 'Optimal route'),

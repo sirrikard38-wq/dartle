@@ -138,6 +138,12 @@ leaderboard shows the scores on the device, as before.
   and resets the streak. Undo: 3 per session; once all 3 are used, the next
   miss ends the session (the result shows "Score: N" and only Replay session,
   which starts a new one).
+- **Favorites**: the dart in the corner of each board in the "Also optimal"
+  popup marks that route as a favorite (filled white) for its number and
+  number of darts; favorites come first in that popup. The menu's Favorites
+  screen lists 170 down to 2 (white = has favorites) and opens a popup per
+  number with "2 Darts" / "3 Darts" pages to swipe between. Saved on the device
+  (`Favorites`, key `dartle.favorites.v1`).
 - Difficulty is a data-driven complexity band (`difficulty.dart`):
   `(darts-1) + trebles + (bull?1:0) + (target>=100?1:0)`.
 
@@ -151,6 +157,7 @@ lib/src/content      the 1000 insults and the five praise lines, contact links
 lib/src/scoring      ScoringService (streak points)
 lib/src/timing       AttemptTimer (monotonic, idempotent start)
 lib/src/stats        AttemptRecord, HistoryRepository, StatisticsService
+lib/src/favorites    Favorites (the routes marked with the dart icon)
 lib/src/leaderboard  LeaderboardRepository (+ local impl), LeaderboardService
 lib/src/storage      StorageService interface (+ in-memory impl)
 lib/src/game         GameController + composition root

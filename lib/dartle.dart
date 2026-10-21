@@ -29,6 +29,7 @@ export 'src/domain/route_order.dart';
 export 'src/domain/single_leave.dart';
 export 'src/domain/site_routes.dart';
 export 'src/domain/tile_feedback.dart';
+export 'src/favorites/favorites.dart';
 export 'src/game/app_factory.dart';
 export 'src/game/game_controller.dart';
 export 'src/game/game_mode.dart';

@@ -3,7 +3,7 @@ import 'package:web/web.dart' as web;
 import 'dom.dart';
 import 'view_context.dart';
 
-/// Main menu: Start, Leaderboard, Statistics.
+/// Main menu: Start, Favorites, Leaderboard, Statistics.
 web.HTMLElement buildMenuScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -15,6 +15,10 @@ web.HTMLElement buildMenuScreen(ViewContext ctx) {
             cls: 'menu-btn primary',
             focusKey: 'start',
             onPressed: (_) => ctx.showPage(MenuPage.modes)),
+        button('Favorites',
+            cls: 'menu-btn',
+            focusKey: 'favorites',
+            onPressed: (_) => ctx.showPage(MenuPage.favorites)),
         button('Leaderboard',
             cls: 'menu-btn',
             focusKey: 'leaderboard',

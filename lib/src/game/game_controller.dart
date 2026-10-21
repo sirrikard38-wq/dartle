@@ -11,6 +11,7 @@ import '../domain/choice_round.dart';
 import '../domain/dart_throw.dart';
 import '../domain/difficulty.dart';
 import '../domain/optimal_route_service.dart';
+import '../favorites/favorites.dart';
 import '../leaderboard/leaderboard_service.dart';
 import '../scoring/scoring_service.dart';
 import '../stats/attempt_record.dart';
@@ -133,6 +134,9 @@ class GameController {
   List<AttemptRecord> _leaderboardRecord = [];
   late final HistoryRepository _leaderboardRecordRepo =
       HistoryRepository(_storage, key: leaderboardRecordKey);
+
+  /// The routes the player marked with the dart icon, saved on this device.
+  late final Favorites favorites = Favorites(_storage);
   AttemptTimer _timer;
 
   GamePhase _phase = GamePhase.menu;
@@ -304,7 +308,16 @@ class GameController {
     final saved = await _storage.read(playerNameKey);
     _needsPlayerName = saved == null || saved.trim().isEmpty;
     _playerName = _needsPlayerName ? defaultPlayerName : saved!;
+    await favorites.load();
     _notify();
+  }
+
+  /// Marks [route] as a favorite for [target], or takes the mark away.
+  /// Returns whether it is a favorite now.
+  Future<bool> toggleFavorite(int target, CheckoutRoute route) async {
+    final now = await favorites.toggle(target, route);
+    _notify();
+    return now;
   }
 
   /// Longest username accepted.
