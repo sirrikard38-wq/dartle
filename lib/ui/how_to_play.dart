@@ -27,7 +27,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
           'exact area you want. Other numbers count as the exact area you press. '
           'You must finish on a double or Bull with the last of your darts; going '
           'below zero, leaving 1 or checking out with a dart still in hand is a '
-          'miss. A two-dart number over 40 can be played with two or three darts: '
+          'miss. A two-dart number over 60 can be played with two or three darts: '
           'before your first dart, press the boxes to choose. When a round is over, '
           'Replay checkout plays the same number again and Next checkout moves on. '
           'There is no clock and no score, and nothing is saved.')
@@ -36,7 +36,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
           'You get a number and always three boxes. A box that is crossed out is a '
           'dart already used, so it cannot be filled. A one-dart number has its '
           'first two boxes crossed out. A two-dart number has its left box '
-          'crossed out - but half the time a two-dart number over 40 comes with '
+          'crossed out - but half the time a two-dart number over 60 comes with '
           'all three boxes free. A three-dart number has nothing crossed out. '
           'Every free box has to be used: checking out with a box still free is '
           'a miss. Pick S, D or T (on either side of the board), then tap a '
@@ -61,8 +61,12 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'D20. When some aims leave a good double whatever you hit, only those '
         'count; otherwise the ones where at least one does. On 20 to 60 the '
         'single and triple of a number always count when both leave a double, '
-        'whatever double (35: T5 D10 and S5 D15). The same good double twice '
-        'counts too (64: D16 D16).'),
+        'whatever double (35: T5 D10 and S5 D15). On 41 to 60 two neighbouring '
+        'singles then a double count too (42: S8 D17 or S16 D13). The same good '
+        'double twice counts too (64: D16 D16). With three darts on a two-dart '
+        'number over 60, a single that leaves another two-dart number is optimal '
+        'too, followed by one of the routes of what is left (93: S19 leaves 74, '
+        'then T20 D7).'),
     section('Bull safety',
         'With two darts left on 51 to 70, aim at the number that is 50 less than '
         'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '
@@ -82,9 +86,8 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'The boxes stay plain while you play. After the checkout, each dart '
         'flips to a colour: white means it belongs in the best route, light pink '
         'means it does not, and grey means the right dart in the wrong place. '
-        'Press "Also optimal" to see the optimal routes on their own boards. A '
-        'number with more than six of them only lists the ones that finish on a '
-        'good double (or the Bull). Press the little dart in the corner of a '
+        'Press "Also optimal" to see every optimal route on its own board. '
+        'Press the little dart in the corner of a '
         'board to make that route a favorite: it fills in white, comes first '
         'next time, and is kept under Favorites in the menu. A number with only '
         'one optimal route has it as a favorite from the start.'),

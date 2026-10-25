@@ -76,7 +76,7 @@ void main() {
     }
   });
 
-  test('a number that can be done in 2 darts is played in 3 only over 40, about half the time', () {
+  test('a number that can be done in 2 darts is played in 3 only over 60, about half the time', () {
     final gen = ChallengeGenerator(catalog, random: Random(3));
     var twoDartOver40 = 0, withThree = 0;
     for (var i = 0; i < 5000; i++) {
@@ -87,10 +87,10 @@ void main() {
       expect(c.optimalRoute.length, c.dartsLeft);
       if (c.hasExtraDart) {
         expect(c.dartCount, 2, reason: '${c.target}');
-        expect(c.target, greaterThan(40));
+        expect(c.target, greaterThan(60));
         expect(c.darts, 3);
       }
-      if (c.dartCount == 2 && c.target > 40) {
+      if (c.dartCount == 2 && c.target > 60) {
         twoDartOver40++;
         if (c.hasExtraDart) withThree++;
       }

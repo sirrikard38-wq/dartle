@@ -191,7 +191,7 @@ void main() {
   group('two darts from 41 to 60: a single that leaves a better double is optimal too', () {
     test('57: S17 D20 next to the bull-safe T7 D18 and S7 Bull (never the outer bull)', () {
       expect(optimal.optimalRoutes(57).map((x) => x.notation),
-          ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3']);
+          ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3', 'S19 D19']);
     });
 
     test('60 is S20 D20 as well as T10 D15 and S10 Bull, and T16 D6 / T8 D18', () {
@@ -209,9 +209,9 @@ void main() {
       });
     });
 
-    test('the double has to be one of the better doubles: S19 D19 is not optimal', () {
+    test('S19 D19 is optimal on 57 (19 and 7 are neighbours: S7 leaves the Bull), S20 D19 not on 58', () {
       expect(engine.isLegalRoute(57, r('S19 D19')), isTrue);
-      expect(optimal.isOptimal(57, r('S19 D19')), isFalse);
+      expect(optimal.isOptimal(57, r('S19 D19')), isTrue);
       expect(engine.isLegalRoute(58, r('S20 D19')), isTrue);
       expect(optimal.isOptimal(58, r('S20 D19')), isFalse);
     });
@@ -527,56 +527,6 @@ void main() {
       expect(BetterDoubles.isSafeTreble(r('T14 D5')), isFalse); // S14 leaves D19
       expect(BetterDoubles.isSafeTreble(r('T7 D18')), isFalse); // S7 leaves the Bull
       expect(BetterDoubles.isSafeTreble(r('S11 D16')), isFalse);
-    });
-
-    group('listed: more than 6 optimal routes leaves out the poor doubles', () {
-      List<String> listedFor(int target) => BetterDoubles.listed(optimal.optimalRoutes(target))
-          .map((x) => x.notation)
-          .toList();
-
-      test('76 has few routes, so T18 D11 stays', () {
-        expect(optimal.optimalRoutes(76).length, lessThanOrEqualTo(6));
-        expect(listedFor(76), contains('T18 D11'));
-        expect(listedFor(76), hasLength(optimal.optimalRoutes(76).length));
-      });
-
-      test('35 has many, so S17 D9 (D9 is not a better double) is left out', () {
-        expect(optimal.optimalRoutes(35).length, greaterThan(6));
-        final shown = listedFor(35);
-        expect(shown, containsAll(['S15 D10', 'S3 D16', 'S19 D8', 'T11 D1']));
-        expect(shown, isNot(contains('S17 D9')));
-        expect(shown, isNot(contains('T7 D7')));
-        expect(shown.length, lessThan(optimal.optimalRoutes(35).length));
-        // Every route is still accepted as optimal.
-        expect(optimal.isOptimal(35, r('S17 D9')), isTrue);
-      });
-
-      test('the Bull finishes and the first route always stay', () {
-        // 52 has 8 routes: S14 D19 goes, S2 Bull stays.
-        expect(listedFor(52), contains('S2 Bull'));
-        expect(listedFor(52), isNot(contains('S14 D19')));
-        // 56 has 7 routes and starts with T6 D19, a bull-safe route: it stays.
-        expect(optimal.optimalRoutes(56).first.notation, 'T6 D19');
-        expect(listedFor(56), contains('T6 D19'));
-        expect(listedFor(56), contains('S6 Bull'));
-      });
-
-      test('exactly 6 routes list them all, 7 leaves the poor doubles out', () {
-        final six = [for (var n = 1; n <= 6; n++) r('S$n D3')];
-        expect(BetterDoubles.listed(six), six);
-        final seven = [...six, r('S7 D20')];
-        expect(BetterDoubles.listed(seven).map((x) => x.notation), ['S1 D3', 'S7 D20']);
-      });
-
-      test('the "Also optimal" extras come from the listed routes only', () {
-        for (final target in [35, 43, 52]) {
-          final shown = BetterDoubles.listed(optimal.optimalRoutes(target));
-          final extras = BetterDoubles.extras(shown, exclude: [shown.first]);
-          for (final route in extras) {
-            expect(shown.any(route.isEquivalentTo), isTrue, reason: '$target ${route.notation}');
-          }
-        }
-      });
     });
 
     test('extras of a number with one optimal route is empty', () {

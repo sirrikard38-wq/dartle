@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
 void main() {
+  noCheckoutNumbersTests();
   CheckoutRoute r(String text) => CheckoutRoute.parse(text);
 
   group('Favorites', () {
@@ -114,5 +117,21 @@ void main() {
     final again = createGameController(storage);
     await again.init();
     expect(again.favorites.isFavorite(43, r('T11 D5')), isTrue);
+  });
+}
+
+void noCheckoutNumbersTests() {
+  test('Favorites screen: the numbers with no checkout are crossed out in red', () {
+    final source = File('lib/ui/favorites_ui.dart').readAsStringSync();
+    final css = File('web/styles.css').readAsStringSync();
+    expect(source, contains("cls: 'fav-number none'"));
+    expect(source, contains('ctx.game.hasNoCheckout(n)'));
+    final rule = RegExp(r'\.fav-number\.none \{[^}]*\}').firstMatch(css)!.group(0)!;
+    expect(rule, contains('var(--burgundy)'));
+    expect(css, contains('.fav-number.none::after'));
+    // The seven numbers that cannot be checked out.
+    final game = createGameController(InMemoryStorageService());
+    expect([for (var n = 2; n <= 170; n++) if (game.hasNoCheckout(n)) n],
+        [159, 162, 163, 165, 166, 168, 169]);
   });
 }

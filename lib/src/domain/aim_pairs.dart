@@ -36,7 +36,11 @@ abstract final class AimPairs {
   static const int minTwoDartTarget = 20;
 
   /// Only a two-dart number above this can be played with three darts.
-  static const int threeDartAbove = 40;
+  static const int threeDartAbove = 60;
+
+  /// The two-dart numbers [neighbourSingleRoutes] is used for, 41 to 60.
+  static const int minNeighbourSingleTarget = 41;
+  static const int maxNeighbourSingleTarget = 60;
 
   /// True when [a] and [b] are next to each other on the board (20 and 1, 16
   /// and 8, 5 and 20).
@@ -110,6 +114,28 @@ abstract final class AimPairs {
     if (byBetter.isEmpty) return const [];
     final best = byBetter.keys.reduce((a, b) => a > b ? a : b);
     return _unique(byBetter[best]!);
+  }
+
+  /// Two darts left on 41 to 60: aim between two neighbouring singles and finish
+  /// whichever you hit - both routes of every pair of neighbours whose two
+  /// singles each leave a double, whatever the doubles are. 42: 8 and 16 are
+  /// neighbours, S8 leaves D17 and S16 leaves D13, so S8 D17 and S16 D13 are
+  /// both optimal. Still two darts: a pair of singles is a bigger area to hit
+  /// than a triple.
+  static List<CheckoutRoute> neighbourSingleRoutes(int target) {
+    if (target < minNeighbourSingleTarget || target > maxNeighbourSingleTarget) {
+      return const [];
+    }
+    final routes = <CheckoutRoute>[];
+    for (final (a, b) in neighbourPairs) {
+      final first = finisherFor(target - a);
+      final second = finisherFor(target - b);
+      if (first == null || second == null) continue;
+      routes
+        ..add(CheckoutRoute([_s(a), first]))
+        ..add(CheckoutRoute([_s(b), second]));
+    }
+    return _unique(routes);
   }
 
   /// The highest two-dart number [sameNumberRoutes] is used for.

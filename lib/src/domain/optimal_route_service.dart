@@ -80,19 +80,41 @@ class OptimalRouteService {
     }
     if (darts == minimum) return optimalRoutes(target);
     return _cacheIn.putIfAbsent((target, darts), () {
-      if (minimum == 2 && darts == 3) {
-        final aims = AimPairs.threeDartRoutes(target);
-        if (aims.isNotEmpty) return List.unmodifiable(aims);
+      if (minimum == 2 && darts == 3 && target > AimPairs.threeDartAbove) {
+        final routes = <CheckoutRoute>[];
+        for (final route in [...AimPairs.threeDartRoutes(target), ..._followUps(target)]) {
+          if (!routes.any(route.isEquivalentTo)) routes.add(route);
+        }
+        if (routes.isNotEmpty) return List.unmodifiable(routes);
       }
       final tier = _tierRoutes(target, darts);
       return List.unmodifiable(tier.isEmpty ? _engine.legalRoutes(target, darts: darts) : tier);
     });
   }
 
-  /// True when [target] is a two-dart number over 40 that can also be played
-  /// with three darts (it has three-dart aim routes).
+  /// A two-dart number played with three darts is also optimal when the first
+  /// dart is a single that leaves a two-dart number, and the last two darts are
+  /// an optimal route of that number: 93 with S19 leaves 74, whose T20 D7 gives
+  /// S19 T20 D7. Biggest single first.
+  List<CheckoutRoute> _followUps(int target) {
+    final routes = <CheckoutRoute>[];
+    for (var n = DartThrow.maxBoardNumber; n >= 1; n--) {
+      final left = target - n;
+      if (_engine.minimumDarts(left) != 2) continue;
+      for (final route in optimalRoutes(left)) {
+        final full = CheckoutRoute([DartThrow(Multiplier.single, n), ...route.darts]).normalized;
+        if (!routes.any(full.isEquivalentTo)) routes.add(full);
+      }
+    }
+    return routes;
+  }
+
+  /// True when [target] is a two-dart number over 60 that can also be played
+  /// with three darts.
   bool hasThreeDartOption(int target) =>
-      _engine.minimumDarts(target) == 2 && AimPairs.threeDartRoutes(target).isNotEmpty;
+      _engine.minimumDarts(target) == 2 &&
+      target > AimPairs.threeDartAbove &&
+      optimalRoutesIn(target, 3).isNotEmpty;
 
   /// Whether [route] is optimal for [target] played with exactly [darts] darts.
   bool isOptimalIn(int target, int darts, CheckoutRoute route) =>
@@ -201,6 +223,7 @@ class OptimalRouteService {
       for (final route in [
         ...AimPairs.twoDartRoutes(target),
         ...AimPairs.sameNumberRoutes(target),
+        ...AimPairs.neighbourSingleRoutes(target),
         if (AimPairs.sameDoubleTwice(target) case final twice?) twice,
       ]) {
         add(route, force: true);

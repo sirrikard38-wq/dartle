@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
@@ -30,6 +31,31 @@ web.HTMLElement routeFigure(ViewContext ctx, int target, CheckoutRoute route) =>
           label: route.notation),
       favoriteButton(ctx, target, route),
     ]);
+
+/// Every route of [routes] as a board with its boxes, in the order given. A
+/// number can have over a hundred (61 with three darts), and drawing them all
+/// at once would freeze the popup, so the first boards are drawn straight away
+/// and the rest follow in small batches while the popup is open. Nothing is
+/// left out.
+web.HTMLElement routeGrid(ViewContext ctx, int target, List<CheckoutRoute> routes) {
+  const firstBatch = 12;
+  const nextBatch = 8;
+  final grid = el('div', cls: 'possibilities');
+  void fill(int from) {
+    // The popup was closed (or replaced): stop.
+    if (from > 0 && !grid.isConnected) return;
+    final to = math.min(from + (from == 0 ? firstBatch : nextBatch), routes.length);
+    for (var i = from; i < to; i++) {
+      grid.appendChild(routeFigure(ctx, target, routes[i]));
+    }
+    if (to < routes.length) {
+      Timer(const Duration(milliseconds: 16), () => fill(to));
+    }
+  }
+
+  fill(0);
+  return grid;
+}
 
 /// The favorite mark: a small dart, an outline until it is pressed, then
 /// filled white.
@@ -95,20 +121,29 @@ web.HTMLElement buildFavoritesScreen(ViewContext ctx) {
       el('h2', text: 'Favorites'),
       el('p', cls: 'hint',
           text: 'Mark a route with the dart in the "Also optimal" popup. '
-              'Numbers with a favorite are white: press one to see them.'),
+              'Numbers with a favorite are white: press one to see them. '
+              'Crossed out in red: no checkout.'),
       el('div', cls: 'fav-grid', children: [
         for (var n = CheckoutEngine.maxCheckout; n >= CheckoutEngine.minCheckout; n--)
-          favorites.hasAny(n)
-              ? button('$n',
-                  cls: 'fav-number has',
-                  focusKey: 'fav-$n',
-                  ariaLabel: '$n: show its favorites',
-                  onPressed: (_) => showFavoritesPopup(ctx, n))
-              : button('$n',
-                  cls: 'fav-number',
-                  disabled: true,
-                  ariaLabel: '$n: no favorites',
-                  onPressed: (_) {}),
+          if (ctx.game.hasNoCheckout(n))
+            // Crossed out in red, like a box that is already used.
+            button('$n',
+                cls: 'fav-number none',
+                disabled: true,
+                ariaLabel: '$n: no checkout',
+                onPressed: (_) {})
+          else if (favorites.hasAny(n))
+            button('$n',
+                cls: 'fav-number has',
+                focusKey: 'fav-$n',
+                ariaLabel: '$n: show its favorites',
+                onPressed: (_) => showFavoritesPopup(ctx, n))
+          else
+            button('$n',
+                cls: 'fav-number',
+                disabled: true,
+                ariaLabel: '$n: no favorites',
+                onPressed: (_) {}),
       ]),
     ]),
   ]);

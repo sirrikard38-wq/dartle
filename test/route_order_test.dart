@@ -81,9 +81,9 @@ void main() {
         RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
 
     test('57: S7 Bull moves up next to T7 D18, the rest stays as it was', () {
-      // By finisher it would be T17 D3, T7 D18, S17 D20, S7 Bull.
-      expect(order(optimal.optimalRoutes(57)), ['T17 D3', 'T7 D18', 'S17 D20', 'S7 Bull']);
-      expect(popup(57), ['T17 D3', 'T7 D18', 'S7 Bull', 'S17 D20']);
+      // By finisher it would be T17 D3, T7 D18, S19 D19, S17 D20, S7 Bull.
+      expect(order(optimal.optimalRoutes(57)), ['T17 D3', 'T7 D18', 'S19 D19', 'S17 D20', 'S7 Bull']);
+      expect(popup(57), ['T17 D3', 'T7 D18', 'S7 Bull', 'S19 D19', 'S17 D20']);
     });
 
     test('130: T20 S20 Bull is next to T20 T20 D5', () {
@@ -172,6 +172,6 @@ void main() {
 
   test('the All possibilities popup lists the routes in that order', () {
     final screen = File('lib/ui/result_screen.dart').readAsStringSync();
-    expect(screen, contains('result.optimalRoutes, RouteOrder.forPopup(listed)))'));
+    expect(screen, contains('RouteOrder.forPopup(result.optimalRoutes)'));
   });
 }

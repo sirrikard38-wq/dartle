@@ -624,6 +624,15 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   color: var(--line-strong); font-size: 1rem; font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* No checkout: a red edge and a red line from the bottom-left to the top-right
+   corner, the same as a box that is already used. */
+.fav-number.none { position: relative; border-color: var(--burgundy); color: var(--burgundy-soft); }
+.fav-number.none::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom right,
+    transparent calc(50% - 1.5px), var(--burgundy) calc(50% - 1.5px),
+    var(--burgundy) calc(50% + 1.5px), transparent calc(50% + 1.5px));
+}
 .fav-number.has { border-color: var(--white); background: var(--white); color: var(--ink); }
 .fav-number.has:hover { background: var(--offwhite); }
 /* Its popup: "2 Darts" / "3 Darts" at the top, the pages side by side to swipe. */

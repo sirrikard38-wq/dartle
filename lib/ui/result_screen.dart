@@ -43,17 +43,13 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   final showYours = entered.isNotEmpty;
   final showBest = best != null && !result.isOptimal;
 
-  // A number with more than 6 optimal routes lists only the ones that finish on
-  // a better double (the Bull finishes and the first route always stay), in the
-  // popup and under "Also optimal" alike.
-  final listed = BetterDoubles.listed(result.optimalRoutes);
-
-  // Every optimal route, each with its marked board and boxes, in a popup. It
-  // opens from "Also optimal" (there is no separate link and the popup has no
-  // title of its own). Each board has the favorite dart in its corner.
+  // Every optimal route, each with its marked board and boxes, in a popup: all
+  // of them, the same as Checkout input lights up. It opens from "Also optimal"
+  // (there is no separate link and the popup has no title of its own). Each
+  // board has the favorite dart in its corner.
   void openPossibilities() {
-    // Every listed optimal route at once. The boards are centred, so a last row
-    // with fewer boards sits in the middle.
+    // Every optimal route at once. The boards are centred, so a last row with
+    // fewer boards sits in the middle.
     showModal(title: 'Every optimal way to check out ${challenge.target}', showTitle: false, body: [
       el('p', cls: 'modal-line top', text: 'Every optimal way to check out'),
       // The number under it, in the middle of the popup, above all the boards.
@@ -61,11 +57,11 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
       // The favorites first. Then in order of the dart they finish on: D1, D2 ...
       // D20, then the Bull - but a Bull finish sits right next to the route with
       // the treble of its single (T7 D18 and S7 Bull).
-      el('div', cls: 'possibilities', children: [
-        for (final route in favoritesFirst(game.favorites, challenge.target,
-            result.optimalRoutes, RouteOrder.forPopup(listed)))
-          routeFigure(ctx, challenge.target, route),
-      ]),
+      routeGrid(
+          ctx,
+          challenge.target,
+          favoritesFirst(game.favorites, challenge.target, result.optimalRoutes,
+              RouteOrder.forPopup(result.optimalRoutes))),
     ]);
   }
 
@@ -75,7 +71,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   // "Also optimal" opens.
   final extras = best == null
       ? const <CheckoutRoute>[]
-      : BetterDoubles.extras(listed, exclude: [
+      : BetterDoubles.extras(result.optimalRoutes, exclude: [
           if (showBest) best,
           if (showYours) result.playerRoute,
         ]);

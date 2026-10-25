@@ -32,7 +32,7 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
       // Plain boxes while you play: each dart's rating colour (white,
       // grey, light pink) only shows on the result screen.
       showDarts: true);
-  // A two-dart number over 40 can be played with three darts: before the first
+  // A two-dart number over 60 can be played with three darts: before the first
   // dart, pressing the boxes switches between two and three.
   final choose = game.canChooseDarts;
   final other = round.maxDarts == 3 ? 2 : 3;

@@ -45,11 +45,11 @@ void main() {
     group('priority: fewest darts, bull-safe, then the most singles', () {
       test('57: the bull-safe darts and the singles that leave a better double are lit', () {
         // T17 D3 is there too: S17 leaves D20, T17 leaves D3 (not a better one).
-        expect(advisor.optimalDarts(57), {d('T7'), d('S7'), d('S17'), d('T17')});
+        expect(advisor.optimalDarts(57), {d('T7'), d('S7'), d('S17'), d('T17'), d('S19')});
         expect(advisor.optimalRoutes(57).map((r) => r.notation),
-            ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3']);
-        // S19 D19 checks 57 out, but D19 is not a better double: S19 is not lit.
-        expect(advisor.optimalDarts(57), isNot(contains(d('S19'))));
+            ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3', 'S19 D19']);
+        // S19 D19 is there too: 19 and 7 are neighbours and S7 leaves the Bull.
+        expect(advisor.optimalDarts(57), contains(d('S19')));
       });
 
       test('over 60 the bull-safe darts are lit, the outer bull on 61 and 65, and neighbour aims', () {
@@ -160,12 +160,13 @@ void main() {
       for (final dart in advisor.optimalDartsIn(85, 3)) {
         expect(rate(85, dart.notation), DartQuality.optimal, reason: dart.notation);
       }
-      // S15 is one (T10 S15 D20: 10 and 15 are neighbours); S25 is a fine dart
+      // S15 is one (T10 S15 D20, and S15 leaves 70: S20 Bull); so is S20, which
+      // leaves 65 (25 D20); a setup double like D10 is not one
       expect(rate(85, 'S15'), DartQuality.optimal);
-      expect(rate(85, 'S25'), DartQuality.fine);
+      expect(rate(85, 'D10'), DartQuality.poor);
       // T3 is a silly dart
       expect(rate(85, 'T3'), DartQuality.poor);
-      expect(rate(85, 'D20'), DartQuality.poor); // non-finishing double
+      expect(rate(85, 'D2'), DartQuality.poor); // a setup double that is no part of a route
     });
 
     test('a finishing double that checks out is optimal with the last dart; with darts left it is a miss', () {
@@ -219,26 +220,35 @@ void main() {
       expect(r.status, RoundStatus.checkedOut);
     });
 
-    test('S15 S20 Bull checks out but is not optimal; so is S25 S20 D20', () {
-      for (final darts in [['S15', 'S20', 'Bull'], ['S25', 'S20', 'D20']]) {
-        final r = three(85);
-        for (final t in darts) {
-          r.throwDart(d(t));
-        }
-        expect(r.isCheckedOut, isTrue, reason: '$darts');
-        expect(r.isOptimal, isFalse, reason: '$darts');
-        // S20 is not part of an optimal route with S15 (that is T10 S15 D20),
-        // and S25 is not part of any.
-        expect(r.steps.any((s) => s.quality == DartQuality.fine), isTrue, reason: '$darts');
+    test('D10 S15 Bull checks 85 out with three darts but is not optimal (a setup double)', () {
+      final r = three(85);
+      for (final t in ['D10', 'S15', 'Bull']) {
+        r.throwDart(d(t));
       }
+      expect(r.isCheckedOut, isTrue);
+      expect(r.isOptimal, isFalse);
+      expect(r.steps.first.quality, DartQuality.poor);
     });
 
     test('85 with three darts: S15 then T10 then D20 is optimal at every step', () {
       final r = three(85)..throwDart(d('S15'));
-      expect(r.optimalDarts, {d('T10')});
+      // S15 leaves 70, so what follows is the rest of 85's three-dart routes with
+      // S15 in them: T10 (T10 S15 D20), and the routes of 70: T20 D5, S20 Bull.
+      expect(r.optimalDarts, containsAll([d('T10'), d('S20'), d('T20')]));
       r.throwDart(d('T10'));
       expect(r.optimalDarts, {d('D20')});
       r.throwDart(d('D20'));
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('93 with three darts: S19 leaves 74, then T20 D7 is optimal at every step', () {
+      final r = three(93)..throwDart(d('S19'));
+      expect(r.remaining, 74);
+      expect(r.optimalDarts, contains(d('T20')));
+      r.throwDart(d('T20'));
+      expect(r.optimalDarts, contains(d('D7')));
+      r.throwDart(d('D7'));
+      expect(r.isCheckedOut, isTrue);
       expect(r.isOptimal, isTrue);
     });
 
@@ -350,7 +360,7 @@ void main() {
       final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed);
       expect(r.maxDarts, 2);
       expect(r.dartsLeft, 2);
-      expect(r.optimalDarts, {d('T7'), d('S7'), d('S17'), d('T17')});
+      expect(r.optimalDarts, {d('T7'), d('S7'), d('S17'), d('T17'), d('S19')});
       r.throwDart(d('S7')); // leaves exactly 50
       expect(r.remaining, 50);
       r.throwDart(d('Bull'));
@@ -374,13 +384,13 @@ void main() {
       expect(other.steps.first.quality, DartQuality.optimal);
     });
 
-    test('S19 then D19 checks 57 out, but D19 is not a better double: not optimal', () {
+    test('S19 then D19 checks 57 out and is optimal: 19 and 7 are neighbours, S7 leaves the Bull', () {
       final other = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
         ..throwDart(d('S19'))
         ..throwDart(d('D19'));
       expect(other.isCheckedOut, isTrue);
-      expect(other.isOptimal, isFalse);
-      expect(other.steps.first.quality, DartQuality.fine);
+      expect(other.isOptimal, isTrue);
+      expect(other.steps.first.quality, DartQuality.optimal);
     });
 
     test('132: T20, D20, D16 is optimal at every step (the outer bull is no aim)', () {

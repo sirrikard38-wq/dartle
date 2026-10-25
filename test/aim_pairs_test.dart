@@ -2,6 +2,7 @@ import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
 void main() {
+  neighbourSingleTests();
   final engine = CheckoutEngine();
   final optimal = OptimalRouteService(engine);
   CheckoutRoute r(String text) => CheckoutRoute.parse(text);
@@ -91,16 +92,38 @@ void main() {
         final singles = routes.map(OptimalRouteService.singles).toSet();
         expect(singles, hasLength(1), reason: '$t: all with the same number of singles');
       }
-      expect(AimPairs.threeDartRoutes(41).every(BetterDoubles.leavesBetterDouble), isTrue);
+      expect(AimPairs.threeDartRoutes(64).every(BetterDoubles.leavesBetterDouble), isTrue);
     });
 
-    test('not for numbers of 40 or less, nor for 1- or 3-dart numbers', () {
-      expect(AimPairs.threeDartRoutes(39), isEmpty);
-      expect(optimal.hasThreeDartOption(39), isFalse);
-      expect(optimal.hasThreeDartOption(40), isFalse); // one dart: D20
+    test('not for numbers of 60 or less, nor for 1- or 3-dart numbers', () {
+      expect(AimPairs.threeDartRoutes(49), isEmpty);
+      for (final n in [39, 40, 41, 49, 60]) {
+        expect(optimal.hasThreeDartOption(n), isFalse, reason: '$n');
+      }
       expect(optimal.hasThreeDartOption(150), isFalse); // three darts anyway
-      expect(optimal.hasThreeDartOption(41), isTrue);
+      expect(optimal.hasThreeDartOption(61), isTrue);
       expect(optimal.hasThreeDartOption(110), isTrue);
+    });
+
+    test('a first single that leaves a two-dart number, then its optimal route: 93 is S19 T20 D7', () {
+      // S19 leaves 74, whose routes include T20 D7.
+      expect(optimal.optimalRoutes(74).any(r('T20 D7').isEquivalentTo), isTrue);
+      expect(optimal.isOptimalIn(93, 3, r('S19 T20 D7')), isTrue);
+      expect(optimal.isOptimalIn(93, 3, r('T20 S19 D7')), isTrue); // any order
+      // The aim routes stay, ahead of the follow-ups.
+      expect(optimal.optimalRoutesIn(64, 3).first.notation, 'S16 S16 D16');
+      // A first single that leaves a number of three darts or one that is not a
+      // checkout does not count: 93 - S3 = 90 is fine, 93 - 20 = 73 too.
+      for (final route in optimal.optimalRoutesIn(93, 3)) {
+        expect(engine.isLegalRoute(93, route), isTrue, reason: route.notation);
+        expect(route.length, 3);
+      }
+    });
+
+    test('every 2-dart number over 60 has a three-dart option', () {
+      for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
+        expect(optimal.hasThreeDartOption(t), engine.minimumDarts(t) == 2, reason: '$t');
+      }
     });
   });
 
@@ -120,6 +143,42 @@ void main() {
       expect(routes, isNotEmpty);
       expect(routes.every((x) => x.length == 2), isTrue);
       expect(routes.any(r('S20 D10').isEquivalentTo), isTrue);
+    });
+  });
+}
+
+void neighbourSingleTests() {
+  final engine = CheckoutEngine();
+  final optimal = OptimalRouteService(engine);
+  CheckoutRoute r(String text) => CheckoutRoute.parse(text);
+
+  group('neighbouring singles then a double, on 41 to 60 (two darts)', () {
+    test('42: 8 and 16 are neighbours - S8 D17 and S16 D13 are optimal', () {
+      expect(optimal.isOptimal(42, r('S8 D17')), isTrue);
+      expect(optimal.isOptimal(42, r('S16 D13')), isTrue);
+      expect(optimal.optimalRoutes(42).every((x) => x.length == 2), isTrue);
+    });
+
+    test('whatever the doubles are: 57 has S19 D19 (19 and 7, S7 leaves the Bull)', () {
+      expect(optimal.isOptimal(57, r('S19 D19')), isTrue);
+      expect(optimal.isOptimal(57, r('S7 Bull')), isTrue);
+    });
+
+    test('only from 41 to 60', () {
+      expect(AimPairs.neighbourSingleRoutes(40), isEmpty);
+      expect(AimPairs.neighbourSingleRoutes(61), isEmpty);
+      expect(AimPairs.neighbourSingleRoutes(42), isNotEmpty);
+      for (var t = AimPairs.minNeighbourSingleTarget; t <= AimPairs.maxNeighbourSingleTarget; t++) {
+        for (final route in AimPairs.neighbourSingleRoutes(t)) {
+          expect(engine.isLegalRoute(t, route), isTrue, reason: '$t ${route.notation}');
+          expect(optimal.isOptimal(t, route), isTrue, reason: '$t ${route.notation}');
+        }
+      }
+    });
+
+    test('and no three-dart option there: 49 stays two darts', () {
+      expect(optimal.hasThreeDartOption(49), isFalse);
+      expect(optimal.optimalRoutesIn(49, 3).every((x) => x.length == 3), isTrue);
     });
   });
 }

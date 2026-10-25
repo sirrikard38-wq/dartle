@@ -93,10 +93,10 @@ void main() {
       }
       // The outer bull is too hard to hit to be an aim.
       expect(validator.validate(c, darts('25 D16')).isOptimal, isFalse);
-      // S19 D19 checks 57 out, but D19 is not one of the better doubles.
+      // S19 D19 checks 57 out too: 19 and 7 are neighbours and S7 leaves the Bull.
       final r = validator.validate(c, darts('S19 D19'));
       expect(r.isCorrect, isTrue);
-      expect(r.isOptimal, isFalse);
+      expect(r.isOptimal, isTrue);
     });
 
     test('65: the outer bull then D20 is optimal, with the bull-safe routes', () {

@@ -40,10 +40,9 @@ void main() {
       for (final n in engine.checkoutableTargets) {
         final routes = optimal.optimalRoutes(n);
         if (routes.length < 2) continue;
-        final listed = BetterDoubles.listed(routes);
         for (final shown in routes) {
           // Whichever route is on screen as the best or as yours, something is left.
-          expect(BetterDoubles.extras(listed, exclude: [shown]), isNotEmpty, reason: '$n without $shown');
+          expect(BetterDoubles.extras(routes, exclude: [shown]), isNotEmpty, reason: '$n without $shown');
         }
       }
     });
@@ -97,7 +96,10 @@ void main() {
     });
 
     test('the popup shows every route at once - no "Shoot more"', () {
-      expect(screen, contains('result.optimalRoutes, RouteOrder.forPopup(listed)))'));
+      expect(screen, contains('RouteOrder.forPopup(result.optimalRoutes)'));
+      expect(screen, contains('routeGrid('));
+      // Every optimal route, never a shorter list (the same as Checkout input lights).
+      expect(screen, isNot(contains('listed')));
       expect(screen, isNot(contains('Shoot more')));
       expect(File('lib/ui/result_screen.dart').readAsStringSync(), isNot(contains('RoutePages')));
       expect(css, isNot(contains('.shoot-more')));
@@ -106,7 +108,7 @@ void main() {
     test('the sentence is on the right, the number under it in the middle above the boards', () {
       final sentence = screen.indexOf("text: 'Every optimal way to check out'");
       final number = screen.indexOf("cls: 'modal-number', text: '\${challenge.target}'");
-      final boards = screen.indexOf("cls: 'possibilities'");
+      final boards = screen.indexOf('routeGrid(');
       expect(sentence, greaterThan(0));
       expect(number, greaterThan(sentence));
       expect(boards, greaterThan(number));

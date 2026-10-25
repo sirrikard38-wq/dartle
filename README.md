@@ -108,20 +108,22 @@ leaderboard shows the scores on the device, as before.
      older rule stays as well: on 20 to 60 both routes of every single/triple
      pair of a number that leave a double, whatever the doubles (35: `T5 D10`,
      `S5 D15`; `AimPairs.sameNumberRoutes`) - no route that was optimal
-     before is taken away. The same better double twice is optimal too (64:
-     `D16 D16`).
-  A two-dart number over 40 can come with three darts (50% in the calculator
-  and in practice; the player chooses in practice and input). Then all three
-  darts must be used and the optimal routes are two setup darts from one aim -
-  neighbours, the single and triple of a number, one of each, or the same
-  number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20` ... (only
-  better doubles when there are any, then the most singles;
-  `AimPairs.threeDartRoutes`).
-  The popup and the "Also optimal" boxes list every optimal route of a number
-  that has up to 6 (76 keeps `T18 D11`); a number with more lists only the
-  routes that finish on a better double, plus the Bull finishes and the first
-  route (`BetterDoubles.listed`). Every route is still accepted as optimal and
-  still lights up its darts in Checkout practice and Checkout input.
+     before is taken away. On 41 to 60 two neighbouring singles then a double
+     are optimal too, whatever the doubles (42: `S8 D17`, `S16 D13`;
+     `AimPairs.neighbourSingleRoutes`). The same better double twice is
+     optimal too (64: `D16 D16`).
+  A two-dart number **over 60** can come with three darts (50% in the
+  calculator and in practice; the player chooses in practice and input). Then
+  all three darts must be used and the optimal routes are (1) two setup darts
+  from one aim - neighbours, the single and triple of a number, one of each,
+  or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
+  ... (only better doubles when there are any, then the most singles;
+  `AimPairs.threeDartRoutes`), and (2) a single that leaves another two-dart
+  number, then one of that number's optimal routes: 93 is `S19 T20 D7`, as S19
+  leaves 74 (`OptimalRouteService._followUps`).
+  The popup and the "Also optimal" boxes list every optimal route - the same
+  as Checkout input lights up, however many (35 has 16, 61 with three darts
+  has over a hundred).
   Equal routes are all optimal, in any order of the setup darts. 120 stays
   `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
   equal route is shown first; tests verify every chart entry is legal and
