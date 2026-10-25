@@ -115,8 +115,9 @@ leaderboard shows the scores on the device, as before.
      optimal too (64: `D16 D16`).
   A two-dart number **over 60** can come with three darts (50% in the
   calculator and in practice; the player chooses in practice and input). Then
-  all three darts must be used (an optimal route of fewer darts is a miss, but
-  the result says "Good, but not in the given number of darts": 74 with T14
+  all three darts must be used (checking out sooner is a miss, unless it is an
+  optimal route of fewer darts: that counts as right and says "Good, but not in
+  the given number of darts", 74 with T14
   D16) and the optimal routes are (1) two setup darts
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`

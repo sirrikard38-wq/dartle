@@ -312,7 +312,7 @@ void goodButFewerDartsTests() {
       expect(c74.dartsLeft, 3);
       final r = validator.validate(c74, darts('T14 D16'));
       expect(r.outcome, AttemptOutcome.goodButFewerDarts);
-      expect(r.isCorrect, isFalse, reason: 'every dart has to be used, so it is still a miss');
+      expect(r.isCorrect, isTrue, reason: 'a right answer: points and the streak');
       expect(r.isOptimal, isFalse);
       expect(r.message, contains('Good, but not in the given number of darts'));
       expect(r.message, contains('T14 D16'));

@@ -748,7 +748,7 @@ void main() {
       expect(game.lastResult!.optimalRoutes.every((r) => r.length == 3), isTrue);
     });
 
-    test('checking out in two darts ends the attempt at once, as a miss - a good one when it is optimal', () async {
+    test('checking out in two darts with an optimal route is good, but not in the given number of darts - and it counts', () async {
       dealUntil((c) => c.hasExtraDart);
       final c = game.challenge!;
       final two = optimalService.optimalRoute(c.target)!;
@@ -758,11 +758,13 @@ void main() {
       expect(game.isHandFull, isTrue, reason: 'the number is reached with a box still free');
       await game.submit();
       final result = game.lastResult!;
-      expect(result.isCorrect, isFalse);
+      expect(result.isCorrect, isTrue);
+      expect(result.isOptimal, isFalse, reason: 'not the optimal route of the darts given');
       expect(result.validation.outcome, AttemptOutcome.goodButFewerDarts);
       expect(result.validation.message, contains('Good, but not in the given number of darts'));
-      expect(result.validation.message, contains('all 3 darts have to be used'));
-      expect(result.score.total, 0, reason: 'a miss: no points');
+      expect(result.validation.message, contains('you were given 3'));
+      expect(result.score.total, greaterThan(0), reason: 'a right answer: points');
+      expect(game.sessionStreak, 1);
     });
 
     test('practice and input: pressing the boxes switches between two and three darts', () {
@@ -802,7 +804,7 @@ void main() {
       await game.submit();
       final result = game.lastResult!;
       expect(result.validation.outcome, AttemptOutcome.goodButFewerDarts);
-      expect(result.isCorrect, isFalse, reason: 'every dart has to be used');
+      expect(result.isCorrect, isTrue, reason: 'it counts as a right answer');
       expect(result.validation.message, contains('Good, but not in the given number of darts'));
       expect(result.playerRoute.isCheckoutFor(74), isTrue, reason: 'it can be a favorite');
     });
@@ -842,6 +844,19 @@ void main() {
       expect(game.phase, GamePhase.playing);
       expect(game.sessionPoints, 0);
       expect(game.undosLeft, 3);
+    });
+
+    test('a good-but-fewer-darts finish counts as right, so it does not end the session', () async {
+      dealUntil((c) => c.hasExtraDart);
+      await useAllUndos();
+      for (final d in optimalService.optimalRoute(game.challenge!.target)!.darts) {
+        game.selectDart(d);
+      }
+      await game.submit();
+      expect(game.lastResult!.validation.outcome, AttemptOutcome.goodButFewerDarts);
+      expect(game.isSessionOver, isFalse);
+      game.nextCheckout(); // carries on
+      expect(game.phase, GamePhase.playing);
     });
 
     test('a miss with undos left, or a right answer with none, carries on', () async {

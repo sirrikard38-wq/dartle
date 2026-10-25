@@ -19,8 +19,14 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   final entered = result.playerRoute.darts;
   final noCheckoutRight = result.isNoCheckoutAnswer;
 
+  // An optimal route of fewer darts than were given: a right answer, but not in
+  // the given number of darts.
+  final goodButFewer = result.validation.outcome == AttemptOutcome.goodButFewerDarts;
+
   final String headline;
-  if (result.isCorrect && result.isOptimal) {
+  if (goodButFewer) {
+    headline = 'Good, but not in the given number of darts';
+  } else if (result.isCorrect && result.isOptimal) {
     headline = 'Optimal!';
   } else if (result.isCorrect) {
     headline = 'Checkout!';
@@ -28,12 +34,9 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
     headline = switch (result.validation.outcome) {
       AttemptOutcome.bust => 'Bust',
       AttemptOutcome.outOfDarts => 'Out of darts',
-      AttemptOutcome.goodButFewerDarts => 'Good, but not in the given number of darts',
       _ => 'Not quite',
     };
   }
-  // An optimal route of fewer darts than were given: still a miss, but a good one.
-  final goodButFewer = result.validation.outcome == AttemptOutcome.goodButFewerDarts;
 
   // Calculator: compare to the best routes. Practice: each dart's own rating.
   final List<TileState>? states = entered.isEmpty
@@ -108,8 +111,8 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen result', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'headline ${result.isCorrect || goodButFewer ? 'good' : 'bad'}',
-          text: '${result.isCorrect || goodButFewer ? '✓ ' : '✗ '}$headline',
+      el('p', cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
+          text: '${result.isCorrect ? '✓ ' : '✗ '}$headline',
           attrs: {'role': 'status'}),
       el('p', cls: 'target small', text: '${challenge.target}'),
 
