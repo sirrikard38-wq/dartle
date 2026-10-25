@@ -122,12 +122,13 @@ leaderboard shows the scores on the device, as before.
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
   ... (only better doubles when there are any, then the most singles;
-  `AimPairs.threeDartRoutes`), and (2) a single that leaves a number with a two-dart
-  finish, then one of that number's optimal routes with two darts: 93 is `S19 T20 D7`, as S19
-  leaves 74, and 64 is `S14 T14 D4` (S14 leaves 50, T14 D4 with S14 D18 as the
-  backup) (`OptimalRouteService._followUps`). Every single can be the first dart.
-  And (3) the single and the triple of one number then any double (74:
-  `S14 T14 D9`; `AimPairs.sameNumberThreeDartRoutes`).
+  `AimPairs.threeDartRoutes`), and (2) a high single (S15 to S20) that leaves a
+  number with a two-dart finish, then one of that number's optimal routes with
+  two darts: 93 is `S19 T20 D7`, as S19 leaves 74
+  (`OptimalRouteService._followUps`; with every single 97 had 52 routes and 61
+  had 147, with S15-S20 only 97 has 23). And (3) the single and the triple of
+  one number then any double (74: `S14 T14 D9`, 64: `S14 T14 D4`;
+  `AimPairs.sameNumberThreeDartRoutes`).
   The popup and the "Also optimal" boxes list every optimal route - the same
   as Checkout input lights up, however many (35 has 16, 61 with three darts
   has over a hundred).

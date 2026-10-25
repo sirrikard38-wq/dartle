@@ -116,20 +116,30 @@ void main() {
           AimPairs.threeDartRoutes(93));
     });
 
-    test('any single can be the first dart: every number lights up on 74 and 64', () {
-      // S3 leaves 90 (T20 D15); S14 leaves 60; S1 leaves 73.
-      expect(optimal.isOptimalIn(93, 3, r('S3 T20 D15')), isTrue);
-      for (final target in [64, 74]) {
-        final firsts = {
-          for (final route in optimal.optimalRoutesIn(target, 3)) ...route.setupDarts,
-        };
-        for (var n = 1; n <= 20; n++) {
-          expect(firsts.contains(DartThrow(Multiplier.single, n)), isTrue, reason: '$target S$n');
-        }
+    test('only S15 to S20 start a follow-up route: 97 has 23 routes, not 52', () {
+      expect(OptimalRouteService.followUpLowestSingle, 15);
+      // S3 leaves 90 (T20 D15), but S3 is not a high single.
+      expect(optimal.isOptimalIn(93, 3, r('S3 T20 D15')), isFalse);
+      expect(optimal.isOptimalIn(93, 3, r('S15 T18 D12')), isTrue); // S15 leaves 78
+      expect(optimal.optimalRoutesIn(97, 3), hasLength(23));
+      // Every follow-up starts with one of the six high singles.
+      final aims = AimPairs.threeDartRoutes(97);
+      final same = AimPairs.sameNumberThreeDartRoutes(97);
+      for (final route in optimal.optimalRoutesIn(97, 3)) {
+        if (aims.any(route.isEquivalentTo) || same.any(route.isEquivalentTo)) continue;
+        final firsts = route.setupDarts.where((d) => d.multiplier == Multiplier.single && d.number >= 15);
+        expect(firsts, isNotEmpty, reason: route.notation);
       }
     });
 
-    test('64: S14 then T14 D4 (S14 D18 if T14 is missed) - the aim works on the 50 left too', () {
+    test('74 keeps follow-ups too (the leftovers 54 to 59 have routes), and 64 its S14 T14 D4', () {
+      expect(optimal.optimalRoutesIn(74, 3).length, greaterThan(40));
+      expect(optimal.isOptimalIn(74, 3, r('S20 T14 D6')), isTrue); // S20 leaves 54, whose T14 D6 is optimal
+      expect(optimal.isOptimalIn(74, 3, r('S14 T10 D15')), isFalse); // S14 is not a high single
+      expect(optimal.isOptimalIn(74, 3, r('S14 T14 D9')), isTrue);
+    });
+
+    test('64: S14 then T14 D4 (S14 D18 if T14 is missed) - the single and triple of one number', () {
       expect(optimal.isOptimalIn(64, 3, r('S14 T14 D4')), isTrue);
       expect(optimal.isOptimalIn(64, 3, r('T14 S14 D4')), isTrue); // any order
       expect(optimal.isOptimalIn(64, 3, r('S14 S14 D18')), isTrue);

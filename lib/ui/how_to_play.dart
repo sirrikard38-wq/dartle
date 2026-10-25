@@ -72,11 +72,10 @@ web.HTMLElement buildHowToPlay(GameController game) {
             'whatever double (35: T5 D10 and S5 D15). On 41 to 60 two neighbouring '
             'singles then a double count too (42: S8 D17 or S16 D13). The same good '
             'double twice counts too (64: D16 D16). With three darts on a two-dart '
-            'number over 60, a single that leaves a number you can finish in two darts '
-            'is optimal too, followed by one of the routes of what is left (93: S19 '
-            'leaves 74, then T20 D7; 64: S14 leaves 50, then T14 D4 with S14 D18 as the '
-            'backup). The single and the triple of one number then any double count too '
-            '(74: S14 T14 D9).')),
+            'number over 60, a single from S15 to S20 that leaves a number you can '
+            'finish in two darts is optimal too, followed by one of the routes of what '
+            'is left (93: S19 leaves 74, then T20 D7). The single and the triple of one '
+            'number then any double count too (74: S14 T14 D9; 64: S14 T14 D4).')),
     section(
         tr('Bull safety'),
         tr('With two darts left on 51 to 70, aim at the number that is 50 less than '

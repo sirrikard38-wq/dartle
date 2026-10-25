@@ -108,6 +108,9 @@ class OptimalRouteService {
     });
   }
 
+  /// The lowest single a three-dart follow-up route starts with (S15 to S20).
+  static const int followUpLowestSingle = 15;
+
   /// A first dart whose two possible hits each leave a finish, and the same
   /// better double twice: the aim routes of two darts (see [AimPairs]).
   List<CheckoutRoute> _aimRoutes(int target) => [
@@ -120,11 +123,12 @@ class OptimalRouteService {
   /// A two-dart number played with three darts is also optimal when the first
   /// dart is a single that leaves a number with a two-dart finish, and the last
   /// two darts are an optimal route of that number with two darts: 93 with S19
-  /// leaves 74, whose T20 D7 gives S19 T20 D7; 64 with S14 leaves 50, whose T14
-  /// D4 (S14 D18 as the backup) gives S14 T14 D4. Biggest single first.
+  /// leaves 74, whose T20 D7 gives S19 T20 D7. Only the high singles S15 to S20
+  /// start one (with every single, 97 had 50 of them and 61 over a hundred).
+  /// Biggest single first.
   List<CheckoutRoute> _followUps(int target) {
     final routes = <CheckoutRoute>[];
-    for (var n = DartThrow.maxBoardNumber; n >= 1; n--) {
+    for (var n = DartThrow.maxBoardNumber; n >= followUpLowestSingle; n--) {
       final left = target - n;
       if (!_engine.canCheckoutIn(left, 2)) continue;
       for (final route in optimalRoutesIn(left, 2)) {
