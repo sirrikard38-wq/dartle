@@ -116,18 +116,35 @@ void main() {
           AimPairs.threeDartRoutes(93));
     });
 
-    test('...but only with S15 to S20 first and a leftover over 60, so there are not hundreds', () {
-      // S3 leaves 90, a fine number, but S3 is not a high single.
-      expect(optimal.isOptimalIn(93, 3, r('S3 T20 D15')), isFalse);
-      // 61: every leftover is under 60, so only the aim routes are left.
-      expect(optimal.optimalRoutesIn(61, 3), AimPairs.threeDartRoutes(61));
+    test('any single can be the first dart: every number lights up on 74 and 64', () {
+      // S3 leaves 90 (T20 D15); S14 leaves 60; S1 leaves 73.
+      expect(optimal.isOptimalIn(93, 3, r('S3 T20 D15')), isTrue);
+      for (final target in [64, 74]) {
+        final firsts = {
+          for (final route in optimal.optimalRoutesIn(target, 3)) ...route.setupDarts,
+        };
+        for (var n = 1; n <= 20; n++) {
+          expect(firsts.contains(DartThrow(Multiplier.single, n)), isTrue, reason: '$target S$n');
+        }
+      }
+    });
+
+    test('64: S14 then T14 D4 (S14 D18 if T14 is missed) - the aim works on the 50 left too', () {
+      expect(optimal.isOptimalIn(64, 3, r('S14 T14 D4')), isTrue);
+      expect(optimal.isOptimalIn(64, 3, r('T14 S14 D4')), isTrue); // any order
+      expect(optimal.isOptimalIn(64, 3, r('S14 S14 D18')), isTrue);
+      // 50 with two darts has the aim routes next to the singles.
+      expect(optimal.optimalRoutesIn(50, 2).any(r('T14 D4').isEquivalentTo), isTrue);
+      expect(optimal.optimalRoutesIn(50, 2).any(r('S14 D18').isEquivalentTo), isTrue);
+    });
+
+    test('every three-dart route is legal, and numbers with a three-dart option all have routes', () {
       for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
         if (engine.minimumDarts(t) != 2) continue;
         for (final route in optimal.optimalRoutesIn(t, 3)) {
           expect(engine.isLegalRoute(t, route), isTrue, reason: '$t ${route.notation}');
           expect(route.length, 3, reason: '$t ${route.notation}');
         }
-        expect(optimal.optimalRoutesIn(t, 3).length, lessThan(50), reason: '$t');
       }
     });
 

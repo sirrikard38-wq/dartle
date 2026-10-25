@@ -90,25 +90,40 @@ class OptimalRouteService {
         if (routes.isNotEmpty) return List.unmodifiable(routes);
       }
       final tier = _tierRoutes(target, darts);
-      return List.unmodifiable(tier.isEmpty ? _engine.legalRoutes(target, darts: darts) : tier);
+      final routes = <CheckoutRoute>[...(tier.isEmpty ? _engine.legalRoutes(target, darts: darts) : tier)];
+      // A one-dart number (50) with two darts: the aims count here too, so after
+      // S14 on 64 the 50 left is T14 D4 (S14 D18 if T14 is missed).
+      if (minimum == 1 && darts == 2) {
+        for (final route in _aimRoutes(target)) {
+          if (_engine.isLegalRoute(target, route) && !routes.any(route.isEquivalentTo)) {
+            routes.add(route);
+          }
+        }
+      }
+      return List.unmodifiable(routes);
     });
   }
 
-  /// The lowest single [_followUps] starts with.
-  static const int followUpLowestSingle = 15;
+  /// A first dart whose two possible hits each leave a finish, and the same
+  /// better double twice: the aim routes of two darts (see [AimPairs]).
+  List<CheckoutRoute> _aimRoutes(int target) => [
+        ...AimPairs.twoDartRoutes(target),
+        ...AimPairs.sameNumberRoutes(target),
+        ...AimPairs.neighbourSingleRoutes(target),
+        if (AimPairs.sameDoubleTwice(target) case final twice?) twice,
+      ];
 
   /// A two-dart number played with three darts is also optimal when the first
-  /// dart is a high single (S15 to S20) that leaves a two-dart number over 60,
-  /// and the last two darts are an optimal route of that number: 93 with S19
-  /// leaves 74, whose T20 D7 gives S19 T20 D7. Limited to high singles and to
-  /// leftovers over 60 because every single and every leftover gave far too
-  /// many routes (142 on 61). Biggest single first.
+  /// dart is a single that leaves a number with a two-dart finish, and the last
+  /// two darts are an optimal route of that number with two darts: 93 with S19
+  /// leaves 74, whose T20 D7 gives S19 T20 D7; 64 with S14 leaves 50, whose T14
+  /// D4 (S14 D18 as the backup) gives S14 T14 D4. Biggest single first.
   List<CheckoutRoute> _followUps(int target) {
     final routes = <CheckoutRoute>[];
-    for (var n = DartThrow.maxBoardNumber; n >= followUpLowestSingle; n--) {
+    for (var n = DartThrow.maxBoardNumber; n >= 1; n--) {
       final left = target - n;
-      if (left <= AimPairs.threeDartAbove || _engine.minimumDarts(left) != 2) continue;
-      for (final route in optimalRoutes(left)) {
+      if (!_engine.canCheckoutIn(left, 2)) continue;
+      for (final route in optimalRoutesIn(left, 2)) {
         final full = CheckoutRoute([DartThrow(Multiplier.single, n), ...route.darts]).normalized;
         if (!routes.any(full.isEquivalentTo)) routes.add(full);
       }
@@ -227,14 +242,7 @@ class OptimalRouteService {
     // better double twice (64: D16 D16). On 20 to 60 every single/triple pair
     // of a number stays optimal too, whatever its doubles (35: T5 D10).
     if (minimum == 2) {
-      for (final route in [
-        ...AimPairs.twoDartRoutes(target),
-        ...AimPairs.sameNumberRoutes(target),
-        ...AimPairs.neighbourSingleRoutes(target),
-        if (AimPairs.sameDoubleTwice(target) case final twice?) twice,
-      ]) {
-        add(route, force: true);
-      }
+      _aimRoutes(target).forEach((route) => add(route, force: true));
     }
 
     if (routes.isEmpty) {
