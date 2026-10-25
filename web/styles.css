@@ -97,10 +97,24 @@ button:disabled { cursor: default; }
   text-align: center;
 }
 .header-spacer { display: block; }
-/* The cell to the right of the word DARTLE: the sound icon and the language box
-   start right at the word; the score (calculator only) is at the far right. */
-.header-right { display: flex; justify-content: space-between; align-items: center; min-width: 0; }
-.header-tools { display: flex; align-items: center; gap: 2px; }
+/* The cell to the right of the word DARTLE. The sound icon and the language box
+   are mirrored on the Back dart: the dart is 2cm to the left of the word, they
+   start 2cm to the right of it (less on a narrow phone, where that much does not
+   fit - the margin is of this cell's width, minus what has to fit in it). The
+   score (calculator only) is at the far right. */
+.header-right {
+  --tools-w: 94px; /* sound icon + language box; the language box alone: .no-sound */
+  --score-w: 0px;  /* the score, when there is one: .has-score */
+  display: flex; justify-content: space-between; align-items: center; min-width: 0;
+}
+.header-right.no-sound { --tools-w: 44px; }
+.header-right.has-score { --score-w: 62px; }
+.header-tools {
+  display: flex; align-items: center; gap: 2px;
+  margin-left: min(2cm, max(0px, calc(100% - var(--tools-w) - var(--score-w))));
+}
+/* The sound icon is as wide as the Back dart, so the two are mirror images. */
+.header-tools .icon-btn { min-width: 48px; }
 .icon-btn {
   min-width: 44px; min-height: 44px;
   border: 0; background: none; border-radius: 6px;
@@ -125,9 +139,12 @@ button:disabled { cursor: default; }
    language box and the score all fit beside DARTLE. */
 @media (max-width: 440px) {
   .title { font-size: 1.3rem; letter-spacing: 0.14em; }
-  .icon-btn, .lang-btn { min-width: 32px; padding: 0; }
+  .icon-btn, .lang-btn, .header-tools .icon-btn { min-width: 32px; padding: 0; }
   .lang-code { min-width: 28px; }
   .score-box { margin-left: 0; }
+  .header-right { --tools-w: 66px; --score-w: 0px; }
+  .header-right.no-sound { --tools-w: 34px; }
+  .header-right.has-score { --score-w: 56px; }
 }
 /* The current score, with a small grey label under it. */
 .score-box { display: flex; flex-direction: column; align-items: center; margin-left: 4px; }

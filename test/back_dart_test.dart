@@ -31,7 +31,7 @@ void main() {
       expect(shot, contains('web.HTMLElement buildDartStage('));
       expect(welcome, contains("buildDartStage(label: tr('Continue')"));
       expect(back, contains('buildDartStage('));
-      expect(back, contains("label: tr('Back to the menu')"));
+      expect(back, contains("label: tr('Back')"));
       expect(back, contains("stageClass: 'back-stage'"));
       expect(back, contains("buttonClass: 'back-dart'"));
     });
@@ -76,7 +76,7 @@ void main() {
     test('the script waits for the fade, then goes to the menu; a second press does nothing', () {
       expect(back, contains('await playDartFade(stage);'));
       expect(back.indexOf('await playDartFade(stage);'),
-          lessThan(back.indexOf('_showPage(MenuPage.home);')));
+          lessThan(back.indexOf('_showPage(ViewContext.backTarget(_game.phase));')));
       expect(back, contains('if (leaving) return;'));
       expect(shot, contains("stage.classList.add('fading');"));
       expect(shot, contains('Duration(milliseconds: dartFadeMs)'));

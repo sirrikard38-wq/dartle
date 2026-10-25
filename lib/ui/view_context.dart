@@ -71,6 +71,13 @@ class ViewContext {
   Multiplier activeMultiplier() =>
       isFinalBox ? Multiplier.double : (pickedMultiplier ?? Multiplier.single);
 
+  /// Where the Back dart goes: one step back. From a checkout (a game, its
+  /// result, typing a number for Checkout input) that is the list of game modes
+  /// you chose from; from the modes, Favorites and the Leaderboard it is the menu
+  /// (Start, Favorites, Leaderboard).
+  static MenuPage backTarget(GamePhase phase) =>
+      phase == GamePhase.menu ? MenuPage.home : MenuPage.modes;
+
   /// The multiplier a new checkout starts with: Triple when the best route has
   /// a triple in it, and also for a number with no checkout; otherwise Single
   /// (null).

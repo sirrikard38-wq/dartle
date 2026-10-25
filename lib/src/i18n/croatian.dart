@@ -32,7 +32,7 @@ const Map<String, String> croatian = {
   'Turn sound on': 'Uključi zvuk',
   'Turn sound off': 'Isključi zvuk',
   'Language: {name}. Press to change it.': 'Jezik: {name}. Pritisni za promjenu.',
-  'Back to the menu': 'Natrag na izbornik',
+  'Back': 'Natrag',
   'Back to the top': 'Natrag na vrh',
 
   // --------------------------------------------------------------- footer

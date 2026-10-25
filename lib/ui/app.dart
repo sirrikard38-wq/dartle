@@ -195,14 +195,17 @@ class DartleApp {
     // language box sit right next to the word DARTLE, on its right; the score
     // (calculator only) is at the far right.
     final showSound = inMenu || _game.mode.hasSound;
-    final right = el('div', cls: 'header-right', children: [
+    final showScore = !inMenu && _game.mode.hasScore;
+    final right = el('div',
+        cls: 'header-right${showSound ? '' : ' no-sound'}${showScore ? ' has-score' : ''}',
+        children: [
       el('div', cls: 'header-tools', children: [
         if (showSound) soundButton,
         languageButton,
       ]),
       // Only Checkout calculator has a score: the current score, with a small
       // grey label under it.
-      if (!inMenu && _game.mode.hasScore)
+      if (showScore)
         el('div', cls: 'score-box', children: [
           el('span', cls: 'score-pill', text: formatScore(_game.sessionPoints)),
           el('span', cls: 'score-label', text: tr('Current score')),
@@ -219,7 +222,9 @@ class DartleApp {
 
   /// The Back button: the welcome screen's dart turned round to point left, with
   /// no background. Pressed, it does not shoot: it slides half a centimetre left
-  /// and fades out smoothly (no circle, no wiggle), then goes back to the menu.
+  /// and fades out smoothly (no circle, no wiggle), then goes one step back: from
+  /// a game to the game modes, from anywhere else to the menu
+  /// ([ViewContext.backTarget]).
   web.HTMLElement _buildBackDart() {
     late final web.HTMLElement stage;
     var leaving = false;
@@ -227,11 +232,11 @@ class DartleApp {
       if (leaving) return; // the dart is already on its way out
       leaving = true;
       await playDartFade(stage);
-      _showPage(MenuPage.home);
+      _showPage(ViewContext.backTarget(_game.phase));
     }
 
     stage = buildDartStage(
-      label: tr('Back to the menu'),
+      label: tr('Back'),
       stageClass: 'back-stage',
       buttonClass: 'back-dart',
       circle: false,
