@@ -1,5 +1,6 @@
 import 'package:web/web.dart' as web;
 
+import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
@@ -9,17 +10,17 @@ web.HTMLElement buildMenuScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen menu', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'greeting', text: 'Hi, ${game.playerName}'),
+      el('p', cls: 'greeting', text: tr('Hi, {name}', {'name': game.playerName})),
       el('div', cls: 'menu-list', children: [
-        button('Start',
+        button(tr('Start'),
             cls: 'menu-btn primary',
             focusKey: 'start',
             onPressed: (_) => ctx.showPage(MenuPage.modes)),
-        button('Favorites',
+        button(tr('Favorites'),
             cls: 'menu-btn',
             focusKey: 'favorites',
             onPressed: (_) => ctx.showPage(MenuPage.favorites)),
-        button('Leaderboard',
+        button(tr('Leaderboard'),
             cls: 'menu-btn',
             focusKey: 'leaderboard',
             onPressed: (_) => ctx.showPage(MenuPage.leaderboard)),

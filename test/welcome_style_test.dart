@@ -13,7 +13,7 @@ void main() {
   group('layout', () {
     test('the dart sits under the name box, and "Welcome" is centred over the box', () {
       final form = screen.substring(screen.indexOf("el('div', cls: 'form'"));
-      final heading = form.indexOf("el('h2', text: 'Welcome')");
+      final heading = form.indexOf("el('h2', text: tr('Welcome'))");
       final nameBox = form.indexOf("el('div', cls: 'name-row', children: [input])");
       final dart = form.indexOf('stage,');
       expect(heading, greaterThanOrEqualTo(0));

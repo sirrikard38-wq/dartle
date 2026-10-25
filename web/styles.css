@@ -97,13 +97,38 @@ button:disabled { cursor: default; }
   text-align: center;
 }
 .header-spacer { display: block; }
-.header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
+/* The cell to the right of the word DARTLE: the sound icon and the language box
+   start right at the word; the score (calculator only) is at the far right. */
+.header-right { display: flex; justify-content: space-between; align-items: center; min-width: 0; }
+.header-tools { display: flex; align-items: center; gap: 2px; }
 .icon-btn {
   min-width: 44px; min-height: 44px;
   border: 0; background: none; border-radius: 6px;
   font-size: 1.3rem; line-height: 1;
 }
 .icon-btn:hover { background: var(--line); }
+/* The language box: the two letters of the language that is on (EN, HR). The
+   button is a full-size target; the little box is drawn inside it. */
+.lang-btn {
+  min-width: 44px; min-height: 44px; padding: 0;
+  display: grid; place-items: center;
+  border: 0; background: none; border-radius: 6px;
+}
+.lang-code {
+  display: block; min-width: 30px; padding: 4px 5px;
+  border: 1px solid var(--line-strong); border-radius: 4px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1;
+  text-align: center;
+}
+.lang-btn:hover .lang-code { border-color: var(--fg); }
+/* On a phone the title and the icons are a little tighter, so the sound icon, the
+   language box and the score all fit beside DARTLE. */
+@media (max-width: 440px) {
+  .title { font-size: 1.3rem; letter-spacing: 0.14em; }
+  .icon-btn, .lang-btn { min-width: 32px; padding: 0; }
+  .lang-code { min-width: 28px; }
+  .score-box { margin-left: 0; }
+}
 /* The current score, with a small grey label under it. */
 .score-box { display: flex; flex-direction: column; align-items: center; margin-left: 4px; }
 .score-pill {

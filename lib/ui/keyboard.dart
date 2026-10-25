@@ -68,7 +68,7 @@ web.HTMLElement buildInputPanel({
     return button(
       m.prefix,
       cls: 'key mode side${m == multiplier ? ' selected' : ''}',
-      ariaLabel: m.label,
+      ariaLabel: tr(m.label),
       focusKey: focusKey,
       disabled: finalBox && m != Multiplier.double,
       attrs: {'aria-pressed': '${m == multiplier}'},
@@ -78,29 +78,29 @@ web.HTMLElement buildInputPanel({
 
   web.HTMLElement modeColumn({required bool right}) => el('div',
       cls: 'mode-col ${right ? 'right' : 'left'}',
-      attrs: {'role': 'group', 'aria-label': right ? 'Ring, right side' : 'Ring, left side'},
+      attrs: {'role': 'group', 'aria-label': right ? tr('Ring, right side') : tr('Ring, left side')},
       children: [for (final m in Multiplier.values) modeKey(m, right: right)]);
 
   // A drawn arrow, not the "⌫" character: many fonts lack that glyph and show
   // an empty box instead.
-  final undoKey = button('UNDO${undosLeft == null ? '' : ' ($undosLeft)'}',
+  final undoKey = button('${tr('UNDO')}${undosLeft == null ? '' : ' ($undosLeft)'}',
       cls: 'key wide undo',
       ariaLabel: undosLeft == null
-          ? 'Undo last dart'
-          : 'Undo last dart, $undosLeft ${undosLeft == 1 ? 'undo' : 'undos'} left',
+          ? tr('Undo last dart')
+          : trn(undosLeft, 'Undo last dart, {n} undo left', 'Undo last dart, {n} undos left'),
       focusKey: 'undo',
       disabled: !canUndo,
       onPressed: onUndo);
   undoKey.insertBefore(undoIcon(), undoKey.firstChild);
 
   // Next to Undo, in the same plain style.
-  final noCheckoutKey = button('NO CHECKOUT',
+  final noCheckoutKey = button(tr('NO CHECKOUT'),
       cls: 'key wide undo no-checkout',
-      ariaLabel: 'No checkout: this number cannot be checked out',
+      ariaLabel: tr('No checkout: this number cannot be checked out'),
       focusKey: 'no-checkout',
       onPressed: (kb) => onNoCheckout?.call(kb));
 
-  return el('div', cls: 'keyboard board-view', attrs: {'aria-label': 'Dart input'}, children: [
+  return el('div', cls: 'keyboard board-view', attrs: {'aria-label': tr('Dart input')}, children: [
     // The ring buttons are a column on each side of the board (S, D, T from the
     // top), so either hand can reach them.
     el('div', cls: 'board-wrap${ringButtons ? ' sided' : ''}', children: [

@@ -10,10 +10,10 @@ web.HTMLElement buildFooter() {
   return el('footer', cls: 'app-footer', children: [
     // Nothing to install once the app is on the home screen (or is the .apk).
     if (!isInstalledApp)
-      button('Install', cls: 'footer-link', onPressed: (_) => _install()),
+      button(tr('Install'), cls: 'footer-link', onPressed: (_) => _install()),
     _link('Instagram', Contact.instagramUrl,
-        label: 'Instagram, opens in a new tab', newTab: true),
-    _link('Email', Contact.emailUrl, label: 'Email ${Contact.email}'),
+        label: tr('Instagram, opens in a new tab'), newTab: true),
+    _link(tr('Email'), Contact.emailUrl, label: tr('Email {address}', {'address': Contact.email})),
   ]);
 }
 
@@ -32,17 +32,17 @@ void _install() {
     case InstallHelp.prompt:
       promptInstall();
     case InstallHelp.ios:
-      showModal(title: 'Install Dartle', body: [
-        modalLine('Tap the Share button in Safari, then Add to Home Screen.'),
+      showModal(title: tr('Install Dartle'), body: [
+        modalLine(tr('Tap the Share button in Safari, then Add to Home Screen.')),
       ]);
     case InstallHelp.none:
-      showModal(title: 'Install Dartle', body: [
-        modalLine('Android: open the browser menu, then tap Install app '
-            '(or Add to Home screen).'),
-        modalLine('iPhone and iPad: tap the Share button in Safari, then '
-            'Add to Home Screen.'),
+      showModal(title: tr('Install Dartle'), body: [
+        modalLine(tr('Android: open the browser menu, then tap Install app '
+            '(or Add to Home screen).')),
+        modalLine(tr('iPhone and iPad: tap the Share button in Safari, then '
+            'Add to Home Screen.')),
         el('p', cls: 'modal-line', children: [
-          el('a', text: 'Download the Android app (.apk)', attrs: {
+          el('a', text: tr('Download the Android app (.apk)'), attrs: {
             'href': Contact.androidAppUrl,
             'target': '_blank',
             'rel': 'noopener noreferrer',

@@ -3,11 +3,12 @@ import 'package:web/web.dart' as web;
 import '../dartle.dart';
 import 'dom.dart';
 
-const Map<TileState, String> _stateWords = {
-  TileState.correct: 'correct',
-  TileState.present: 'in the route but in a different position',
-  TileState.absent: 'not in the route',
-};
+/// What a coloured box means, in words (for screen readers).
+String _stateWord(TileState state) => switch (state) {
+      TileState.correct => tr('correct'),
+      TileState.present => tr('in the route but in a different position'),
+      TileState.absent => tr('not in the route'),
+    };
 
 /// Glyphs so state never depends on colour alone.
 const Map<TileState, String> _stateMarks = {
@@ -53,7 +54,7 @@ web.HTMLElement tileRow(
   return el('div', cls: 'tile-row${small ? ' small' : ''}', attrs: {
     'role': 'group',
     'aria-label': label ??
-        'Your checkout, ${free.length} ${free.length == 1 ? 'dart' : 'darts'} left',
+        trn(free.length, 'Your checkout, {n} dart left', 'Your checkout, {n} darts left'),
   }, children: [
     for (var i = 0; i < slots; i++)
       if (used.contains(i))
@@ -88,15 +89,15 @@ web.HTMLElement _tile(DartThrow? dart,
   ].join(' ');
 
   final description = usedBox
-      ? 'already used'
+      ? tr('already used')
       : dart == null
-          ? 'empty'
+          ? tr('empty')
           : state == null
               ? dart.spokenName
-              : '${dart.spokenName}, ${_stateWords[state]}';
+              : '${dart.spokenName}, ${_stateWord(state)}';
 
   return el('div', cls: classes, attrs: {
-    'aria-label': 'Dart ${index + 1}: $description',
+    'aria-label': tr('Dart {n}: {state}', {'n': index + 1, 'state': description}),
     'style': '--i:$index',
   }, children: [
     textNode(dart?.notation ?? ''),

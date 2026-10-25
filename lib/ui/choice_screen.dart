@@ -39,27 +39,29 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen game choice', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'meta', text: 'Finish on a double or Bull in the chosen number of darts.'),
+      el('p', cls: 'meta', text: tr('Finish on a double or Bull in the chosen number of darts.')),
       el('p', cls: 'target', text: '${round.remaining}', attrs: {
-        'aria-label': '${round.remaining} to checkout, ${round.dartsLeft} darts left',
+        'aria-label': trn(round.dartsLeft, '{target} to checkout, {n} dart left',
+            '{target} to checkout, {n} darts left', {'target': round.remaining}),
       }),
       if (steps.isEmpty && game.hasOnlyOneCheckout)
-        el('p', cls: 'hint only-one', text: 'Only possible checkout.'),
+        el('p', cls: 'hint only-one', text: tr('Only possible checkout.')),
       el('p', cls: 'hint',
           text: steps.isEmpty
-              ? 'The lit areas are the optimal darts.'
-              : 'Started on ${round.target}. The lit areas are the optimal darts.'),
+              ? tr('The lit areas are the optimal darts.')
+              : tr('Started on {target}. The lit areas are the optimal darts.',
+                  {'target': round.target})),
       if (choose)
         button('',
             cls: 'dart-count-toggle',
             focusKey: 'darts',
-            ariaLabel: 'Play ${round.target} with $other darts',
+            ariaLabel: tr('Play {target} with {n} darts', {'target': round.target, 'n': other}),
             onPressed: (_) => game.chooseOtherDarts())
           ..appendChild(boxes)
       else
         boxes,
-      if (choose) el('p', cls: 'hint darts-hint', text: 'Press the darts to choose 2 or 3 darts.'),
-      if (game.isReplay) el('p', cls: 'hint', text: 'Replay - the same number again.'),
+      if (choose) el('p', cls: 'hint darts-hint', text: tr('Press the darts to choose 2 or 3 darts.')),
+      if (game.isReplay) el('p', cls: 'hint', text: tr('Replay - the same number again.')),
     ]),
     buildEntryPanel(ctx),
     buildHowToPlay(game),

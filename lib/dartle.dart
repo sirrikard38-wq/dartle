@@ -33,6 +33,7 @@ export 'src/favorites/favorites.dart';
 export 'src/game/app_factory.dart';
 export 'src/game/game_controller.dart';
 export 'src/game/game_mode.dart';
+export 'src/i18n/i18n.dart';
 export 'src/leaderboard/leaderboard_service.dart';
 export 'src/leaderboard/online_leaderboard.dart';
 export 'src/scoring/scoring_service.dart';

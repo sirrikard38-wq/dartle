@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import '../i18n/i18n.dart';
+import 'phrases_hr.dart';
+
 /// The silly lines of the app: 1000 goofy school-kid insults (for a number that
 /// cannot be checked out) and five short praise lines (for a right "No
 /// checkout").
@@ -35,11 +38,16 @@ abstract final class Phrases {
   ];
 
   /// A random insult.
-  static String randomInsult(Random random) => insults[random.nextInt(count)];
+  static String randomInsult(Random random) {
+    final lines = I18n.current == Language.hr ? PhrasesHr.insults : insults;
+    return lines[random.nextInt(lines.length)];
+  }
 
   /// A random praise line for a right "No checkout".
-  static String randomEncouragement(Random random) =>
-      encouragements[random.nextInt(encouragements.length)];
+  static String randomEncouragement(Random random) {
+    final lines = I18n.current == Language.hr ? PhrasesHr.encouragements : encouragements;
+    return lines[random.nextInt(lines.length)];
+  }
 
   /// Unique lines, shuffled the same way every time, cut to [count]. The
   /// [always] lines are in every time.

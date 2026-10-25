@@ -1,3 +1,5 @@
+import '../i18n/i18n.dart';
+
 /// The ring a dart lands in.
 enum Multiplier {
   single(1, 'S', 'Single'),
@@ -59,9 +61,9 @@ final class DartThrow {
 
   /// Screen-reader friendly name, e.g. "Treble 20".
   String get spokenName {
-    if (isBull) return 'Bull, 50';
-    if (isOuterBull) return 'Outer bull, 25';
-    return '${multiplier.label} $number';
+    if (isBull) return tr('Bull, 50');
+    if (isOuterBull) return tr('Outer bull, 25');
+    return '${tr(multiplier.label)} $number';
   }
 
   /// Every legal segment, ordered singles, doubles, trebles, then bulls.

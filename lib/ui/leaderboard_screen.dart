@@ -8,7 +8,7 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
   final game = ctx.game;
   final sort = ctx.leaderboardSort;
   final list = el('ol', cls: 'rank-list');
-  final status = el('p', cls: 'hint', text: 'Loading…');
+  final status = el('p', cls: 'hint', text: tr('Loading…'));
   final note = el('p', cls: 'hint', text: '');
 
   String metric(LeaderboardEntry e) => switch (sort) {
@@ -26,7 +26,7 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
     bool isMe(LeaderboardEntry e) =>
         e.id != null && myId != null ? e.id == myId : e.playerName == game.playerName;
 
-    status.textContent = entries.isEmpty ? 'No scores yet - be the first!' : '';
+    status.textContent = entries.isEmpty ? tr('No scores yet - be the first!') : '';
     for (final e in entries) {
       list.appendChild(el('li', cls: isMe(e) ? 'me' : null, children: [
         el('span', cls: 'name', text: e.playerName),
@@ -44,16 +44,16 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
       ]));
     }
     note.textContent =
-        online ? 'Your name and scores are visible to all players.' : 'Scores on this device.';
+        online ? tr('Your name and scores are visible to all players.') : tr('Scores on this device.');
   });
 
   return el('main', cls: 'screen leaderboard', children: [
     el('div', cls: 'play-area', children: [
       // The title is in the middle (the style uppercases it).
-      el('h2', text: '180 Leaderboard'),
-      el('div', cls: 'chips', attrs: {'role': 'group', 'aria-label': 'Rank by'}, children: [
+      el('h2', text: tr('180 Leaderboard')),
+      el('div', cls: 'chips', attrs: {'role': 'group', 'aria-label': tr('Rank by')}, children: [
         for (final option in LeaderboardSort.values)
-          button(option.label,
+          button(tr(option.label),
               cls: 'chip${option == sort ? ' selected' : ''}',
               attrs: {'aria-pressed': '${option == sort}'},
               onPressed: (_) {

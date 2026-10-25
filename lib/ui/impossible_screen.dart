@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:web/web.dart' as web;
 
+import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
@@ -15,7 +16,7 @@ const Duration _nextAfter = Duration(seconds: 3);
 /// after that the Next checkout button appears.
 web.HTMLElement buildImpossibleScreen(ViewContext ctx) {
   final game = ctx.game;
-  final next = button('Next checkout',
+  final next = button(tr('Next checkout'),
       cls: 'cta fade fade-3',
       focusKey: 'next',
       disabled: true, // until it has faded in
@@ -26,7 +27,7 @@ web.HTMLElement buildImpossibleScreen(ViewContext ctx) {
     el('div', cls: 'play-area', children: [
       el('p', cls: 'target small', text: '${game.impossibleNumber}'),
       el('p', cls: 'impossible-title fade fade-1',
-          text: 'This number is impossible to checkout.',
+          text: tr('This number is impossible to checkout.'),
           attrs: {'role': 'status'}),
       el('p', cls: 'insult fade fade-2', text: game.insult ?? ''),
       next,

@@ -46,7 +46,7 @@ void main() {
 
   group('the leaderboard title', () {
     test('"180 LEADERBOARD" is in the middle, not at the right edge', () {
-      expect(leaderboard, contains("el('h2', text: '180 Leaderboard')"));
+      expect(leaderboard, contains("el('h2', text: tr('180 Leaderboard'))"));
       expect(leaderboard, isNot(contains('screen-title-right')));
       expect(css, isNot(contains('screen-title-right')));
       // The heading style centres it (the screen's text is centred and uppercased).

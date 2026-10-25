@@ -19,7 +19,7 @@ void main() {
     expect(clock, greaterThan(remaining), reason: 'the clock comes after the number that is left');
     // A replay has no clock.
     expect(playArea, contains("if (game.isReplay)"));
-    expect(playArea, contains("text: 'Replay - no clock, no points.'"));
+    expect(playArea, contains("text: tr('Replay - no clock, no points.')"));
   });
 
   test('nothing is drawn in the middle of the dartboard any more', () {

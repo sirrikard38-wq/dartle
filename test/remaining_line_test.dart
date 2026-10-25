@@ -27,6 +27,6 @@ void main() {
 
   test('"over" is mirrored the same way as "left"', () {
     final line = screen.substring(screen.indexOf('web.HTMLElement _remainingLine'));
-    expect(line, contains("final word = left < 0 ? 'over' : 'left';"));
+    expect(line, contains("final word = left < 0 ? tr('over') : tr('left');"));
   });
 }

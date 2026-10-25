@@ -29,9 +29,9 @@ void main() {
 
     test('it is made by the same function as the welcome screen\'s dart', () {
       expect(shot, contains('web.HTMLElement buildDartStage('));
-      expect(welcome, contains("buildDartStage(label: 'Continue'"));
+      expect(welcome, contains("buildDartStage(label: tr('Continue')"));
       expect(back, contains('buildDartStage('));
-      expect(back, contains("label: 'Back to the menu'"));
+      expect(back, contains("label: tr('Back to the menu')"));
       expect(back, contains("stageClass: 'back-stage'"));
       expect(back, contains("buttonClass: 'back-dart'"));
     });
@@ -47,7 +47,7 @@ void main() {
     });
 
     test('the sound button is not touched: it keeps its own style', () {
-      expect(app, contains("cls: 'icon-btn',\n        ariaLabel: _sound.isMuted ? 'Turn sound on' : 'Turn sound off'"));
+      expect(app, contains("cls: 'icon-btn',\n        ariaLabel: _sound.isMuted ? tr('Turn sound on') : tr('Turn sound off')"));
     });
   });
 

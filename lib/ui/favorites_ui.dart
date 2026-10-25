@@ -22,7 +22,7 @@ web.HTMLElement routeFigure(ViewContext ctx, int target, CheckoutRoute route) =>
       buildDartboard(
         linesOnly: true,
         marks: spreadMarks(route.darts, const [], math.Random(routeSeed(route.notation))),
-        label: 'Route ${route.notation}',
+        label: tr('Route {route}', {'route': route.notation}),
       ),
       tileRow(route.darts,
           slots: route.length,
@@ -83,7 +83,9 @@ web.HTMLButtonElement favoriteButton(ViewContext ctx, int target, CheckoutRoute 
     b.classList.toggle('on', on);
     b.setAttribute('aria-pressed', '$on');
     b.setAttribute('aria-label',
-        on ? 'Favorite ${route.notation} - press to remove it' : 'Make ${route.notation} a favorite');
+        on
+            ? tr('Favorite {route} - press to remove it', {'route': route.notation})
+            : tr('Make {route} a favorite', {'route': route.notation}));
   }
 
   void showEverywhere(bool on) {
@@ -133,11 +135,11 @@ web.HTMLElement buildFavoritesScreen(ViewContext ctx) {
   final favorites = ctx.game.favorites;
   return el('main', cls: 'screen favorites', children: [
     el('div', cls: 'play-area', children: [
-      el('h2', text: 'Favorites'),
+      el('h2', text: tr('Favorites')),
       el('p', cls: 'hint',
-          text: 'Mark a route with the dart in the "Also optimal" popup. '
+          text: tr('Mark a route with the dart in the "Also optimal" popup. '
               'Numbers with a favorite are white: press one to see them. '
-              'Crossed out in red: no checkout.'),
+              'Crossed out in red: no checkout.')),
       el('div', cls: 'fav-grid', children: [
         for (var n = CheckoutEngine.maxCheckout; n >= CheckoutEngine.minCheckout; n--)
           if (ctx.game.hasNoCheckout(n))
@@ -145,19 +147,19 @@ web.HTMLElement buildFavoritesScreen(ViewContext ctx) {
             button('$n',
                 cls: 'fav-number none',
                 disabled: true,
-                ariaLabel: '$n: no checkout',
+                ariaLabel: tr('{n}: no checkout', {'n': n}),
                 onPressed: (_) {})
           else if (favorites.hasAny(n))
             button('$n',
                 cls: 'fav-number has',
                 focusKey: 'fav-$n',
-                ariaLabel: '$n: show its favorites',
+                ariaLabel: tr('{n}: show its favorites', {'n': n}),
                 onPressed: (_) => showFavoritesPopup(ctx, n))
           else
             button('$n',
                 cls: 'fav-number',
                 disabled: true,
-                ariaLabel: '$n: no favorites',
+                ariaLabel: tr('{n}: no favorites', {'n': n}),
                 onPressed: (_) {}),
       ]),
     ]),
@@ -171,7 +173,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
   final favorites = ctx.game.favorites;
   final counts = favorites.dartCountsFor(target);
   if (counts.isEmpty) return;
-  String name(int darts) => '$darts ${darts == 1 ? 'Dart' : 'Darts'}';
+  String name(int darts) => trn(darts, '{n} Dart', '{n} Darts');
 
   final tabs = <web.HTMLElement>[];
   final pages = el('div', cls: 'fav-pages${counts.length > 1 ? ' swipe' : ''}');
@@ -206,7 +208,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
   });
   select(0);
 
-  showModal(title: 'Favorites for $target', showTitle: false, body: [
+  showModal(title: tr('Favorites for {n}', {'n': target}), showTitle: false, body: [
     el('div', cls: 'fav-tabs', attrs: {'role': 'tablist'}, children: tabs),
     el('p', cls: 'modal-number', text: '$target'),
     pages,

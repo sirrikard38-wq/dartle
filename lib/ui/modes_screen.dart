@@ -12,10 +12,10 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
     final b = button('',
         cls: 'mode-card',
         focusKey: 'mode-${mode.name}',
-        ariaLabel: '${mode.label}: ${mode.blurb}',
+        ariaLabel: '${tr(mode.label)}: ${tr(mode.blurb)}',
         onPressed: (_) => game.startGame(null, mode));
-    b.appendChild(el('strong', text: mode.label));
-    b.appendChild(el('span', text: mode.blurb));
+    b.appendChild(el('strong', text: tr(mode.label)));
+    b.appendChild(el('span', text: tr(mode.blurb)));
     return b;
   }
 

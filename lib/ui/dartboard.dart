@@ -98,10 +98,10 @@ web.Element buildDartboard({
     'role': 'group',
     'aria-label': label ??
         (byArea
-            ? 'Dartboard. Press the area you want to throw.'
+            ? tr('Dartboard. Press the area you want to throw.')
             : mode == null
-                ? 'Dartboard'
-                : 'Dartboard. Press a number to throw ${mode.label.toLowerCase()}.'),
+                ? tr('Dartboard')
+                : tr('Dartboard. Press a number to throw {ring}.', {'ring': tr(mode.label).toLowerCase()})),
   });
 
   BoardPoint pressPoint(web.MouseEvent event) {

@@ -1,3 +1,5 @@
+import '../i18n/i18n.dart';
+
 /// Tunable numbers for scoring.
 ///
 /// Points come from a streak: a correct checkout with time left on the clock
@@ -57,27 +59,30 @@ class ScoreBreakdown {
     switch (kind) {
       case ScoreKind.counted:
         return [
-          'Time left: ${seconds}s. That is more than 0, so this checkout counts.',
-          'It is checkout number $streakAfter in a row, so it scores '
-              '$points ${points == 1 ? 'point' : 'points'}.',
-          'Keep going: the next one in a row is worth ${streakAfter + 1}. '
-              'A miss starts the count again from 0.',
+          tr('Time left: {seconds}s. That is more than 0, so this checkout counts.',
+              {'seconds': seconds}),
+          trn(points, 'It is checkout number {streak} in a row, so it scores {n} point.',
+              'It is checkout number {streak} in a row, so it scores {n} points.',
+              {'streak': streakAfter}),
+          tr('Keep going: the next one in a row is worth {next}. '
+              'A miss starts the count again from 0.', {'next': streakAfter + 1}),
         ];
       case ScoreKind.late:
         return [
-          'Time left: ${seconds}s. The clock had run out, so no points this time.',
-          'Your streak of $streakBefore is kept, but it did not grow.',
-          'Finish with time left (above 0) to score again.',
+          tr('Time left: {seconds}s. The clock had run out, so no points this time.',
+              {'seconds': seconds}),
+          tr('Your streak of {streak} is kept, but it did not grow.', {'streak': streakBefore}),
+          tr('Finish with time left (above 0) to score again.'),
         ];
       case ScoreKind.miss:
         return [
-          'That was not right, so no points.',
+          tr('That was not right, so no points.'),
           streakBefore == 0
-              ? 'Your streak is 0. Get one right to start it.'
-              : 'Your streak of $streakBefore starts again from 0.',
+              ? tr('Your streak is 0. Get one right to start it.')
+              : tr('Your streak of {streak} starts again from 0.', {'streak': streakBefore}),
         ];
       case ScoreKind.none:
-        return ['A replay does not score and has no clock.'];
+        return [tr('A replay does not score and has no clock.')];
     }
   }
 }

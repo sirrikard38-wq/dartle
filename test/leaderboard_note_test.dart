@@ -10,7 +10,7 @@ void main() {
 
   group('the note under the leaderboard', () {
     test('the online note is exactly: Your name and scores are visible to all players.', () {
-      expect(screen, contains("online ? 'Your name and scores are visible to all players.'"));
+      expect(screen, contains("online ? tr('Your name and scores are visible to all players.')"));
     });
 
     test('nothing else is said about the board: no old wording, nothing about sample players', () {

@@ -164,6 +164,23 @@ leaderboard shows the scores on the device, as before.
 - Difficulty is a data-driven complexity band (`difficulty.dart`):
   `(darts-1) + trebles + (bull?1:0) + (target>=100?1:0)`.
 
+## Languages
+
+The little box next to the sound icon at the top (EN, HR) switches the whole app
+between English and Croatian; the choice is saved on the device. Every text of
+the app is written in English in the code and goes through `tr('...')`
+(`trn(count, one, other)` when it depends on a count, `{pieces}` for the parts
+that change); the Croatian version is looked up in `lib/src/i18n/croatian.dart`
+under the English wording, and a text with no translation shows in English.
+The silly insults and praise lines have a Croatian word bank of their own
+(`lib/src/content/phrases_hr.dart`, with the gender of every noun).
+
+To add a language: add it to `Language` in `lib/src/i18n/i18n.dart` (two letters
+and its own name), write its catalog next to `croatian.dart`, and list it in
+`I18n.catalogs`. `test/translations_test.dart` reads every `tr(...)` out of the
+source and fails until the catalog has each text (with the same `{pieces}`) and
+nothing that is no longer used.
+
 ## Layout
 
 ```
@@ -175,6 +192,7 @@ lib/src/scoring      ScoringService (streak points)
 lib/src/timing       AttemptTimer (monotonic, idempotent start)
 lib/src/stats        AttemptRecord, HistoryRepository, StatisticsService
 lib/src/favorites    Favorites (the routes marked with the dart icon)
+lib/src/i18n         Language, tr(), the Croatian catalog
 lib/src/leaderboard  LeaderboardRepository (+ local impl), LeaderboardService
 lib/src/storage      StorageService interface (+ in-memory impl)
 lib/src/game         GameController + composition root

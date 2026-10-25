@@ -13,7 +13,7 @@ void main() {
   test('the buttons are just the letters S, D and T, in that order', () {
     expect([for (final m in Multiplier.values) m.prefix], ['S', 'D', 'T']);
     expect(keyboard, contains('m.prefix,'), reason: 'the button text is the letter');
-    expect(keyboard, contains('ariaLabel: m.label'), reason: 'screen readers still hear the whole word');
+    expect(keyboard, contains('ariaLabel: tr(m.label)'), reason: 'screen readers still hear the whole word');
   });
 
   test('there is one column on each side of the board, the left one first', () {

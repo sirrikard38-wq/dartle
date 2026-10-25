@@ -22,8 +22,8 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     'autocomplete': 'nickname',
     'autocapitalize': 'words',
     'spellcheck': 'false',
-    'placeholder': 'Enter your name...',
-    'aria-label': 'Your name',
+    'placeholder': tr('Enter your name...'),
+    'aria-label': tr('Your name'),
     'data-focus': 'name',
     'value': game.needsPlayerName ? '' : game.playerName,
   }) as web.HTMLInputElement;
@@ -33,7 +33,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
   Future<void> submit() async {
     if (shooting) return; // the dart is already on its way
     if (input.value.trim().isEmpty) {
-      ctx.toast('Enter your name to continue');
+      ctx.toast(tr('Enter your name to continue'));
       input.focus();
       return;
     }
@@ -46,7 +46,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
 
   // The dart sits under the name box. In front of its tip is a tiny circle that
   // appears when the dart is pressed (see playDartShot).
-  stage = buildDartStage(label: 'Continue', focusKey: 'go', onPressed: submit);
+  stage = buildDartStage(label: tr('Continue'), focusKey: 'go', onPressed: submit);
 
   web.EventStreamProviders.keyDownEvent.forElement(input).listen((event) {
     if (event.key == 'Enter') {
@@ -59,10 +59,10 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     // Fade in from nothing, one after the other; no movement.
     el('div', cls: 'intro', children: [
       el('h1', cls: 'i1', text: 'DARTLE'),
-      el('p', cls: 'i2', text: 'Checkout calculator by PK Normal'),
+      el('p', cls: 'i2', text: tr('Checkout calculator by PK Normal')),
     ]),
     el('div', cls: 'form', children: [
-      el('h2', text: 'Welcome'),
+      el('h2', text: tr('Welcome')),
       el('div', cls: 'name-row', children: [input]),
       stage,
     ]),

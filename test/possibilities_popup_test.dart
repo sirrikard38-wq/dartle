@@ -19,11 +19,11 @@ void main() {
       }
       expect(optimal.optimalRoutes(132).length, greaterThan(1));
       expect(screen, contains('result.optimalRoutes.length == 1'));
-      expect(screen, contains("text: 'Only possibility'"));
+      expect(screen, contains("text: tr('Only possibility')"));
     });
 
     test('"Also optimal" is the button that opens the popup; there is no "All possibilities"', () {
-      expect(screen, contains("button('Also optimal'"));
+      expect(screen, contains("button(tr('Also optimal')"));
       expect(screen, contains('onPressed: (_) => openPossibilities()'));
       expect(screen, contains("focusKey: 'all'"));
       // The words "All possibilities" are gone: no link, no popup title.
@@ -106,7 +106,7 @@ void main() {
     });
 
     test('the sentence is on the right, the number under it in the middle above the boards', () {
-      final sentence = screen.indexOf("text: 'Every optimal way to check out'");
+      final sentence = screen.indexOf("text: tr('Every optimal way to check out')");
       final number = screen.indexOf("cls: 'modal-number', text: '\${challenge.target}'");
       final boards = screen.indexOf('routeGrid(');
       expect(sentence, greaterThan(0));

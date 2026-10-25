@@ -85,10 +85,10 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen game', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'meta', text: 'Finish on a double or Bull in the given number of darts.'),
+      el('p', cls: 'meta', text: tr('Finish on a double or Bull in the given number of darts.')),
       el('p', cls: 'target', text: '${challenge.target}', attrs: {
-        'aria-label': 'Checkout ${challenge.target}, '
-            '${challenge.dartsLeft} ${challenge.dartsLeft == 1 ? 'dart' : 'darts'} left',
+        'aria-label': trn(challenge.dartsLeft, 'Checkout {target}, {n} dart left',
+            'Checkout {target}, {n} darts left', {'target': challenge.target}),
       }),
       // Always three boxes. The ones already used are crossed out: only the
       // free boxes can be filled.
@@ -103,7 +103,7 @@ web.HTMLElement buildGameScreen(ViewContext ctx) {
       // The clock sits centred between the number that is left and the
       // dartboard (see .clock-gap). A replay has no clock.
       if (game.isReplay)
-        el('p', cls: 'hint', text: 'Replay - no clock, no points.')
+        el('p', cls: 'hint', text: tr('Replay - no clock, no points.'))
       else
         el('div', cls: 'clock-gap', children: [timerLine(game)]),
     ]),
@@ -125,9 +125,9 @@ web.HTMLElement timerLine(GameController game) => el('p',
 web.HTMLElement _remainingLine(int target, List<DartThrow> entered) {
   final left = target - entered.fold<int>(0, (sum, d) => sum + d.score);
   final state = left < 0 ? 'over' : (left == 0 ? 'zero' : '');
-  final word = left < 0 ? 'over' : 'left';
+  final word = left < 0 ? tr('over') : tr('left');
   return el('p', cls: 'remaining $state', attrs: {
-    'aria-label': left < 0 ? 'Over by ${-left}' : '$left left',
+    'aria-label': left < 0 ? tr('Over by {n}', {'n': -left}) : tr('{n} left', {'n': left}),
   }, children: [
     el('span', cls: 'left-note ghost', text: word, attrs: {'aria-hidden': 'true'}),
     el('strong', text: '${left.abs()}'),

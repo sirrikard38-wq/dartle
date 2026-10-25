@@ -56,10 +56,10 @@ web.HTMLElement buildNumberEntryScreen(ViewContext ctx) {
         typeNumberDigit(ctx, '$n');
       });
 
-  final undo = button('UNDO',
+  final undo = button(tr('UNDO'),
       cls: 'key pad-key pad-undo',
       focusKey: 'pad-undo',
-      ariaLabel: 'Delete the last digit',
+      ariaLabel: tr('Delete the last digit'),
       disabled: text.isEmpty,
       onPressed: (kb) {
         ctx.keepFocus(kb ? 'pad-undo' : null);
@@ -67,7 +67,7 @@ web.HTMLElement buildNumberEntryScreen(ViewContext ctx) {
       });
   undo.insertBefore(undoIcon(), undo.firstChild);
 
-  final enter = button('ENTER',
+  final enter = button(tr('ENTER'),
       cls: 'key pad-key pad-enter',
       focusKey: 'pad-enter',
       disabled: !ready,
@@ -75,21 +75,21 @@ web.HTMLElement buildNumberEntryScreen(ViewContext ctx) {
 
   final String hint;
   if (text.isEmpty) {
-    hint = 'See the possibilities, enter a number.';
+    hint = tr('See the possibilities, enter a number.');
   } else if (ready) {
-    hint = 'Press ENTER to play it.';
+    hint = tr('Press ENTER to play it.');
   } else {
-    hint = 'A number from 2 to 170.';
+    hint = tr('A number from 2 to 170.');
   }
 
   return el('main', cls: 'screen entry', children: [
     el('div', cls: 'play-area', children: [
       el('p', cls: 'target number-display${text.isEmpty ? ' empty' : ''}',
           text: text.isEmpty ? '–' : text,
-          attrs: {'aria-label': text.isEmpty ? 'No number yet' : 'Number $text'}),
+          attrs: {'aria-label': text.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': text})}),
       el('p', cls: 'hint', text: hint),
     ]),
-    el('div', cls: 'keypad', attrs: {'aria-label': 'Number pad'}, children: [
+    el('div', cls: 'keypad', attrs: {'aria-label': tr('Number pad')}, children: [
       digit(1), digit(2), digit(3),
       digit(4), digit(5), digit(6),
       digit(7), digit(8), digit(9),

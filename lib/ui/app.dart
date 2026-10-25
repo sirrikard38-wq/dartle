@@ -104,6 +104,8 @@ class DartleApp {
 
   void render() {
     if (!_started) return; // nothing to draw until saved data has loaded
+    // Screen readers read the page in the language that is on.
+    web.document.documentElement?.setAttribute('lang', I18n.current.code.toLowerCase());
     final screenKey = '${_game.phase.name}-${_page.name}';
     // The welcome screen is full-screen: no header, no footer.
     final fullScreen = _game.phase == GamePhase.menu && _page == MenuPage.welcome;
@@ -155,6 +157,7 @@ class DartleApp {
     if (screenChanged) web.window.scrollTo(0.toJS, 0);
     // At the end of the Leaderboard and Favorites a little dart
     // shoots you back to the top.
+    _toTop.element.setAttribute('aria-label', tr('Back to the top'));
     _toTop.enabled = !fullScreen &&
         _game.phase == GamePhase.menu &&
         (_page == MenuPage.leaderboard || _page == MenuPage.favorites);
@@ -169,22 +172,40 @@ class DartleApp {
 
     final soundButton = button(_sound.isMuted ? '🔇' : '🔊',
         cls: 'icon-btn',
-        ariaLabel: _sound.isMuted ? 'Turn sound on' : 'Turn sound off',
+        ariaLabel: _sound.isMuted ? tr('Turn sound on') : tr('Turn sound off'),
         onPressed: (_) {
           _sound.toggleMuted();
           render();
         });
 
-    // No sound (and no sound button) in the practice modes.
+    // The language box: the two letters of the language that is on; pressing it
+    // goes to the next language (there are two for now, EN and HR).
+    final language = I18n.current;
+    final languageButton = button('',
+        cls: 'lang-btn',
+        focusKey: 'language',
+        ariaLabel: tr('Language: {name}. Press to change it.', {'name': language.name}),
+        onPressed: (_) {
+          _focusKey = 'language';
+          _game.setLanguage(language.next);
+        })
+      ..appendChild(el('span', cls: 'lang-code', text: language.code));
+
+    // No sound (and no sound button) in the practice modes. The sound icon and the
+    // language box sit right next to the word DARTLE, on its right; the score
+    // (calculator only) is at the far right.
     final showSound = inMenu || _game.mode.hasSound;
-    final right = el('div', cls: 'header-actions', children: [
-      if (showSound) soundButton,
+    final right = el('div', cls: 'header-right', children: [
+      el('div', cls: 'header-tools', children: [
+        if (showSound) soundButton,
+        languageButton,
+      ]),
       // Only Checkout calculator has a score: the current score, with a small
       // grey label under it.
       if (!inMenu && _game.mode.hasScore)
         el('div', cls: 'score-box', children: [
           el('span', cls: 'score-pill', text: formatScore(_game.sessionPoints)),
-          el('span', cls: 'score-label', text: 'Current score'),
+          el('span', cls: 'score-label', text: tr('Current score')),
         ]),
     ]);
 
@@ -210,7 +231,7 @@ class DartleApp {
     }
 
     stage = buildDartStage(
-      label: 'Back to the menu',
+      label: tr('Back to the menu'),
       stageClass: 'back-stage',
       buttonClass: 'back-dart',
       circle: false,
@@ -317,7 +338,7 @@ class DartleApp {
     // The practice modes have no ring buttons, so S / D / T do nothing there.
     if (_game.mode.isPractice) return;
     if (_ctx.isFinalBox && m != Multiplier.double) {
-      _showToast('The last dart must be a double');
+      _showToast(tr('The last dart must be a double'));
       return;
     }
     _ctx.pickedMultiplier = m;

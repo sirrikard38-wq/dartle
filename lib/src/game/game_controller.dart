@@ -12,6 +12,7 @@ import '../domain/dart_throw.dart';
 import '../domain/difficulty.dart';
 import '../domain/optimal_route_service.dart';
 import '../favorites/favorites.dart';
+import '../i18n/i18n.dart';
 import '../leaderboard/leaderboard_service.dart';
 import '../scoring/scoring_service.dart';
 import '../stats/attempt_record.dart';
@@ -325,6 +326,13 @@ class GameController {
     _needsPlayerName = saved == null || saved.trim().isEmpty;
     _playerName = _needsPlayerName ? defaultPlayerName : saved!;
     await favorites.load();
+    await I18n.load(_storage);
+    _notify();
+  }
+
+  /// Switches the whole app to [language] and remembers it.
+  Future<void> setLanguage(Language language) async {
+    await I18n.choose(_storage, language);
     _notify();
   }
 

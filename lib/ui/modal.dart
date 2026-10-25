@@ -1,5 +1,6 @@
 import 'package:web/web.dart' as web;
 
+import '../dartle.dart';
 import 'dom.dart';
 
 web.HTMLElement? _open;
@@ -19,7 +20,7 @@ void closeModal() {
 /// title is not drawn (screen readers still hear it).
 void showModal({required String title, required List<web.Node> body, bool showTitle = true}) {
   closeModal();
-  final close = button('Close', cls: 'modal-close', onPressed: (_) => closeModal());
+  final close = button(tr('Close'), cls: 'modal-close', onPressed: (_) => closeModal());
   final backdrop = el('div', cls: 'modal-backdrop', attrs: {
     'role': 'dialog',
     'aria-modal': 'true',
