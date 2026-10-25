@@ -232,8 +232,9 @@ void main() {
 
     test('85 with three darts: S15 then T10 then D20 is optimal at every step', () {
       final r = three(85)..throwDart(d('S15'));
-      // S15 leaves 70, so what follows is the rest of 85's three-dart routes with
-      // S15 in them: T10 (T10 S15 D20), and the routes of 70: T20 D5, S20 Bull.
+      // S15 leaves 70, so what follows is the rest of 85's three-dart routes
+      // with S15 in them: T10 (T10 S15 D20), and the routes of 70: T20 D5,
+      // S20 Bull.
       expect(r.optimalDarts, containsAll([d('T10'), d('S20'), d('T20')]));
       r.throwDart(d('T10'));
       expect(r.optimalDarts, {d('D20')});

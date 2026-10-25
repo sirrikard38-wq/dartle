@@ -5,6 +5,7 @@ import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
 void main() {
+  treblePairingTests();
   CheckoutRoute r(String text) => CheckoutRoute.parse(text);
   List<String> order(Iterable<CheckoutRoute> routes) =>
       RouteOrder.byFinisher(routes).map((x) => x.notation).toList();
@@ -80,10 +81,11 @@ void main() {
     List<String> popup(int target) =>
         RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
 
-    test('57: S7 Bull moves up next to T7 D18, the rest stays as it was', () {
+    test('57: S7 Bull moves up next to T7 D18, T17 D3 next to S17 D20, the rest stays as it was', () {
       // By finisher it would be T17 D3, T7 D18, S19 D19, S17 D20, S7 Bull.
       expect(order(optimal.optimalRoutes(57)), ['T17 D3', 'T7 D18', 'S19 D19', 'S17 D20', 'S7 Bull']);
-      expect(popup(57), ['T17 D3', 'T7 D18', 'S7 Bull', 'S19 D19', 'S17 D20']);
+      // T17 D3 then goes right after its single, S17 D20.
+      expect(popup(57), ['T7 D18', 'S7 Bull', 'S19 D19', 'S17 D20', 'T17 D3']);
     });
 
     test('130: T20 S20 Bull is next to T20 T20 D5', () {
@@ -105,9 +107,12 @@ void main() {
     });
 
     test('a Bull finish with no partner stays at the end: S1 Bull has no D24, T20 Bull has no single', () {
-      expect(popup(51).last, 'S1 Bull');
-      expect(popup(51), order(optimal.optimalRoutes(51)), reason: 'nothing moved on 51');
-      expect(popup(110), order(optimal.optimalRoutes(110)));
+      List<String> bullOnly(int n) => RouteOrder.withBullPairsTogether(RouteOrder.byFinisher(optimal.optimalRoutes(n)))
+          .map((x) => x.notation)
+          .toList();
+      expect(bullOnly(51).last, 'S1 Bull');
+      expect(bullOnly(51), order(optimal.optimalRoutes(51)), reason: 'no Bull finish moved on 51');
+      expect(bullOnly(110), order(optimal.optimalRoutes(110)));
     });
 
     test('works from the finisher order whatever order the routes come in', () {
@@ -138,7 +143,7 @@ void main() {
       for (final n in engine.checkoutableTargets) {
         final routes = optimal.optimalRoutes(n);
         final byFinisher = RouteOrder.byFinisher(routes);
-        final result = RouteOrder.forPopup(routes);
+        final result = RouteOrder.withBullPairsTogether(byFinisher);
         expect(result.map((x) => x.notation).toSet(), byFinisher.map((x) => x.notation).toSet(),
             reason: '$n keeps every route');
         expect(result, hasLength(byFinisher.length), reason: '$n');
@@ -173,5 +178,57 @@ void main() {
   test('the All possibilities popup lists the routes in that order', () {
     final screen = File('lib/ui/result_screen.dart').readAsStringSync();
     expect(screen, contains('RouteOrder.forPopup(result.optimalRoutes)'));
+  });
+}
+
+void treblePairingTests() {
+  final engine = CheckoutEngine();
+  final optimal = OptimalRouteService(engine);
+  List<String> popup(int target) =>
+      RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
+
+  group('RouteOrder.forPopup: a two-dart treble route right next to the single of its number', () {
+    test('23: T7 D1 next to S7 D8, T5 D4 next to S5 D9, T3 D7 next to S3 D10, T1 D10 next to S1 D11 (one side or the other)', () {
+      final list = popup(23);
+      for (final (single, treble) in [
+        ('S7 D8', 'T7 D1'),
+        ('S5 D9', 'T5 D4'),
+        ('S3 D10', 'T3 D7'),
+        ('S1 D11', 'T1 D10'),
+      ]) {
+        final at = list.indexOf(single);
+        expect(at, greaterThanOrEqualTo(0), reason: single);
+        expect((list.indexOf(treble) - at).abs(), 1, reason: '$treble right next to $single');
+      }
+    });
+
+    test('43: T11 D5 is next to S11 D16', () {
+      final list = popup(43);
+      expect((list.indexOf('T11 D5') - list.indexOf('S11 D16')).abs(), 1);
+    });
+
+    test('every number: nothing lost or added, and every treble with a single is next to it', () {
+      for (final n in engine.checkoutableTargets) {
+        final routes = optimal.optimalRoutes(n);
+        final list = RouteOrder.forPopup(routes);
+        expect(list.map((x) => x.notation).toSet(), routes.map((x) => x.notation).toSet(), reason: '$n');
+        expect(list, hasLength(routes.length), reason: '$n');
+        for (final treble in list) {
+          if (treble.length != 2 || !treble.darts.first.isTreble) continue;
+          final number = treble.darts.first.number;
+          final singles = [
+            for (var i = 0; i < list.length; i++)
+              if (list[i].length == 2 &&
+                  list[i].darts.first.multiplier == Multiplier.single &&
+                  list[i].darts.first.number == number)
+                i,
+          ];
+          if (singles.isEmpty) continue;
+          final at = list.indexOf(treble);
+          expect(singles.any((i) => (i - at).abs() == 1), isTrue,
+              reason: '$n: ${treble.notation} should be next to its single');
+        }
+      }
+    });
   });
 }

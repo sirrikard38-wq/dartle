@@ -19,7 +19,8 @@ import 'site_routes.dart';
 ///  1. **Fewest darts.** A number that can be finished in 2 darts is never
 ///     played (or accepted as optimal) in 3.
 ///  2. **Bull-safe**, where it applies: two-dart numbers from 51 to 70, and
-///     three-dart numbers whose first treble leaves 51 to 70. The treble of the
+///     three-dart numbers whose first treble leaves 55 to 70 (not 51 to 54: no
+///     tiny single before the Bull, 109 is not T19 S2 Bull). The treble of the
 ///     number whose single leaves 50, then the double - or that single, then
 ///     the Bull. All of them are equal (57: T7 D18, S7 Bull; 119: T19 T12 D13,
 ///     T19 S12 Bull). See [BullSafeFinish]. A three-dart number also accepts
@@ -69,10 +70,11 @@ class OptimalRouteService {
 
   /// The optimal routes for [target] played with exactly [darts] darts (all of
   /// them have to be used). With the fewest darts it needs that is
-  /// [optimalRoutes]; a two-dart number over 40 with three darts uses
-  /// [AimPairs.threeDartRoutes]; anything else that has to use more darts than
-  /// it needs (after a dart that was not optimal) gets the routes with the most
-  /// singles. Empty when it cannot be done in exactly [darts].
+  /// [optimalRoutes]; a two-dart number over 60 with three darts uses
+  /// [AimPairs.threeDartRoutes] and the [_followUps]; anything else that has to
+  /// use more darts than it needs (after a dart that was not optimal) gets the
+  /// routes with the most singles. Empty when it cannot be done in exactly
+  /// [darts].
   List<CheckoutRoute> optimalRoutesIn(int target, int darts) {
     final minimum = _engine.minimumDarts(target);
     if (minimum == null || darts < minimum || !_engine.canCheckoutIn(target, darts)) {
@@ -92,15 +94,20 @@ class OptimalRouteService {
     });
   }
 
+  /// The lowest single [_followUps] starts with.
+  static const int followUpLowestSingle = 15;
+
   /// A two-dart number played with three darts is also optimal when the first
-  /// dart is a single that leaves a two-dart number, and the last two darts are
-  /// an optimal route of that number: 93 with S19 leaves 74, whose T20 D7 gives
-  /// S19 T20 D7. Biggest single first.
+  /// dart is a high single (S15 to S20) that leaves a two-dart number over 60,
+  /// and the last two darts are an optimal route of that number: 93 with S19
+  /// leaves 74, whose T20 D7 gives S19 T20 D7. Limited to high singles and to
+  /// leftovers over 60 because every single and every leftover gave far too
+  /// many routes (142 on 61). Biggest single first.
   List<CheckoutRoute> _followUps(int target) {
     final routes = <CheckoutRoute>[];
-    for (var n = DartThrow.maxBoardNumber; n >= 1; n--) {
+    for (var n = DartThrow.maxBoardNumber; n >= followUpLowestSingle; n--) {
       final left = target - n;
-      if (_engine.minimumDarts(left) != 2) continue;
+      if (left <= AimPairs.threeDartAbove || _engine.minimumDarts(left) != 2) continue;
       for (final route in optimalRoutes(left)) {
         final full = CheckoutRoute([DartThrow(Multiplier.single, n), ...route.darts]).normalized;
         if (!routes.any(full.isEquivalentTo)) routes.add(full);

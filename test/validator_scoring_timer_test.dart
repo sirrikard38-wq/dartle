@@ -131,11 +131,15 @@ void main() {
     test('109: after T19 (52 left) a single and a better double is optimal too', () {
       final c = catalog.forTarget(109)!;
       expect(c.dartsLeft, 3);
-      for (final text in ['T19 S20 D16', 'T19 S2 Bull', 'T19 S12 D20', 'S20 T19 D16']) {
+      for (final text in ['T19 S20 D16', 'T19 S12 D20', 'S20 T19 D16']) {
         final r = validator.validate(c, darts(text));
         expect(r.isCorrect, isTrue, reason: text);
         expect(r.isOptimal, isTrue, reason: text);
       }
+      // T19 S2 Bull checks 109 out but is not optimal: a tiny single before the Bull.
+      final bull = validator.validate(c, darts('T19 S2 Bull'));
+      expect(bull.isCorrect, isTrue);
+      expect(bull.isOptimal, isFalse);
     });
 
     test('170 accepts only T20 T20 Bull', () {

@@ -83,7 +83,8 @@ leaderboard shows the scores on the device, as before.
 - **Optimal** (see `OptimalRouteService`), in order:
   1. the fewest darts;
   2. **bull-safe** where it applies - 2-dart numbers from 51 to 70 (always), and
-     3-dart numbers whose first triple leaves 51-70: the triple of the number
+     3-dart numbers whose first triple leaves 55-70 (not 51-54: no tiny single
+     before the Bull, so 109 is not `T19 S2 Bull`): the triple of the number
      whose single leaves 50, then the double, *or* that single, then the Bull
      (57: `T7 D18`, `S7 Bull`; 119: `T19 T12 D13`, `T19 S12 Bull`). A
      three-dart number also accepts its chart route. With two darts left on 41
@@ -118,8 +119,8 @@ leaderboard shows the scores on the device, as before.
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
   ... (only better doubles when there are any, then the most singles;
-  `AimPairs.threeDartRoutes`), and (2) a single that leaves another two-dart
-  number, then one of that number's optimal routes: 93 is `S19 T20 D7`, as S19
+  `AimPairs.threeDartRoutes`), and (2) a high single (S15 to S20) that leaves another two-dart
+  number over 60, then one of that number's optimal routes: 93 is `S19 T20 D7`, as S19
   leaves 74 (`OptimalRouteService._followUps`).
   The popup and the "Also optimal" boxes list every optimal route - the same
   as Checkout input lights up, however many (35 has 16, 61 with three darts

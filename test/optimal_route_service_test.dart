@@ -257,7 +257,9 @@ void main() {
       // The bull-safe route is still the first one shown.
       expect(optimal.optimalRoute(109)!.notation,
           BullSafeFinish.threeDartRoutes(109).first.notation);
-      expect(notations(109), contains('T19 S2 Bull'));
+      // T19 S2 Bull (52 left, a tiny single then the Bull) is not optimal.
+      expect(notations(109), isNot(contains('T19 S2 Bull')));
+      expect(engine.isLegalRoute(109, r('T19 S2 Bull')), isTrue);
       // D19 is not one of the better doubles.
       expect(engine.isLegalRoute(109, r('T19 S14 D19')), isTrue);
       expect(optimal.isOptimal(109, r('T19 S14 D19')), isFalse);

@@ -12,9 +12,34 @@ abstract final class RouteOrder {
 
   /// The order the popup uses: [byFinisher], with each Bull finish that has a
   /// treble partner moved right next to that partner (see
-  /// [withBullPairsTogether]). Everything else stays in the same order.
+  /// [withBullPairsTogether]), and then each two-dart treble route right next to
+  /// the single of the same number (see [withTreblesNextToTheirSingle]).
+  /// Everything else stays in the same order.
   static List<CheckoutRoute> forPopup(Iterable<CheckoutRoute> routes) =>
-      withBullPairsTogether(byFinisher(routes));
+      withTreblesNextToTheirSingle(withBullPairsTogether(byFinisher(routes)));
+
+  /// In an already ordered list, puts every two-dart route that starts on a
+  /// treble (`T5 D4`) straight after the two-dart route that starts on the
+  /// single of the same number (`S5 D9`): aiming at the 5, either is a hit, so
+  /// they belong together. A treble with no such single stays where it was, and
+  /// a pair that is already side by side (`T7 D18`, `S7 Bull`) is left alone.
+  static List<CheckoutRoute> withTreblesNextToTheirSingle(List<CheckoutRoute> ordered) {
+    final result = [...ordered];
+    for (final treble in ordered) {
+      if (treble.length != 2 || !treble.darts.first.isTreble) continue;
+      final number = treble.darts.first.number;
+      bool isSingle(CheckoutRoute r) =>
+          r.length == 2 &&
+          r.darts.first.multiplier == Multiplier.single &&
+          r.darts.first.number == number;
+      final at = result.indexOf(treble);
+      final single = result.indexWhere(isSingle);
+      if (single < 0 || (single - at).abs() == 1) continue;
+      result.removeAt(at);
+      result.insert(result.indexWhere(isSingle) + 1, treble);
+    }
+    return result;
+  }
 
   /// In an already ordered list, puts every route that finishes on the Bull and
   /// has a single among its other darts straight after the route that has the

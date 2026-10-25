@@ -64,7 +64,8 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'whatever double (35: T5 D10 and S5 D15). On 41 to 60 two neighbouring '
         'singles then a double count too (42: S8 D17 or S16 D13). The same good '
         'double twice counts too (64: D16 D16). With three darts on a two-dart '
-        'number over 60, a single that leaves another two-dart number is optimal '
+        'number over 60, a high single (S15 to S20) that leaves another two-dart '
+        'number over 60 is optimal '
         'too, followed by one of the routes of what is left (93: S19 leaves 74, '
         'then T20 D7).'),
     section('Bull safety',
@@ -72,7 +73,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '
         'the triple T7 and then D18, or the single S7 and then the Bull. These '
         'are the optimal routes. If you aim at the triple and hit the single, you '
-        'still have the Bull. For three darts the first dart should leave 51 to '
+        'still have the Bull. For three darts the first dart should leave 55 to '
         '70 (119: T19 leaves 62, then T12 D13 or S12 Bull).'),
     section('The board',
         'Pick S, D or T (single, double or triple - the buttons on both sides of '

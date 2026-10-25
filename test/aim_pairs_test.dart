@@ -105,18 +105,29 @@ void main() {
       expect(optimal.hasThreeDartOption(110), isTrue);
     });
 
-    test('a first single that leaves a two-dart number, then its optimal route: 93 is S19 T20 D7', () {
+    test('a high single that leaves a two-dart number over 60, then its optimal route: 93 is S19 T20 D7', () {
       // S19 leaves 74, whose routes include T20 D7.
       expect(optimal.optimalRoutes(74).any(r('T20 D7').isEquivalentTo), isTrue);
       expect(optimal.isOptimalIn(93, 3, r('S19 T20 D7')), isTrue);
       expect(optimal.isOptimalIn(93, 3, r('T20 S19 D7')), isTrue); // any order
       // The aim routes stay, ahead of the follow-ups.
       expect(optimal.optimalRoutesIn(64, 3).first.notation, 'S16 S16 D16');
-      // A first single that leaves a number of three darts or one that is not a
-      // checkout does not count: 93 - S3 = 90 is fine, 93 - 20 = 73 too.
-      for (final route in optimal.optimalRoutesIn(93, 3)) {
-        expect(engine.isLegalRoute(93, route), isTrue, reason: route.notation);
-        expect(route.length, 3);
+      expect(optimal.optimalRoutesIn(93, 3).take(AimPairs.threeDartRoutes(93).length),
+          AimPairs.threeDartRoutes(93));
+    });
+
+    test('...but only with S15 to S20 first and a leftover over 60, so there are not hundreds', () {
+      // S3 leaves 90, a fine number, but S3 is not a high single.
+      expect(optimal.isOptimalIn(93, 3, r('S3 T20 D15')), isFalse);
+      // 61: every leftover is under 60, so only the aim routes are left.
+      expect(optimal.optimalRoutesIn(61, 3), AimPairs.threeDartRoutes(61));
+      for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
+        if (engine.minimumDarts(t) != 2) continue;
+        for (final route in optimal.optimalRoutesIn(t, 3)) {
+          expect(engine.isLegalRoute(t, route), isTrue, reason: '$t ${route.notation}');
+          expect(route.length, 3, reason: '$t ${route.notation}');
+        }
+        expect(optimal.optimalRoutesIn(t, 3).length, lessThan(50), reason: '$t');
       }
     });
 

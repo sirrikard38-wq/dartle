@@ -63,11 +63,14 @@ abstract final class BullSafeFinish {
   }
 
   /// Three-dart routes for [target]: a first treble that leaves a bull-safe
-  /// two-dart finish (either kind). All are equally optimal (119: T19 S12 Bull
-  /// and T19 T12 D13). Highest first treble first.
+  /// two-dart finish (either kind) of 55 to 70. All are equally optimal (119:
+  /// T19 S12 Bull and T19 T12 D13). Highest first treble first. A treble that
+  /// leaves 51 to 54 is not used: its only bull-safe finish is a tiny single and
+  /// then the Bull (109: T19 leaves 52, S2 Bull), which is not optimal.
   static List<CheckoutRoute> threeDartRoutes(int target) {
     final routes = <CheckoutRoute>[];
     for (var k = DartThrow.maxBoardNumber; k >= 1; k--) {
+      if (target - 3 * k < minRemaining) continue;
       for (final finish in twoDartRoutes(target - 3 * k)) {
         routes.add(CheckoutRoute([DartThrow(Multiplier.treble, k), ...finish.darts]));
       }

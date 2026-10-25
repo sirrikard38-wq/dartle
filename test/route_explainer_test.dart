@@ -55,11 +55,9 @@ void main() {
       expect(out, contains('T20 T9 D16 or T20 S9 Bull'));
     });
 
-    test('a three-dart number whose first dart leaves 51 to 54 has only the single and the Bull', () {
+    test('a three-dart number whose first dart would leave 51 to 54 has no bull-safe route there', () {
       final out = text(explain(108));
-      expect(out, contains('T19 leaves 51'));
-      expect(out, contains('Then it is the single 1 and the Bull: T19 S1 Bull'));
-      expect(out, isNot(contains('triple of 1')));
+      expect(out, isNot(contains('T19 S1 Bull')));
     });
 
     test('35: singles win', () {
