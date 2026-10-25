@@ -600,7 +600,7 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
    filled white once it is a favorite. Small and right in the corner, outside
    the ring of numbers (18 and 4 sit further in). The button is a bit bigger
    than the dart so it is easy to press. */
-.modal .board-figure { position: relative; }
+.board-figure { position: relative; }
 .fav-btn {
   position: absolute; top: -6px; right: -6px;
   width: 30px; height: 34px; padding: 4px;

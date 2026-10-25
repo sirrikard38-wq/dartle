@@ -28,16 +28,21 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
     headline = switch (result.validation.outcome) {
       AttemptOutcome.bust => 'Bust',
       AttemptOutcome.outOfDarts => 'Out of darts',
+      AttemptOutcome.goodButFewerDarts => 'Good, but not in the given number of darts',
       _ => 'Not quite',
     };
   }
+  // An optimal route of fewer darts than were given: still a miss, but a good one.
+  final goodButFewer = result.validation.outcome == AttemptOutcome.goodButFewerDarts;
 
   // Calculator: compare to the best routes. Practice: each dart's own rating.
   final List<TileState>? states = entered.isEmpty
       ? null
-      : round != null
-          ? [for (final s in round.steps) tileStateFor(s.quality)]
-          : TileFeedback.best(entered, result.optimalRoutes);
+      : goodButFewer
+          ? List.filled(entered.length, TileState.correct)
+          : round != null
+              ? [for (final s in round.steps) tileStateFor(s.quality)]
+              : TileFeedback.best(entered, result.optimalRoutes);
   final best = result.optimalRoutes.isEmpty ? null : result.optimalRoutes.first;
 
   final showYours = entered.isNotEmpty;
@@ -103,8 +108,8 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen result', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
-          text: '${result.isCorrect ? '✓ ' : '✗ '}$headline',
+      el('p', cls: 'headline ${result.isCorrect || goodButFewer ? 'good' : 'bad'}',
+          text: '${result.isCorrect || goodButFewer ? '✓ ' : '✗ '}$headline',
           attrs: {'role': 'status'}),
       el('p', cls: 'target small', text: '${challenge.target}'),
 
@@ -147,6 +152,9 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
                 small: true,
                 states: states,
                 label: 'Your darts'),
+            // Your own checkout can be a favorite when it ends on a double and
+            // adds up to the number, optimal or not.
+            if (favoriteForYourRoute(ctx, challenge.target, result.playerRoute) case final fav?) fav,
           ]),
         // Not optimal (or missed): the best route, marked and boxed the same way.
         if (showBest)

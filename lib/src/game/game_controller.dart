@@ -329,12 +329,11 @@ class GameController {
   }
 
   /// Marks [route] as a favorite for [target], or takes the mark away.
-  /// Returns whether it is a favorite now.
-  Future<bool> toggleFavorite(int target, CheckoutRoute route) async {
-    final now = await favorites.toggle(target, route);
-    _notify();
-    return now;
-  }
+  /// Returns whether it is a favorite now. Nobody is told: the screen would
+  /// redraw (and replay the tile flip on the result screen); the buttons update
+  /// themselves, and the Favorites screen reads the list when it opens.
+  Future<bool> toggleFavorite(int target, CheckoutRoute route) =>
+      favorites.toggle(target, route);
 
   /// Longest username accepted.
   static const int maxPlayerNameLength = 20;
@@ -466,6 +465,16 @@ class GameController {
               '${last.bustReason}.',
         );
       case RoundStatus.finishedEarly:
+        // An optimal way of fewer darts (74 with three: T14 D16) is good, just
+        // not in the given number of darts.
+        if (route.isCheckoutFor(round.target) && _optimal.isOptimal(round.target, route)) {
+          return ValidationResult(
+            outcome: AttemptOutcome.goodButFewerDarts,
+            playerRoute: route,
+            isOptimal: false,
+            message: goodButFewerDartsMessage(route, round.maxDarts),
+          );
+        }
         return ValidationResult(
           outcome: AttemptOutcome.wrongDartCount,
           playerRoute: route,

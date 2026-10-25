@@ -115,7 +115,9 @@ leaderboard shows the scores on the device, as before.
      optimal too (64: `D16 D16`).
   A two-dart number **over 60** can come with three darts (50% in the
   calculator and in practice; the player chooses in practice and input). Then
-  all three darts must be used and the optimal routes are (1) two setup darts
+  all three darts must be used (an optimal route of fewer darts is a miss, but
+  the result says "Good, but not in the given number of darts": 74 with T14
+  D16) and the optimal routes are (1) two setup darts
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
   ... (only better doubles when there are any, then the most singles;
@@ -154,7 +156,9 @@ leaderboard shows the scores on the device, as before.
   screen lists 170 down to 2 (white = has favorites) and opens a popup per
   number with "2 Darts" / "3 Darts" pages to swipe between. A number with only
   one optimal route (for its number of darts) has it as a favorite from the
-  start - 40 of them, 170 to 2 - until it is unmarked. Saved on the device
+  start - 40 of them, 170 to 2 - until it is unmarked. The player's own
+  checkout under "Your darts" can be marked too when it ends on a double and
+  adds up to the number, optimal or not. Saved on the device
   (`Favorites`, key `dartle.favorites.v1`).
 - Difficulty is a data-driven complexity band (`difficulty.dart`):
   `(darts-1) + trebles + (bull?1:0) + (target>=100?1:0)`.

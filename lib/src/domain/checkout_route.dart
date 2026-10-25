@@ -23,6 +23,12 @@ final class CheckoutRoute {
   /// True when the final dart is a double or bull.
   bool get endsOnDouble => finishingDart?.isFinishingDart ?? false;
 
+  /// True when this is a checkout of [target]: it ends on a double (or the
+  /// Bull) and its darts add up to [target]. Optimal or not, any number of darts
+  /// up to three.
+  bool isCheckoutFor(int target) =>
+      !isEmpty && length <= 3 && endsOnDouble && total == target;
+
   int get trebleCount => darts.where((d) => d.isTreble).length;
   bool get usesBull => darts.any((d) => d.isBull);
 

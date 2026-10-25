@@ -2,6 +2,7 @@ import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
 void main() {
+  goodButFewerDartsTests();
   final engine = CheckoutEngine();
   final optimal = OptimalRouteService(engine);
   final catalog = CheckoutCatalog(engine, optimal);
@@ -293,6 +294,47 @@ void main() {
       timer.restart();
       now += const Duration(seconds: 1);
       expect(timer.elapsed, const Duration(seconds: 1));
+    });
+  });
+}
+
+void goodButFewerDartsTests() {
+  final engine = CheckoutEngine();
+  final optimal = OptimalRouteService(engine);
+  final catalog = CheckoutCatalog(engine, optimal);
+  final validator = CheckoutValidator(engine, optimal);
+  List<DartThrow> darts(String text) => CheckoutRoute.parse(text).darts;
+
+  group('an optimal route of fewer darts than given', () {
+    final c74 = catalog.threeDartFor(74)!; // 74 with three darts
+
+    test('74 with three darts: T14 D16 is good, but not in the given number of darts', () {
+      expect(c74.dartsLeft, 3);
+      final r = validator.validate(c74, darts('T14 D16'));
+      expect(r.outcome, AttemptOutcome.goodButFewerDarts);
+      expect(r.isCorrect, isFalse, reason: 'every dart has to be used, so it is still a miss');
+      expect(r.isOptimal, isFalse);
+      expect(r.message, contains('Good, but not in the given number of darts'));
+      expect(r.message, contains('T14 D16'));
+    });
+
+    test('a fewer-dart checkout that is not optimal, or does not add up, is just a miss', () {
+      // T12 D19 checks 74 out in two darts, but is not one of its optimal routes.
+      expect(engine.isLegalRoute(74, CheckoutRoute.parse('T12 D19')), isTrue);
+      expect(validator.validate(c74, darts('T12 D19')).outcome, AttemptOutcome.wrongDartCount);
+      expect(validator.validate(c74, darts('T14 D15')).outcome, AttemptOutcome.wrongDartCount);
+      expect(validator.validate(c74, darts('Bull')).outcome, AttemptOutcome.wrongDartCount);
+    });
+
+    test('with the darts given it is simply correct', () {
+      final r = validator.validate(c74, darts('S14 T14 D9'));
+      expect(r.outcome, AttemptOutcome.correct);
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('the two-dart number on its own two darts is not affected', () {
+      final c = catalog.forTarget(74)!;
+      expect(validator.validate(c, darts('T14 D16')).outcome, AttemptOutcome.correct);
     });
   });
 }

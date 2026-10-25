@@ -8,6 +8,11 @@ enum AttemptOutcome {
   /// Legal checkout of the right length that hits the target.
   correct,
   wrongDartCount,
+
+  /// An optimal checkout, but with fewer darts than the number was given with
+  /// (74 with three darts: T14 D16 is optimal in two). Every dart has to be
+  /// used, so it is still a miss - but a good one.
+  goodButFewerDarts,
   wrongTotal,
   invalidFinish,
 
@@ -48,6 +53,11 @@ class ValidationResult {
   bool get isCorrect =>
       outcome == AttemptOutcome.correct || outcome == AttemptOutcome.noCheckoutCorrect;
 }
+
+/// What the result says when an optimal route used fewer darts than were given.
+String goodButFewerDartsMessage(CheckoutRoute route, int given) =>
+    'Good, but not in the given number of darts: ${route.notation} is an optimal '
+    'checkout in ${route.length} darts, but all $given darts have to be used.';
 
 /// Pure rule checking. Contains no scoring or UI concerns.
 class CheckoutValidator {
@@ -106,6 +116,10 @@ class CheckoutValidator {
     // Exactly the free darts of the visit: all of them have to be used.
     if (route.length != challenge.dartsLeft) {
       final left = challenge.dartsLeft;
+      // An optimal way of fewer darts: good, just not in the given number.
+      if (route.length < left && route.isCheckoutFor(target) && _optimal.isOptimal(target, route)) {
+        return fail(AttemptOutcome.goodButFewerDarts, goodButFewerDartsMessage(route, left));
+      }
       return fail(
         AttemptOutcome.wrongDartCount,
         route.total == target

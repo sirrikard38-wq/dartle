@@ -39,7 +39,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
           'crossed out - but half the time a two-dart number over 60 comes with '
           'all three boxes free. A three-dart number has nothing crossed out. '
           'Every free box has to be used: checking out with a box still free is '
-          'a miss. Pick S, D or T (on either side of the board), then tap a '
+          'a miss (a good one, "Good, but not in the given number of darts", when '
+          'it is an optimal route of fewer darts). Pick S, D or T (on either side '
+          'of the board), then tap a '
           'number. The last free box is always a double or Bull. Your answer is '
           'checked the moment it is complete. Not every number can be checked '
           'out: if there is no checkout, press No checkout.'),
@@ -93,7 +95,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'Press the little dart in the corner of a '
         'board to make that route a favorite: it fills in white, comes first '
         'next time, and is kept under Favorites in the menu. A number with only '
-        'one optimal route has it as a favorite from the start.'),
+        'one optimal route has it as a favorite from the start. Your own '
+        'checkout under "Your darts" can be a favorite too, when it ends on a '
+        'double and adds up to the number - optimal or not.'),
     if (game.mode.hasScore) ...[
       section('Score',
           'A correct checkout with time left on the clock scores as many points as '

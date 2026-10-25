@@ -76,22 +76,37 @@ web.Element favoriteDartIcon() => svg('svg', cls: 'fav-icon', attrs: {
 /// fills in white straight away.
 web.HTMLButtonElement favoriteButton(ViewContext ctx, int target, CheckoutRoute route) {
   final game = ctx.game;
-  late final web.HTMLButtonElement b;
-  void show(bool on) {
+  // The same route can have a button in more than one place (your darts on the
+  // result screen and the popup); they all show the same state.
+  final id = '$target|${Favorites.keyOf(route)}';
+  void show(web.Element b, bool on) {
     b.classList.toggle('on', on);
     b.setAttribute('aria-pressed', '$on');
     b.setAttribute('aria-label',
         on ? 'Favorite ${route.notation} - press to remove it' : 'Make ${route.notation} a favorite');
   }
 
-  b = button('', cls: 'fav-btn', onPressed: (_) async {
-    show(!b.classList.contains('on')); // at once; the save follows
-    show(await game.toggleFavorite(target, route));
+  void showEverywhere(bool on) {
+    final all = web.document.querySelectorAll('.fav-btn[data-fav="$id"]');
+    for (var i = 0; i < all.length; i++) {
+      show(all.item(i) as web.Element, on);
+    }
+  }
+
+  late final web.HTMLButtonElement b;
+  b = button('', cls: 'fav-btn', attrs: {'data-fav': id}, onPressed: (_) async {
+    showEverywhere(!b.classList.contains('on')); // at once; the save follows
+    showEverywhere(await game.toggleFavorite(target, route));
   });
   b.appendChild(favoriteDartIcon());
-  show(game.favorites.isFavorite(target, route));
+  show(b, game.favorites.isFavorite(target, route));
   return b;
 }
+
+/// The player's own checkout can be a favorite too when it ends on a double and
+/// adds up to the number - optimal or not. Null otherwise.
+web.HTMLElement? favoriteForYourRoute(ViewContext ctx, int target, CheckoutRoute route) =>
+    route.isCheckoutFor(target) ? favoriteButton(ctx, target, route) : null;
 
 /// The routes a popup lists for [target]: its favorites among [routes] first
 /// (in the order they were marked), then the others in [rest] order.

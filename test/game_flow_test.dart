@@ -732,12 +732,12 @@ void main() {
     expect(game.sessionPoints, 0);
   });
 
-  group('A two-dart number over 40 with three darts', () {
+  group('A two-dart number over 60 with three darts', () {
     test('the calculator deals it with all three boxes free and three-dart answers', () async {
       dealUntil((c) => c.hasExtraDart);
       final c = game.challenge!;
       expect(c.dartCount, 2);
-      expect(c.target, greaterThan(40));
+      expect(c.target, greaterThan(60));
       expect(c.layout, BoxLayout.all);
       expect(c.dartsLeft, 3);
       expect(game.currentOptimalRoutes, isNotEmpty);
@@ -748,7 +748,7 @@ void main() {
       expect(game.lastResult!.optimalRoutes.every((r) => r.length == 3), isTrue);
     });
 
-    test('checking out in two darts ends the attempt at once, as a miss', () async {
+    test('checking out in two darts ends the attempt at once, as a miss - a good one when it is optimal', () async {
       dealUntil((c) => c.hasExtraDart);
       final c = game.challenge!;
       final two = optimalService.optimalRoute(c.target)!;
@@ -759,8 +759,10 @@ void main() {
       await game.submit();
       final result = game.lastResult!;
       expect(result.isCorrect, isFalse);
-      expect(result.validation.outcome, AttemptOutcome.wrongDartCount);
+      expect(result.validation.outcome, AttemptOutcome.goodButFewerDarts);
+      expect(result.validation.message, contains('Good, but not in the given number of darts'));
       expect(result.validation.message, contains('all 3 darts have to be used'));
+      expect(result.score.total, 0, reason: 'a miss: no points');
     });
 
     test('practice and input: pressing the boxes switches between two and three darts', () {
@@ -787,8 +789,26 @@ void main() {
       }
     });
 
+    test('74 with three darts: T14 is lit, and T14 then D16 is good - but not in the given number of darts', () async {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(74);
+      game.chooseOtherDarts();
+      expect(game.challenge!.darts, 3);
+      expect(game.choiceHints, contains(DartThrow.parse('T14')));
+      game.selectDart(DartThrow.parse('T14')); // leaves 32
+      expect(game.round!.remaining, 32);
+      expect(game.round!.steps.first.quality, DartQuality.optimal);
+      game.selectDart(DartThrow.parse('D16'));
+      await game.submit();
+      final result = game.lastResult!;
+      expect(result.validation.outcome, AttemptOutcome.goodButFewerDarts);
+      expect(result.isCorrect, isFalse, reason: 'every dart has to be used');
+      expect(result.validation.message, contains('Good, but not in the given number of darts'));
+      expect(result.playerRoute.isCheckoutFor(74), isTrue, reason: 'it can be a favorite');
+    });
+
     test('there is no choosing in the calculator', () {
-      dealUntil((c) => c.dartCount == 2 && c.target > 40);
+      dealUntil((c) => c.dartCount == 2 && c.target > 60);
       expect(game.canChooseDarts, isFalse);
     });
   });

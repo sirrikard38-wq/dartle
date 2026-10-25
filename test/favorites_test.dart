@@ -4,6 +4,7 @@ import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
 void main() {
+  yourRouteTests();
   noCheckoutNumbersTests();
   CheckoutRoute r(String text) => CheckoutRoute.parse(text);
 
@@ -133,5 +134,48 @@ void noCheckoutNumbersTests() {
     final game = createGameController(InMemoryStorageService());
     expect([for (var n = 2; n <= 170; n++) if (game.hasNoCheckout(n)) n],
         [159, 162, 163, 165, 166, 168, 169]);
+  });
+}
+
+void yourRouteTests() {
+  CheckoutRoute r(String text) => CheckoutRoute.parse(text);
+
+  group('your own checkout can be a favorite', () {
+    test('when it ends on a double and adds up to the number - optimal or not', () {
+      expect(r('S20 D10').isCheckoutFor(40), isTrue);
+      expect(r('T20 D20').isCheckoutFor(100), isTrue);
+      expect(r('S1 S1 D19').isCheckoutFor(40), isTrue);
+      expect(r('S20 Bull').isCheckoutFor(70), isTrue);
+      expect(r('D20').isCheckoutFor(40), isTrue);
+      // A route that finishes early still adds up (the result says it was a miss).
+      expect(r('T16 D8').isCheckoutFor(64), isTrue);
+    });
+
+    test('not when the last dart is no double, or it does not add up', () {
+      expect(r('S20 S20').isCheckoutFor(40), isFalse);
+      expect(r('T20 D10').isCheckoutFor(100), isFalse);
+      expect(r('S20 D10').isCheckoutFor(41), isFalse);
+      expect(CheckoutRoute(const []).isCheckoutFor(0), isFalse);
+      expect(r('S1 S1 S1 D1').isCheckoutFor(5), isFalse); // four darts
+    });
+
+    test('a route that is not optimal is saved and listed like any other', () async {
+      final game = createGameController(InMemoryStorageService());
+      await game.init();
+      final route = r('S1 S19 D10'); // 1 + 19 + 20 = 40, not an optimal way
+      expect(route.isCheckoutFor(40), isTrue);
+      expect(await game.toggleFavorite(40, route), isTrue);
+      expect(game.favorites.isFavorite(40, r('S19 S1 D10')), isTrue); // any order of the setup darts
+      expect(game.favorites.routesFor(40).any(route.isEquivalentTo), isTrue);
+      expect(game.favorites.dartCountsFor(40), containsAll([1, 3]));
+    });
+
+    test('the result screen puts the dart on "Your darts", and a press does not redraw the screen', () {
+      final source = File('lib/ui/result_screen.dart').readAsStringSync();
+      expect(source, contains('favoriteForYourRoute(ctx, challenge.target, result.playerRoute)'));
+      final controller = File('lib/src/game/game_controller.dart').readAsStringSync();
+      final toggle = controller.substring(controller.indexOf('Future<bool> toggleFavorite'));
+      expect(toggle.substring(0, toggle.indexOf(';')), isNot(contains('_notify')));
+    });
   });
 }
