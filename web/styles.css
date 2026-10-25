@@ -692,17 +692,9 @@ summary { cursor: pointer; color: var(--muted); }
 .how-section h4 { margin: 14px 0 2px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .how-section p { margin: 0; }
 
-/* ---------- Stats / leaderboard ---------- */
-/* No heading above it any more: the same space over it that a heading had. */
-.more-stats { width: 100%; margin-top: 22px; text-align: left; font-size: 0.9rem; }
-/* Statistics: Reset statistics is the last thing on the screen, against the right edge. */
-.reset-box { align-self: flex-end; margin-top: 24px; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
-.reset-stats { padding: 0; text-align: right; font-size: 0.8rem; line-height: 1.2; min-height: 36px; }
-.reset-note { margin: 0; max-width: 16ch; color: var(--muted); font-size: 0.65rem; line-height: 1.25; }
-.weak-list, .rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
-.weak-list li, .rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
-.weak-list strong { font-size: 1.2rem; }
-.weak-list span { color: var(--muted); }
+/* ---------- Leaderboard ---------- */
+.rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
+.rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
 .rank-list { counter-reset: rank; }
 .rank-list li::before { counter-increment: rank; content: counter(rank); width: 2em; color: var(--muted); text-align: left; }
 .rank-list .name { flex: 1; text-align: left; }
@@ -714,15 +706,7 @@ summary { cursor: pointer; color: var(--muted); }
 .chip.selected { background: var(--white); color: var(--ink); }
 .kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 8px 0; }
 .kv dt { color: var(--muted); } .kv dd { margin: 0; font-weight: 700; }
-.table-wrap { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.data-table caption { text-align: left; color: var(--muted); padding: 8px 0 4px; }
-.data-table th, .data-table td { padding: 6px 6px; border-bottom: 1px solid var(--line); text-align: right; }
-.data-table th[scope="row"], .data-table thead th:first-child { text-align: left; }
 .big-stat strong { color: var(--fg); }
-/* Numbers that cannot be checked out. */
-.no-checkout-row th, .no-checkout { color: var(--red); }
-.no-checkout { text-align: center !important; }
 
 /* ---------- Footer: one row of links at the very end of the app ---------- */
 .app-footer {

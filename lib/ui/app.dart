@@ -18,7 +18,6 @@ import 'modes_screen.dart';
 import 'number_entry_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
-import 'stats_screen.dart';
 import 'to_top.dart';
 import 'view_context.dart';
 import 'welcome_screen.dart';
@@ -125,7 +124,6 @@ class DartleApp {
           MenuPage.home => buildMenuScreen(_ctx),
           MenuPage.modes => buildModesScreen(_ctx),
           MenuPage.favorites => buildFavoritesScreen(_ctx),
-          MenuPage.stats => buildStatsScreen(_ctx),
           MenuPage.leaderboard => buildLeaderboardScreen(_ctx),
         },
     };
@@ -155,13 +153,11 @@ class DartleApp {
     // starts at the top, not wherever the last, longer screen was scrolled to.
     // After the focus above, which can scroll a button into view.
     if (screenChanged) web.window.scrollTo(0.toJS, 0);
-    // At the end of the Leaderboard, Statistics and Favorites a little dart
+    // At the end of the Leaderboard and Favorites a little dart
     // shoots you back to the top.
     _toTop.enabled = !fullScreen &&
         _game.phase == GamePhase.menu &&
-        (_page == MenuPage.stats ||
-            _page == MenuPage.leaderboard ||
-            _page == MenuPage.favorites);
+        (_page == MenuPage.leaderboard || _page == MenuPage.favorites);
   }
 
   web.HTMLElement _buildHeader() {

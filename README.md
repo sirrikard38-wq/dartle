@@ -4,7 +4,7 @@ Wordle-style trainer for 501 checkouts, in three modes:
 
 - **Checkout calculator** - a number and three boxes (a visit). Boxes that are
   crossed out are darts already used; you fill the free ones. Against the
-  clock, scored by streak, saved to statistics and the leaderboard. All the
+  clock, scored by streak and saved to the leaderboard. All the
   one-dart numbers (21) together come up 2% of the time; every other number, the
   seven with no checkout included, shares the other 98% equally.
 - **Checkout practice** - choose your own darts one at a time; the optimal darts
@@ -40,7 +40,7 @@ Pieces: `web/manifest.webmanifest` (name, colours, icons), `web/icons/` (made by
 `tool/make_icons.ps1`), `web/sw.js` (offline cache, stamped per build by
 `tool/build.dart`), the safe-area CSS for notches and home bars, and
 `lib/ui/install.dart` and `lib/ui/footer.dart` (the row of links at the end of
-every screen: Install, Instagram, Email). Scores and statistics are saved
+every screen: Install, Instagram, Email). Scores are saved
 on the device; on iPhone the home-screen app keeps its own copy, separate from
 the Safari tab. Store versions (Google Play, App Store) are not built.
 

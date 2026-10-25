@@ -7,7 +7,7 @@ import 'dart_icon.dart';
 import 'dom.dart';
 import 'to_top_math.dart';
 
-/// The little dart at the end of a long page (the Leaderboard and Statistics).
+/// The little dart at the end of a long page (the Leaderboard and Favorites).
 ///
 /// It is the same dart as on the welcome screen, pointing up, in the left corner,
 /// and only shows once the page is scrolled down to its end. Pressed, it is thrown
