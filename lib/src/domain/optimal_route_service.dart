@@ -84,7 +84,11 @@ class OptimalRouteService {
     return _cacheIn.putIfAbsent((target, darts), () {
       if (minimum == 2 && darts == 3 && target > AimPairs.threeDartAbove) {
         final routes = <CheckoutRoute>[];
-        for (final route in [...AimPairs.threeDartRoutes(target), ..._followUps(target)]) {
+        for (final route in [
+          ...AimPairs.threeDartRoutes(target),
+          ...AimPairs.sameNumberThreeDartRoutes(target),
+          ..._followUps(target),
+        ]) {
           if (!routes.any(route.isEquivalentTo)) routes.add(route);
         }
         if (routes.isNotEmpty) return List.unmodifiable(routes);

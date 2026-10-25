@@ -67,7 +67,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
         'number over 60, a single that leaves a number you can finish in two darts '
         'is optimal '
         'too, followed by one of the routes of what is left (93: S19 leaves 74, '
-        'then T20 D7; 64: S14 leaves 50, then T14 D4 with S14 D18 as the backup).'),
+        'then T20 D7; 64: S14 leaves 50, then T14 D4 with S14 D18 as the backup). '
+        'The single and the triple of one number then any double count too '
+        '(74: S14 T14 D9).'),
     section('Bull safety',
         'With two darts left on 51 to 70, aim at the number that is 50 less than '
         'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '

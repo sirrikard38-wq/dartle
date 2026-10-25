@@ -194,6 +194,21 @@ abstract final class AimPairs {
     return routes;
   }
 
+  /// Three darts on a two-dart number over 60: the single and the triple of the
+  /// same number, then a double, whatever the double is (74: S14 T14 D9, S10
+  /// T10 D17 ...). [threeDartRoutes] keeps only the better doubles; these stay
+  /// optimal next to them. Biggest number first.
+  static List<CheckoutRoute> sameNumberThreeDartRoutes(int target) {
+    if (target <= threeDartAbove) return const [];
+    final routes = <CheckoutRoute>[];
+    for (var n = DartThrow.maxBoardNumber; n >= 1; n--) {
+      final finisher = finisherFor(target - 4 * n);
+      if (finisher == null) continue;
+      routes.add(CheckoutRoute([_s(n), _t(n), finisher]).normalized);
+    }
+    return routes;
+  }
+
   /// Same number as the double first (S16 S16 D16), then neighbours, then the
   /// rest; within that the bigger double first.
   static int _threeDartOrder(CheckoutRoute a, CheckoutRoute b) {

@@ -123,6 +123,8 @@ leaderboard shows the scores on the device, as before.
   finish, then one of that number's optimal routes with two darts: 93 is `S19 T20 D7`, as S19
   leaves 74, and 64 is `S14 T14 D4` (S14 leaves 50, T14 D4 with S14 D18 as the
   backup) (`OptimalRouteService._followUps`). Every single can be the first dart.
+  And (3) the single and the triple of one number then any double (74:
+  `S14 T14 D9`; `AimPairs.sameNumberThreeDartRoutes`).
   The popup and the "Also optimal" boxes list every optimal route - the same
   as Checkout input lights up, however many (35 has 16, 61 with three darts
   has over a hundred).

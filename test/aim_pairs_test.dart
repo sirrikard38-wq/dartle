@@ -138,6 +138,24 @@ void main() {
       expect(optimal.optimalRoutesIn(50, 2).any(r('S14 D18').isEquivalentTo), isTrue);
     });
 
+    test('the single and the triple of the same number, then any double: 74 is S14 T14 D9', () {
+      // D9 is not a better double, and S14 would leave 46 after T14 is missed,
+      // but the single and triple of one number then a double is optimal anyway.
+      expect(optimal.isOptimalIn(74, 3, r('S14 T14 D9')), isTrue);
+      expect(optimal.isOptimalIn(74, 3, r('T14 S14 D9')), isTrue);
+      expect(optimal.isOptimalIn(74, 3, r('S10 T10 D17')), isTrue);
+      expect(optimal.isOptimalIn(74, 3, r('S6 T6 Bull')), isTrue);
+      expect(optimal.isOptimalIn(64, 3, r('S14 T14 D4')), isTrue);
+      expect(AimPairs.sameNumberThreeDartRoutes(60), isEmpty); // two darts there
+      for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
+        if (engine.minimumDarts(t) != 2) continue;
+        for (final route in AimPairs.sameNumberThreeDartRoutes(t)) {
+          expect(engine.isLegalRoute(t, route), isTrue, reason: '$t ${route.notation}');
+          expect(optimal.isOptimalIn(t, 3, route), isTrue, reason: '$t ${route.notation}');
+        }
+      }
+    });
+
     test('every three-dart route is legal, and numbers with a three-dart option all have routes', () {
       for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
         if (engine.minimumDarts(t) != 2) continue;
