@@ -110,20 +110,6 @@ class ChoiceAdvisor {
     return Set<DartThrow>.unmodifiable({for (final r in routes) ...r.setupDarts});
   }
 
-  /// What a press on the board is worth when the [best] darts are highlighted.
-  ///
-  /// Pressing anywhere in a number's wedge counts as the highlighted best dart
-  /// of that number: with T20 highlighted, a press on the 20 - single, treble,
-  /// double, anywhere - is worth T20. If the tapped area is itself highlighted
-  /// it is used as is. A number with no highlighted dart is worth exactly what
-  /// was tapped.
-  static DartThrow resolveTap(Set<DartThrow> best, DartThrow tapped) {
-    if (best.contains(tapped)) return tapped;
-    final sameNumber = best.where((d) => d.number == tapped.number).toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
-    return sameNumber.isEmpty ? tapped : sameNumber.first;
-  }
-
   /// Rates throwing [dart] with [remaining] left and [dartsLeft] darts
   /// (counting this one) still to throw. Every dart has to be used: checking
   /// out with darts still in hand is wrong (a bust). [best] are the optimal

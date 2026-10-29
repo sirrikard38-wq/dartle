@@ -23,10 +23,8 @@ web.HTMLElement buildHowToPlay(GameController game) {
           tr(game.mode == GameMode.input ? 'Checkout input' : 'Checkout practice'),
           tr('Choose your own darts to check the number out. The big number is what '
               'you still need. Before every dart the board lights up the optimal darts '
-              'in grey and fades the rest, so you can see where to aim. Press anywhere '
-              'on a number that has one lit area and it counts as that lit dart. When a '
-              'number has two lit areas (say the triple and the single), press the '
-              'exact area you want. Other numbers count as the exact area you press. '
+              'in grey and fades the rest, so you can see where to aim. The area you '
+              'press is the dart you throw, lit or not. '
               'You must finish on a double or Bull with the last of your darts; going '
               'below zero, leaving 1 or checking out with a dart still in hand is a '
               'miss. A two-dart number over 60 can be played with two or three darts: '

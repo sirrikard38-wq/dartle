@@ -43,10 +43,9 @@ String _sectorPath(double r0, double r1, double a0, double a1) =>
 ///   divide them - so only the [marks] stand out (used to compare boards).
 /// * [marks] are drawn as translucent circles - where darts landed.
 /// * With [lit], those darts' areas are lit up in light grey and every other
-///   area fades back, so only the best choices stand out. A number with a lit
-///   dart is worth that lit dart wherever it is pressed (T20 lit: any press on
-///   the 20 is T20), and the mark goes in the middle of the lit area - see
-///   [ChoiceAdvisor.resolveTap].
+///   area fades back, so only the best choices stand out. The lighting is only
+///   a hint: a press is still worth exactly the area pressed (T20 lit: a press
+///   on S20 or D20 is S20 or D20).
 web.Element buildDartboard({
   Multiplier? mode,
   List<BoardPoint> marks = const [],
@@ -112,8 +111,7 @@ web.Element buildDartboard({
     );
   }
 
-  /// Makes [target] a button that throws [dart] (or, with hints, the lit dart
-  /// of the same number).
+  /// Makes [target] a button that throws [dart].
   void makeTappable(web.Element target, DartThrow dart, {String? focusKey}) {
     target.setAttribute('role', 'button');
     // One tab stop per number; the other areas are for touch and mouse.
@@ -122,23 +120,22 @@ web.Element buildDartboard({
     if (focusKey != null) target.setAttribute('data-focus', focusKey);
 
     void press(BoardPoint? pointer) {
-      final worth = lit == null ? dart : ChoiceAdvisor.resolveTap(lit, dart);
-      // By keyboard (no pointer), or when the press is worth a different dart,
-      // the mark goes in the middle of that dart's area. Otherwise it goes
-      // where you pressed, moved onto the ring that was thrown.
+      // By keyboard (no pointer) the mark goes in the middle of the dart's
+      // area. Otherwise it goes where you pressed, moved onto the ring that was
+      // thrown.
       final BoardPoint at;
-      if (pointer == null || worth != dart) {
-        at = segmentCenter(worth);
-      } else if (lit != null && lit.contains(worth)) {
-        // A lit dart: the mark stays on the highlighted part of its number,
-        // however far from it (on the same number) the press was.
-        at = inLitArea(worth, pointer) ? pointer : segmentCenter(worth);
-      } else if (worth.number == DartThrow.bullNumber) {
+      if (pointer == null) {
+        at = segmentCenter(dart);
+      } else if (lit != null && lit.contains(dart)) {
+        // A lit dart: the mark stays on the highlighted part of its number
+        // (a press on the inner single of a lit single goes to the lit ring).
+        at = inLitArea(dart, pointer) ? pointer : segmentCenter(dart);
+      } else if (dart.number == DartThrow.bullNumber) {
         at = pointer; // inside the bull area already
       } else {
-        at = snapToRing(worth.multiplier, pointer);
+        at = snapToRing(dart.multiplier, pointer);
       }
-      onDart!(worth, at, pointer == null);
+      onDart!(dart, at, pointer == null);
     }
 
     target.onClick.listen((event) {
@@ -196,14 +193,6 @@ web.Element buildDartboard({
 
   // Invisible press areas.
   if (interactive) {
-    final litNumbers = {for (final d in lit ?? const <DartThrow>{}) d.number};
-    // A number with two or more lit areas (say the triple and the single, or
-    // the single and the double): each area is its own press area, exactly the
-    // size it is drawn, so you can pick the one you mean.
-    final manyLit = {
-      for (final n in litNumbers)
-        if (lit!.where((d) => d.number == n).length > 1) n,
-    };
     web.Element sector(double r0, double r1, double a0, double a1) =>
         svg('path', cls: 'hit', attrs: {'d': _sectorPath(r0, r1, a0, a1)});
 
@@ -216,14 +205,8 @@ web.Element buildDartboard({
         final hit = sector(_hitInner, _hitOuter, a0, a1);
         makeTappable(hit, DartThrow(mode!, number), focusKey: 'seg-$number');
         root.appendChild(hit);
-      } else if (litNumbers.contains(number) && !manyLit.contains(number)) {
-        // A number with one lit best dart: anywhere on it is worth that dart.
-        final hit = sector(_hitInner, _hitOuter, a0, a1);
-        makeTappable(hit, DartThrow(Multiplier.single, number), focusKey: 'seg-$number');
-        root.appendChild(hit);
       } else {
-        // Otherwise the exact area pressed is the dart thrown (with two or more
-        // lit areas, an unlit area of that number counts as the best lit dart).
+        // The exact area pressed is the dart thrown, lit or not.
         for (final zone in BoardZone.values) {
           final hit = sector(zone.inner, zone.outer, a0, a1);
           makeTappable(hit, DartThrow(zone.multiplier, number),
@@ -237,19 +220,12 @@ web.Element buildDartboard({
         cls: 'hit', attrs: {'cx': '$_centre', 'cy': '$_centre', 'r': '$r'});
 
     if (byArea) {
-      if (litNumbers.contains(DartThrow.bullNumber)) {
-        // A lit bull: the whole bull area is worth it.
-        final centre = circle(_outerBullRadius);
-        makeTappable(centre, DartThrow.outerBull, focusKey: 'seg-25');
-        root.appendChild(centre);
-      } else {
-        final outer = circle(_outerBullRadius);
-        makeTappable(outer, DartThrow.outerBull, focusKey: 'seg-25');
-        root.appendChild(outer);
-        final inner = circle(_bullRadius);
-        makeTappable(inner, DartThrow.bull, focusKey: 'seg-bull');
-        root.appendChild(inner);
-      }
+      final outer = circle(_outerBullRadius);
+      makeTappable(outer, DartThrow.outerBull, focusKey: 'seg-25');
+      root.appendChild(outer);
+      final inner = circle(_bullRadius);
+      makeTappable(inner, DartThrow.bull, focusKey: 'seg-bull');
+      root.appendChild(inner);
     } else if (mode != Multiplier.treble) {
       // 25 with Single, Bull with Double. (Nothing with Treble - there is no
       // treble bull.)

@@ -279,39 +279,11 @@ void main() {
       expect(r.steps.single.remainingBefore, 85);
     });
 
-    test('a press anywhere on a number counts as its highlighted best dart', () {
-      // 85: the highlighted darts are T15, T17 and T19.
-      final best = advisor.optimalDarts(85);
-      for (final (pressed, worth) in [
-        ('T17', 'T17'), // the highlighted area itself
-        ('S17', 'T17'), // pressed in the singles: still worth T17
-        ('D17', 'T17'), // or in the doubles
-        ('S15', 'T15'),
-        ('S19', 'T19'),
-        ('T3', 'T3'), // 3 has no highlighted dart: worth exactly what was tapped
-        ('S3', 'S3'),
-        ('Bull', 'Bull'),
-        ('S20', 'S20'), // 20 has none either on 85
-      ]) {
-        expect(ChoiceAdvisor.resolveTap(best, d(pressed)).notation, worth, reason: pressed);
-      }
-    });
-
-    test('a tapped area that is itself highlighted is used as it is', () {
-      final best = {d('T20'), d('S20')};
-      expect(ChoiceAdvisor.resolveTap(best, d('S20')), d('S20'));
-      expect(ChoiceAdvisor.resolveTap(best, d('T20')), d('T20'));
-      // D20 is not highlighted: it snaps to the higher-scoring highlighted 20.
-      expect(ChoiceAdvisor.resolveTap(best, d('D20')), d('T20'));
-    });
-
-    test('the bull area snaps to a highlighted Bull', () {
-      expect(ChoiceAdvisor.resolveTap({d('Bull')}, d('25')), d('Bull'));
-      expect(ChoiceAdvisor.resolveTap({d('T20')}, d('25')), d('25'));
-    });
-
-    test('with no hints, a press is worth exactly what was tapped', () {
-      expect(ChoiceAdvisor.resolveTap(const {}, d('S7')), d('S7'));
+    test('an unlit area of a number with a lit dart is thrown as it is', () {
+      // 85: T15, T17 and T19 are lit; S17 is a legal dart of its own (68 left).
+      final r = round(85)..throwDart(d('S17'));
+      expect(r.steps.single.dart, d('S17'));
+      expect(r.remaining, 68);
     });
 
     test('bust ends the round and keeps the score where it was', () {

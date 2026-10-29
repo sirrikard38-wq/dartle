@@ -18,16 +18,6 @@ void enterDart(ViewContext ctx, DartThrow dart, [BoardPoint? point]) {
   final game = ctx.game;
   if (game.phase != GamePhase.playing || game.isHandFull) return;
 
-  // Practice: a number with a lit best dart is worth that dart however it was
-  // entered (board or typed). The mark then goes in the middle of the lit area
-  // instead of where it was pressed.
-  var worth = dart;
-  var at = point;
-  if (game.mode.isPractice) {
-    worth = ChoiceAdvisor.resolveTap(game.choiceHints, dart);
-    if (worth != dart) at = null;
-  }
-
   // The mark goes where it was pressed (or mid-area), but a repeat of the same
   // dart in the same area is placed beside the earlier one - sharing about half
   // its area - instead of on top of it. Stored, so it stays put on re-render.
@@ -35,10 +25,10 @@ void enterDart(ViewContext ctx, DartThrow dart, [BoardPoint? point]) {
   final placed = markPoints(game.entered, ctx.marks);
   final earlier = [
     for (var i = 0; i < game.entered.length; i++)
-      if (game.entered[i] == worth) placed[i],
+      if (game.entered[i] == dart) placed[i],
   ];
-  ctx.marks.add(spreadMark(worth, at ?? segmentCenter(worth), earlier, ctx.random));
-  game.selectDart(worth); // re-renders
+  ctx.marks.add(spreadMark(dart, point ?? segmentCenter(dart), earlier, ctx.random));
+  game.selectDart(dart); // re-renders
   if (game.isHandFull) game.submit();
 }
 
