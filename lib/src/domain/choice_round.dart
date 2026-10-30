@@ -77,18 +77,6 @@ class ChoiceRound {
   Set<DartThrow> _next() =>
       _advisor.nextOptimalDarts(target, maxDarts, [for (final s in _steps) s.dart]);
 
-  /// The more optimal of the [optimalDarts], lit brighter (see
-  /// [ChoiceAdvisor.brighterDarts]).
-  Set<DartThrow> get brighterDarts => isFinished
-      ? const {}
-      : _advisor.brighterDarts(target, maxDarts, [for (final s in _steps) s.dart]);
-
-  /// The most optimal of the [optimalDarts], lit brightest (see
-  /// [ChoiceAdvisor.brightestDarts]).
-  Set<DartThrow> get brightestDarts => isFinished
-      ? const {}
-      : _advisor.brightestDarts(target, maxDarts, [for (final s in _steps) s.dart]);
-
   /// The same round played with [layout]'s darts from now on, the darts thrown
   /// so far kept as they were rated: 68 with three darts, T14 thrown, switched
   /// to two darts leaves 26 with one dart (D13). There must be a dart left.

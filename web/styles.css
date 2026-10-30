@@ -497,12 +497,6 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .dartboard .zone.on.dim { fill-opacity: 0.4; }
 .dartboard .zone.on.lit { fill: #d6d6d6; fill-opacity: 1; stroke-width: 1.5; }
 .dartboard .zone.off.lit { fill: #808080; }
-/* Three darts on a two-dart number over 60: the other lit areas step back to a
-   darker grey, the aims keep the usual lit grey and neighbouring aims shine
-   white. */
-.dartboard.tiers .zone.on.lit { fill: #8c8c8c; }
-.dartboard.tiers .zone.on.lit.bright { fill: #d6d6d6; }
-.dartboard.tiers .zone.on.lit.brightest { fill: #ffffff; }
 
 /* Comparing boards (result screen): no filled areas at all, only the white
    lines that divide them, so just the marks stand out. */

@@ -73,8 +73,8 @@ void main() {
       expect(routes.any(r('S8 S16 D20').isEquivalentTo), isTrue);
       expect(routes.any(r('S16 S8 D20').isEquivalentTo), isTrue);
       expect(routes.any(r('S16 S16 D16').isEquivalentTo), isTrue);
-      // Same number as the double comes first.
-      expect(routes.first.notation, 'S16 S16 D16');
+      // The best aim comes first: S14 leaves the Bull and T14 leaves D11.
+      expect(routes.first.notation, 'S14 S10 D20');
       expect(optimal.isOptimalIn(64, 3, r('S16 S8 D20')), isTrue);
       // Two darts are not optimal when three have to be used.
       expect(optimal.isOptimalIn(64, 3, r('T16 D8')), isFalse);
@@ -111,20 +111,18 @@ void main() {
       expect(optimal.isOptimalIn(93, 3, r('S19 T20 D7')), isTrue);
       expect(optimal.isOptimalIn(93, 3, r('T20 S19 D7')), isTrue); // any order
       // The aim routes come first: 93's only aim is 19 (T19 leaves D18, S19
-      // leaves 74). 64 still starts with S16 S16 D16.
+      // leaves 74).
       expect(optimal.threeDartAims(93), [19]);
       expect(notations([optimal.optimalRoutesIn(93, 3).first]).single, contains('S19'));
-      expect(optimal.optimalRoutesIn(64, 3).first.notation, 'S16 S16 D16');
     });
 
-    test('only S15 to S20 start a follow-up route, and every route starts with a first dart: 97 has 28', () {
+    test('only S15 to S20 start a follow-up route, and every route starts with an aim: 97 has 20', () {
       expect(OptimalRouteService.followUpLowestSingle, 15);
       // S3 leaves 90 (T20 D15), but S3 is not a high single.
       expect(optimal.isOptimalIn(93, 3, r('S3 T20 D15')), isFalse);
-      // S15 leaves 78 (T18 D12), but on 93 neither S15 (78) nor T15 (48)
-      // leaves a double, so S15 is no first dart.
+      // S15 leaves 78 (T18 D12), but 15 is no aim on 93 (T15 leaves 48).
       expect(optimal.isOptimalIn(93, 3, r('S15 T18 D12')), isFalse);
-      expect(optimal.optimalRoutesIn(97, 3), hasLength(28));
+      expect(optimal.optimalRoutesIn(97, 3), hasLength(20));
       final first = optimal.threeDartFirstDarts(97);
       for (final route in optimal.optimalRoutesIn(97, 3)) {
         expect(route.setupDarts.any(first.contains), isTrue, reason: route.notation);
@@ -139,26 +137,29 @@ void main() {
       expect(optimal.isOptimalIn(74, 3, r('S14 T14 D9')), isTrue);
     });
 
-    test('no first dart from a number whose single and triple both leave no double: 68 has no S11 or T11', () {
-      final first = optimal.threeDartFirstDarts(68);
-      // S11 leaves 57 and T11 35 - neither is a double; the same for 7, 8, 9,
-      // 13, 15 and 17.
-      for (final n in [7, 8, 9, 11, 13, 15, 17]) {
-        expect(first, isNot(contains(DartThrow.parse('S$n'))), reason: 'S$n');
-        expect(first, isNot(contains(DartThrow.parse('T$n'))), reason: 'T$n');
+    test('the first dart is one of the aims and nothing else: 68 is 18 first (S18 leaves the Bull, T18 D7)', () {
+      expect(optimal.threeDartAims(68), [18, 20, 16, 14, 12, 10, 6]);
+      expect(optimal.threeDartFirstDarts(68), {
+        for (final n in [18, 20, 16, 14, 12, 10, 6]) ...[DartThrow.parse('S$n'), DartThrow.parse('T$n')],
+      });
+      expect(optimal.optimalRoutesIn(68, 3).first.notation, 'S18 S10 D20');
+      // No route without an aim: not S19 (S19 and S3 together leave 46), S1,
+      // S2, S3 or S11 first.
+      for (final route in ['S19 S11 D19', 'S17 S1 Bull', 'S1 T17 D8', 'S15 S3 Bull', 'T11 S11 D12']) {
+        expect(optimal.isOptimalIn(68, 3, r(route)), isFalse, reason: route);
       }
-      // The aims stay (T14 leaves D13), and so does S19, whose T19 is no first dart.
-      for (final dart in ['S14', 'T14', 'S6', 'T6', 'S19', 'S1']) {
-        expect(first, contains(DartThrow.parse(dart)), reason: dart);
+      // S2 can still come second: S16 leaves 52, then S2 leaves the Bull.
+      expect(optimal.isOptimalIn(68, 3, r('S16 S2 Bull')), isTrue);
+      // Every two-dart number over 60 has aims.
+      for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
+        if (engine.minimumDarts(t) == 2) expect(optimal.threeDartAims(t), isNotEmpty, reason: '$t');
       }
-      expect(optimal.isOptimalIn(68, 3, r('T11 S11 D12')), isFalse);
-      expect(optimal.isOptimalIn(68, 3, r('S19 S11 D19')), isTrue); // S19 first, then S11 leaves D19
     });
 
-    test('after the first dart the single and the triple of one number both count when both leave a double: 68 S1 T17 D8', () {
-      // S1 leaves 67: S17 leaves the Bull and T17 leaves D8.
-      expect(optimal.isOptimalIn(68, 3, r('S17 S1 Bull')), isTrue);
-      expect(optimal.isOptimalIn(68, 3, r('S1 T17 D8')), isTrue);
+    test('after the first dart the single and the triple of one number both count when both leave a double: 68 T18 T2 D4', () {
+      // T18 leaves 14: S2 leaves D6 and T2 leaves D4.
+      expect(optimal.isOptimalIn(68, 3, r('T18 S2 D6')), isTrue);
+      expect(optimal.isOptimalIn(68, 3, r('T18 T2 D4')), isTrue);
     });
 
     test('64: S14 then T14 D4 (S14 D18 if T14 is missed) - the single and triple of one number', () {
@@ -175,8 +176,7 @@ void main() {
       // but the single and triple of one number then a double is optimal anyway.
       expect(optimal.isOptimalIn(74, 3, r('S14 T14 D9')), isTrue);
       expect(optimal.isOptimalIn(74, 3, r('T14 S14 D9')), isTrue);
-      // ...unless neither the single nor the triple leaves a double: on 74 S10
-      // leaves 64 and T10 44, S6 leaves 68 and T6 56.
+      // ...when the number is an aim: on 74, T10 leaves 44 and T6 56.
       expect(optimal.isOptimalIn(74, 3, r('S10 T10 D17')), isFalse);
       expect(optimal.isOptimalIn(74, 3, r('S6 T6 Bull')), isFalse);
       expect(optimal.isOptimalIn(64, 3, r('S14 T14 D4')), isTrue);

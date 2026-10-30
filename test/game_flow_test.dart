@@ -789,8 +789,8 @@ void main() {
       game.startGame(null, GameMode.input);
       game.enterNumber(68);
       game.chooseOtherDarts(); // three darts
-      expect(game.choiceBrightestHints, {for (final d in ['S6', 'T6', 'S10', 'T10']) DartThrow.parse(d)});
-      expect(game.choiceBrightHints, contains(DartThrow.parse('T14')));
+      expect(game.choiceHints, containsAll([for (final d in ['S18', 'T18', 'T14']) DartThrow.parse(d)]));
+      expect(game.choiceHints, isNot(contains(DartThrow.parse('S19'))));
       game.selectDart(DartThrow.parse('T14')); // leaves 26
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts(); // two darts: one left

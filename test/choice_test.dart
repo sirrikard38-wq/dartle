@@ -160,24 +160,26 @@ void main() {
       for (final dart in advisor.optimalDartsIn(85, 3)) {
         expect(rate(85, dart.notation), DartQuality.optimal, reason: dart.notation);
       }
-      // S15 is one (T10 S15 D20, and S15 leaves 70: S20 Bull); so is S20, which
-      // leaves 65 (25 D20); a setup double like D10 is not one
+      // S15 is one - 15 is an aim (T15 leaves D20, S15 leaves 70); S20 is not
+      // (T20 leaves 25), nor is a setup double like D10
       expect(rate(85, 'S15'), DartQuality.optimal);
+      expect(rate(85, 'S20'), isNot(DartQuality.optimal));
       expect(rate(85, 'D10'), DartQuality.poor);
       // T3 is a silly dart
       expect(rate(85, 'T3'), DartQuality.poor);
       expect(rate(85, 'D2'), DartQuality.poor); // a setup double that is no part of a route
     });
 
-    test('68 with three darts: S11 and T11 are not lit (neither leaves a double); after S1, S17 and T17 are', () {
+    test('68 with three darts lights only its aims, S18 T18 to S6 T6 - not S19, S1, S2, S3 or S11', () {
       final first = advisor.nextOptimalDarts(68, 3, const []);
-      expect(first, isNot(contains(d('S11'))));
-      expect(first, isNot(contains(d('T11'))));
-      expect(first, contains(d('S1')));
+      expect(first, {
+        for (final n in [18, 20, 16, 14, 12, 10, 6]) ...[d('S$n'), d('T$n')],
+      });
       expect(advisor.optimalDartsIn(68, 3), first);
-      // S1 leaves 67: S17 leaves the Bull, T17 leaves D8.
+      expect(rate(68, 'S19'), isNot(DartQuality.optimal));
+      // After S1 (no route has it) the darts of what is left light up: 67 is
+      // T17 D8 or S17 Bull.
       expect(advisor.nextOptimalDarts(68, 3, [d('S1')]), {d('S17'), d('T17')});
-      expect(rate(68, 'T11'), DartQuality.poor);
     });
 
     test('a finishing double that checks out is optimal with the last dart; with darts left it is a miss', () {
@@ -290,11 +292,39 @@ void main() {
       expect(r.steps.single.remainingBefore, 85);
     });
 
-    test('an unlit area of a number with a lit dart is thrown as it is', () {
-      // 85: T15, T17 and T19 are lit; S17 is a legal dart of its own (68 left).
-      final r = round(85)..throwDart(d('S17'));
-      expect(r.steps.single.dart, d('S17'));
-      expect(r.remaining, 68);
+    test('a press anywhere on a number counts as its highlighted best dart', () {
+      // 85: the highlighted darts are T15, T17 and T19.
+      final best = advisor.optimalDarts(85);
+      for (final (pressed, worth) in [
+        ('T17', 'T17'), // the highlighted area itself
+        ('S17', 'T17'), // pressed in the singles: still worth T17
+        ('D17', 'T17'), // or in the doubles
+        ('S15', 'T15'),
+        ('S19', 'T19'),
+        ('T3', 'T3'), // 3 has no highlighted dart: worth exactly what was tapped
+        ('S3', 'S3'),
+        ('Bull', 'Bull'),
+        ('S20', 'S20'), // 20 has none either on 85
+      ]) {
+        expect(ChoiceAdvisor.resolveTap(best, d(pressed)).notation, worth, reason: pressed);
+      }
+    });
+
+    test('a tapped area that is itself highlighted is used as it is', () {
+      final best = {d('T20'), d('S20')};
+      expect(ChoiceAdvisor.resolveTap(best, d('S20')), d('S20'));
+      expect(ChoiceAdvisor.resolveTap(best, d('T20')), d('T20'));
+      // D20 is not highlighted: it snaps to the higher-scoring highlighted 20.
+      expect(ChoiceAdvisor.resolveTap(best, d('D20')), d('T20'));
+    });
+
+    test('the bull area snaps to a highlighted Bull', () {
+      expect(ChoiceAdvisor.resolveTap({d('Bull')}, d('25')), d('Bull'));
+      expect(ChoiceAdvisor.resolveTap({d('T20')}, d('25')), d('25'));
+    });
+
+    test('with no hints, a press is worth exactly what was tapped', () {
+      expect(ChoiceAdvisor.resolveTap(const {}, d('S7')), d('S7'));
     });
 
     test('bust ends the round and keeps the score where it was', () {

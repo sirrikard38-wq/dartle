@@ -69,9 +69,8 @@ class ChoiceAdvisor {
   Set<DartThrow> optimalDarts(int remaining) => _nextDarts(optimalRoutes(remaining));
 
   /// Like [optimalDarts], with exactly [darts] darts still to throw. A two-dart
-  /// number over 60 with three darts has its own first darts (68: not S11 or
-  /// T11, which leave no double - see
-  /// [OptimalRouteService.threeDartFirstDarts]).
+  /// number over 60 with three darts lights only its aims (68: S18 T18, S20
+  /// T20 ... - see [OptimalRouteService.threeDartFirstDarts]).
   Set<DartThrow> optimalDartsIn(int remaining, int darts) {
     if (darts == 3) {
       final first = _optimal.threeDartFirstDarts(remaining);
@@ -101,27 +100,6 @@ class ChoiceAdvisor {
         : Set<DartThrow>.unmodifiable(next);
   }
 
-  /// The more optimal of the [nextOptimalDarts], lit brighter: before the first
-  /// of three darts on a two-dart number over 60, the single and triple of
-  /// every aim (68: S6 T6 ... S20 T20, see
-  /// [OptimalRouteService.threeDartAims]). Empty otherwise.
-  Set<DartThrow> brighterDarts(int target, int darts, List<DartThrow> thrown) {
-    if (thrown.isNotEmpty || darts != 3) return const <DartThrow>{};
-    return Set<DartThrow>.unmodifiable(_optimal.threeDartAimDarts(target));
-  }
-
-  /// The most optimal of the [brighterDarts], lit brightest: the aims that
-  /// have a neighbouring aim (68: S6 T6 S10 T10).
-  Set<DartThrow> brightestDarts(int target, int darts, List<DartThrow> thrown) {
-    if (thrown.isNotEmpty || darts != 3) return const <DartThrow>{};
-    return Set<DartThrow>.unmodifiable({
-      for (final n in _optimal.threeDartNeighbourAims(target)) ...[
-        DartThrow(Multiplier.single, n),
-        DartThrow(Multiplier.treble, n),
-      ],
-    });
-  }
-
   /// [route] without [thrown] (taken from its setup darts), or null when they
   /// are not all among them.
   static List<DartThrow>? _rest(CheckoutRoute route, List<DartThrow> thrown) {
@@ -138,6 +116,20 @@ class ChoiceAdvisor {
       return Set<DartThrow>.unmodifiable({for (final r in routes) r.darts.first});
     }
     return Set<DartThrow>.unmodifiable({for (final r in routes) ...r.setupDarts});
+  }
+
+  /// What a press on the board is worth when the [best] darts are highlighted.
+  ///
+  /// Pressing anywhere in a number's wedge counts as the highlighted best dart
+  /// of that number: with T20 highlighted, a press on the 20 - single, treble,
+  /// double, anywhere - is worth T20. If the tapped area is itself highlighted
+  /// it is used as is. A number with no highlighted dart is worth exactly what
+  /// was tapped.
+  static DartThrow resolveTap(Set<DartThrow> best, DartThrow tapped) {
+    if (best.contains(tapped)) return tapped;
+    final sameNumber = best.where((d) => d.number == tapped.number).toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+    return sameNumber.isEmpty ? tapped : sameNumber.first;
   }
 
   /// Rates throwing [dart] with [remaining] left and [dartsLeft] darts

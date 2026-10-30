@@ -229,12 +229,6 @@ class GameController {
   /// be checked out. Empty in Checkout calculator or once the round is over.
   Set<DartThrow> get choiceHints => _round?.optimalDarts ?? const {};
 
-  /// Practice: the more optimal of the [choiceHints], lit brighter.
-  Set<DartThrow> get choiceBrightHints => _round?.brighterDarts ?? const {};
-
-  /// Practice: the most optimal of the [choiceHints], lit brightest.
-  Set<DartThrow> get choiceBrightestHints => _round?.brightestDarts ?? const {};
-
   /// True for a number from 2 to 170 that has no checkout at all.
   bool hasNoCheckout(int number) => _generator.isImpossible(number);
 
