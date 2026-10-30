@@ -118,7 +118,12 @@ leaderboard shows the scores on the device, as before.
   all three darts must be used (checking out sooner is a miss, unless it is an
   optimal route of fewer darts: that counts as right and says "Good, but not in
   the given number of darts", 74 with T14
-  D16) and the optimal routes are (1) two setup darts
+  D16) and the optimal routes are (0) the **aims**: the single or the triple of
+  a number whose triple leaves a double and whose single leaves a two-dart
+  finish, then an optimal two-dart route of what is left (68: `T14` leaves
+  D13, `S14` leaves 54; `OptimalRouteService.threeDartAims`). In practice the
+  aims are lit brighter than the other first darts, and aims that are board
+  neighbours brightest (68: 6 and 10). (1) two setup darts
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
   ... (only better doubles when there are any, then the most singles;
@@ -126,9 +131,16 @@ leaderboard shows the scores on the device, as before.
   number with a two-dart finish, then one of that number's optimal routes with
   two darts: 93 is `S19 T20 D7`, as S19 leaves 74
   (`OptimalRouteService._followUps`; with every single 97 had 52 routes and 61
-  had 147, with S15-S20 only 97 has 23). And (3) the single and the triple of
+  had 147, with S15-S20 only 97 had 23; with the aims (0) it has 28). And
+  (3) the single and the triple of
   one number then any double (74: `S14 T14 D9`, 64: `S14 T14 D4`;
-  `AimPairs.sameNumberThreeDartRoutes`).
+  `AimPairs.sameNumberThreeDartRoutes`). But the single and the triple of a
+  number that both leave no double are never a first dart (68: S11 leaves 57,
+  T11 leaves 35; also 7, 8, 9, 13, 15, 17), so a route counts only when one of
+  its setup darts is an allowed first dart (`threeDartFirstDarts`; 68 loses
+  `T11 S11 D12`, 74 `S10 T10 D17`). After the first dart the single and the
+  triple of one number both count when both leave a double (68: `S1` leaves
+  67, so `S17 S1 Bull` and `S1 T17 D8`).
   The popup and the "Also optimal" boxes list every optimal route - the same
   as Checkout input lights up, however many (35 has 16, 61 with three darts
   has over a hundred).

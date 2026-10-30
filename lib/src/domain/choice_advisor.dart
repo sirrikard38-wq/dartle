@@ -68,9 +68,17 @@ class ChoiceAdvisor {
   /// them can be thrown first.
   Set<DartThrow> optimalDarts(int remaining) => _nextDarts(optimalRoutes(remaining));
 
-  /// Like [optimalDarts], with exactly [darts] darts still to throw.
-  Set<DartThrow> optimalDartsIn(int remaining, int darts) =>
-      _nextDarts(optimalRoutesIn(remaining, darts));
+  /// Like [optimalDarts], with exactly [darts] darts still to throw. A two-dart
+  /// number over 60 with three darts has its own first darts (68: not S11 or
+  /// T11, which leave no double - see
+  /// [OptimalRouteService.threeDartFirstDarts]).
+  Set<DartThrow> optimalDartsIn(int remaining, int darts) {
+    if (darts == 3) {
+      final first = _optimal.threeDartFirstDarts(remaining);
+      if (first.isNotEmpty) return first;
+    }
+    return _nextDarts(optimalRoutesIn(remaining, darts));
+  }
 
   /// The equally optimal next darts for [target] played with exactly [darts]
   /// darts, once [thrown] are in: the rest of every optimal route that has the
@@ -81,6 +89,7 @@ class ChoiceAdvisor {
     final left = darts - thrown.length;
     final remaining = target - thrown.fold<int>(0, (sum, d) => sum + d.score);
     if (left <= 0 || remaining <= 0) return const <DartThrow>{};
+    if (thrown.isEmpty) return optimalDartsIn(target, darts);
     final next = <DartThrow>{};
     for (final route in optimalRoutesIn(target, darts)) {
       final rest = _rest(route, thrown);
@@ -90,6 +99,27 @@ class ChoiceAdvisor {
     return next.isEmpty
         ? optimalDartsIn(remaining, left)
         : Set<DartThrow>.unmodifiable(next);
+  }
+
+  /// The more optimal of the [nextOptimalDarts], lit brighter: before the first
+  /// of three darts on a two-dart number over 60, the single and triple of
+  /// every aim (68: S6 T6 ... S20 T20, see
+  /// [OptimalRouteService.threeDartAims]). Empty otherwise.
+  Set<DartThrow> brighterDarts(int target, int darts, List<DartThrow> thrown) {
+    if (thrown.isNotEmpty || darts != 3) return const <DartThrow>{};
+    return Set<DartThrow>.unmodifiable(_optimal.threeDartAimDarts(target));
+  }
+
+  /// The most optimal of the [brighterDarts], lit brightest: the aims that
+  /// have a neighbouring aim (68: S6 T6 S10 T10).
+  Set<DartThrow> brightestDarts(int target, int darts, List<DartThrow> thrown) {
+    if (thrown.isNotEmpty || darts != 3) return const <DartThrow>{};
+    return Set<DartThrow>.unmodifiable({
+      for (final n in _optimal.threeDartNeighbourAims(target)) ...[
+        DartThrow(Multiplier.single, n),
+        DartThrow(Multiplier.treble, n),
+      ],
+    });
   }
 
   /// [route] without [thrown] (taken from its setup darts), or null when they

@@ -778,9 +778,28 @@ void main() {
       expect(game.choiceHints, contains(DartThrow.parse('S16')));
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 2);
-      // Not once a dart is thrown.
-      game.selectDart(DartThrow.parse('T16'));
+      // Not once two darts are thrown.
+      game.chooseOtherDarts();
+      game.selectDart(DartThrow.parse('S16'));
+      game.selectDart(DartThrow.parse('S16'));
       expect(game.canChooseDarts, isFalse);
+    });
+
+    test('after the first dart the boxes still switch, and the dart stays', () {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(68);
+      game.chooseOtherDarts(); // three darts
+      expect(game.choiceBrightestHints, {for (final d in ['S6', 'T6', 'S10', 'T10']) DartThrow.parse(d)});
+      expect(game.choiceBrightHints, contains(DartThrow.parse('T14')));
+      game.selectDart(DartThrow.parse('T14')); // leaves 26
+      expect(game.canChooseDarts, isTrue);
+      game.chooseOtherDarts(); // two darts: one left
+      expect(game.challenge!.darts, 2);
+      expect(game.entered, [DartThrow.parse('T14')]);
+      expect(game.round!.remaining, 26);
+      expect(game.round!.dartsLeft, 1);
+      expect(game.choiceHints, {DartThrow.parse('D13')});
+      expect(game.round!.steps.single.quality, DartQuality.optimal, reason: 'kept as rated with three darts');
     });
 
     test('numbers of 40 or less, one- and three-dart numbers have no choice', () {

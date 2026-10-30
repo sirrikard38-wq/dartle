@@ -83,14 +83,7 @@ class OptimalRouteService {
     if (darts == minimum) return optimalRoutes(target);
     return _cacheIn.putIfAbsent((target, darts), () {
       if (minimum == 2 && darts == 3 && target > AimPairs.threeDartAbove) {
-        final routes = <CheckoutRoute>[];
-        for (final route in [
-          ...AimPairs.threeDartRoutes(target),
-          ...AimPairs.sameNumberThreeDartRoutes(target),
-          ..._followUps(target),
-        ]) {
-          if (!routes.any(route.isEquivalentTo)) routes.add(route);
-        }
+        final routes = _threeDartRoutes(target);
         if (routes.isNotEmpty) return List.unmodifiable(routes);
       }
       final tier = _tierRoutes(target, darts);
@@ -106,6 +99,157 @@ class OptimalRouteService {
       }
       return List.unmodifiable(routes);
     });
+  }
+
+  /// A two-dart number over 60 played with three darts: the numbers to aim the
+  /// first dart at. Its triple leaves a double that can still be finished with
+  /// the two darts left, and its single leaves a two-dart finish (68: T14
+  /// leaves D13, S14 leaves 54). Aims with a neighbour among them come first
+  /// (see [threeDartNeighbourAims]), then the rest; biggest number first.
+  List<int> threeDartAims(int target) {
+    if (_engine.minimumDarts(target) != 2 || target <= AimPairs.threeDartAbove) return const [];
+    final aims = [
+      for (var n = DartThrow.maxBoardNumber; n >= 1; n--)
+        if (AimPairs.finisherFor(target - 3 * n) != null &&
+            _engine.canCheckoutIn(target - 3 * n, 2) &&
+            _engine.canCheckoutIn(target - n, 2))
+          n,
+    ];
+    final neighbours = _neighbourAims(aims);
+    return [...aims.where(neighbours.contains), ...aims.where((n) => !neighbours.contains(n))];
+  }
+
+  /// The [threeDartAims] that sit next to another of them on the board (68: 6
+  /// and 10). Aiming where they meet, every hit still works, so they are the
+  /// more optimal aims (lit brighter).
+  Set<int> threeDartNeighbourAims(int target) => _neighbourAims(threeDartAims(target));
+
+  static Set<int> _neighbourAims(List<int> aims) => {
+        for (final a in aims)
+          if (aims.any((b) => AimPairs.areNeighbours(a, b))) a,
+      };
+
+  /// The single and triple of every [threeDartAims] number, lit brighter
+  /// before the first of three darts (68: S6 T6 ... S20 T20).
+  Set<DartThrow> threeDartAimDarts(int target) => {
+        for (final n in threeDartAims(target)) ...[
+          DartThrow(Multiplier.single, n),
+          DartThrow(Multiplier.treble, n),
+        ],
+      };
+
+  /// The darts that may start a three-dart route on a two-dart number over 60
+  /// (the lit first darts; empty for any other number): the [threeDartAimDarts]
+  /// and every setup dart of the older three-dart rules - but not the single
+  /// and the triple of a number that are both there while neither leaves a
+  /// double. 68: S11 leaves 57 and T11 leaves 35, so both go (and S7/T7,
+  /// S17/T17 ...); S19, whose T19 is not there, stays.
+  Set<DartThrow> threeDartFirstDarts(int target) {
+    if (_engine.minimumDarts(target) != 2 || target <= AimPairs.threeDartAbove) return const {};
+    return _firstDarts.putIfAbsent(target, () {
+      final candidates = {
+        ...threeDartAimDarts(target),
+        for (final route in _olderThreeDartRoutes(target)) ...route.setupDarts,
+      };
+      bool leavesDouble(DartThrow d) => AimPairs.finisherFor(target - d.score) != null;
+      final noDouble = {
+        for (final d in candidates)
+          if (_partner(d) case final partner?
+              when candidates.contains(partner) && !leavesDouble(d) && !leavesDouble(partner))
+            d,
+      };
+      return Set.unmodifiable(candidates.difference(noDouble));
+    });
+  }
+
+  final Map<int, Set<DartThrow>> _firstDarts = {};
+
+  /// The single of a triple's number and the triple of a single's; null for a
+  /// double, the outer bull and the Bull.
+  static DartThrow? _partner(DartThrow dart) {
+    if (dart.number == DartThrow.bullNumber) return null;
+    return switch (dart.multiplier) {
+      Multiplier.single => DartThrow(Multiplier.treble, dart.number),
+      Multiplier.treble => DartThrow(Multiplier.single, dart.number),
+      Multiplier.double => null,
+    };
+  }
+
+  /// The three-dart routes of a two-dart number over 60: the aim routes
+  /// (neighbours first), the older rules' routes and their partners (see
+  /// [_partnerRoutes]) - each only when it can start with one of the
+  /// [threeDartFirstDarts] (68: T11 S11 D12 cannot). When none can, the older
+  /// routes as they are.
+  List<CheckoutRoute> _threeDartRoutes(int target) {
+    final first = threeDartFirstDarts(target);
+    final older = _olderThreeDartRoutes(target);
+    final startable = [
+      for (final route in [..._aimFirstRoutes(target, threeDartAims(target)), ...older])
+        if (route.setupDarts.any(first.contains)) route,
+    ];
+    if (startable.isEmpty) return older;
+    final routes = <CheckoutRoute>[];
+    for (final route in [...startable, ..._partnerRoutes(target, startable, first)]) {
+      if (!routes.any(route.isEquivalentTo)) routes.add(route);
+    }
+    return routes;
+  }
+
+  /// The routes of the older three-dart rules: the two setup darts of one aim
+  /// ([AimPairs.threeDartRoutes]), the single and the triple of one number
+  /// ([AimPairs.sameNumberThreeDartRoutes]) and the [_followUps].
+  List<CheckoutRoute> _olderThreeDartRoutes(int target) {
+    final routes = <CheckoutRoute>[];
+    for (final route in [
+      ...AimPairs.threeDartRoutes(target),
+      ...AimPairs.sameNumberThreeDartRoutes(target),
+      ..._followUps(target),
+    ]) {
+      if (!routes.any(route.isEquivalentTo)) routes.add(route);
+    }
+    return routes;
+  }
+
+  /// After the first dart, the single and the triple of one number are both
+  /// optimal when both leave a double: on 68, S1 leaves 67, where S17 leaves
+  /// the Bull and T17 leaves D8 - so S1 T17 D8 counts next to S17 S1 Bull. For
+  /// every route that starts with one of [first], the route with the other of
+  /// its second dart's single and triple, when that leaves a double too.
+  List<CheckoutRoute> _partnerRoutes(
+          int target, List<CheckoutRoute> routes, Set<DartThrow> first) =>
+      [
+        for (final route in routes)
+          for (final (a, b) in _setupOrders(route))
+            if (first.contains(a))
+              if (_partner(b) case final partner?)
+                if (AimPairs.finisherFor(target - a.score - partner.score) case final finisher?)
+                  CheckoutRoute([a, partner, finisher]).normalized,
+      ];
+
+  /// Both orders of a three-dart route's two setup darts.
+  static List<(DartThrow, DartThrow)> _setupOrders(CheckoutRoute route) {
+    final setup = route.setupDarts.toList();
+    if (setup.length != 2) return const [];
+    return [(setup[0], setup[1]), (setup[1], setup[0])];
+  }
+
+  /// Every route that starts with the single or the triple of one of [aims],
+  /// followed by an optimal two-dart route of what is left (68: S14 S14 D20,
+  /// T14 S10 D8 ...).
+  List<CheckoutRoute> _aimFirstRoutes(int target, List<int> aims) {
+    final routes = <CheckoutRoute>[];
+    void add(DartThrow first) {
+      for (final rest in optimalRoutesIn(target - first.score, 2)) {
+        final full = CheckoutRoute([first, ...rest.darts]).normalized;
+        if (!routes.any(full.isEquivalentTo)) routes.add(full);
+      }
+    }
+
+    for (final n in aims) {
+      add(DartThrow(Multiplier.single, n));
+      add(DartThrow(Multiplier.treble, n));
+    }
+    return routes;
   }
 
   /// The lowest single a three-dart follow-up route starts with (S15 to S20).

@@ -169,6 +169,17 @@ void main() {
       expect(rate(85, 'D2'), DartQuality.poor); // a setup double that is no part of a route
     });
 
+    test('68 with three darts: S11 and T11 are not lit (neither leaves a double); after S1, S17 and T17 are', () {
+      final first = advisor.nextOptimalDarts(68, 3, const []);
+      expect(first, isNot(contains(d('S11'))));
+      expect(first, isNot(contains(d('T11'))));
+      expect(first, contains(d('S1')));
+      expect(advisor.optimalDartsIn(68, 3), first);
+      // S1 leaves 67: S17 leaves the Bull, T17 leaves D8.
+      expect(advisor.nextOptimalDarts(68, 3, [d('S1')]), {d('S17'), d('T17')});
+      expect(rate(68, 'T11'), DartQuality.poor);
+    });
+
     test('a finishing double that checks out is optimal with the last dart; with darts left it is a miss', () {
       expect(rate(34, 'D17', left: 1), DartQuality.optimal);
       expect(rate(34, 'D17', left: 2), DartQuality.bust); // a dart still to throw

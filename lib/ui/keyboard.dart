@@ -49,6 +49,13 @@ web.HTMLElement buildInputPanel({
 
   /// Darts to light up on the board as the best choices (practice modes).
   Set<DartThrow>? lit,
+
+  /// The more optimal of the [lit] darts, lit brighter.
+  Set<DartThrow> bright = const {},
+
+  /// The most optimal of the [bright] darts, lit brightest.
+  Set<DartThrow> brightest = const {},
+
   /// [focusKey] names the button that was pressed (the left and the right one of
   /// the same ring are different buttons), to give it the focus back.
   required void Function(Multiplier m, bool viaKeyboard, String focusKey) onPickMultiplier,
@@ -110,6 +117,8 @@ web.HTMLElement buildInputPanel({
         byArea: !ringButtons,
         marks: marks,
         lit: lit,
+        bright: bright,
+        brightest: brightest,
         animateLastMark: true,
         onDart: (dart, point, kb) => onDart(dart, point, kb),
       ),

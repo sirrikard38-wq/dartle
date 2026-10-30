@@ -28,7 +28,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
               'You must finish on a double or Bull with the last of your darts; going '
               'below zero, leaving 1 or checking out with a dart still in hand is a '
               'miss. A two-dart number over 60 can be played with two or three darts: '
-              'before your first dart, press the boxes to choose. When a round is over, '
+              'before your second dart, press the boxes to choose. When a round is over, '
               'Replay checkout plays the same number again and Next checkout moves on. '
               'There is no clock and no score, and nothing is saved.'))
     else
@@ -70,10 +70,17 @@ web.HTMLElement buildHowToPlay(GameController game) {
             'whatever double (35: T5 D10 and S5 D15). On 41 to 60 two neighbouring '
             'singles then a double count too (42: S8 D17 or S16 D13). The same good '
             'double twice counts too (64: D16 D16). With three darts on a two-dart '
-            'number over 60, a single from S15 to S20 that leaves a number you can '
-            'finish in two darts is optimal too, followed by one of the routes of what '
-            'is left (93: S19 leaves 74, then T20 D7). The single and the triple of one '
-            'number then any double count too (74: S14 T14 D9; 64: S14 T14 D4).')),
+            'number over 60, aim the first dart at a number whose triple leaves a '
+            'double and whose single leaves a two-dart finish (68: T14 leaves D13, S14 '
+            'leaves 54); aims next to each other on the board are lit brightest (68: 6 '
+            'and 10). A single from S15 to S20 that leaves a number you can finish in '
+            'two darts is optimal too, followed by one of the routes of what is left '
+            '(93: S19 leaves 74, then T20 D7). The single and the triple of one number '
+            'then any double count too (74: S14 T14 D9; 64: S14 T14 D4). But a number '
+            'whose single and triple both leave no double is never the first dart (68: '
+            'S11 leaves 57, T11 leaves 35). After the first dart, the single and the '
+            'triple of a number both count when both leave a double (68: S1, then S17 '
+            'leaves the Bull and T17 leaves D8).')),
     section(
         tr('Bull safety'),
         tr('With two darts left on 51 to 70, aim at the number that is 50 less than '

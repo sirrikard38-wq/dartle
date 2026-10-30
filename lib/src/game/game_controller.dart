@@ -229,6 +229,12 @@ class GameController {
   /// be checked out. Empty in Checkout calculator or once the round is over.
   Set<DartThrow> get choiceHints => _round?.optimalDarts ?? const {};
 
+  /// Practice: the more optimal of the [choiceHints], lit brighter.
+  Set<DartThrow> get choiceBrightHints => _round?.brighterDarts ?? const {};
+
+  /// Practice: the most optimal of the [choiceHints], lit brightest.
+  Set<DartThrow> get choiceBrightestHints => _round?.brightestDarts ?? const {};
+
   /// True for a number from 2 to 170 that has no checkout at all.
   bool hasNoCheckout(int number) => _generator.isImpossible(number);
 
@@ -249,22 +255,30 @@ class GameController {
   }
 
   /// Practice and Checkout input: the number on screen can be played with two
-  /// or three darts and no dart has been thrown yet, so pressing the boxes
-  /// switches between them.
+  /// or three darts and at most one dart has been thrown, so pressing the boxes
+  /// switches between them (after a dart, the darts thrown stay).
   bool get canChooseDarts {
     final challenge = _challenge;
     return _mode.isPractice &&
         _phase == GamePhase.playing &&
-        _entered.isEmpty &&
+        _entered.length <= 1 &&
         challenge != null &&
         _generator.otherDarts(challenge) != null;
   }
 
   /// Switches the number on screen between two and three darts (see
-  /// [canChooseDarts]).
+  /// [canChooseDarts]). A dart already thrown keeps its place and rating: 68
+  /// with three darts, T14 thrown, switched to two darts lights D13.
   void chooseOtherDarts() {
     if (!canChooseDarts) return;
-    _begin(_generator.otherDarts(_challenge!)!);
+    final other = _generator.otherDarts(_challenge!)!;
+    if (_entered.isEmpty) {
+      _begin(other);
+      return;
+    }
+    _challenge = other;
+    _round = _round!.withLayout(other.layout);
+    _notify();
   }
 
   /// The countdown starts here (30s by default).

@@ -45,7 +45,9 @@ String _sectorPath(double r0, double r1, double a0, double a1) =>
 /// * With [lit], those darts' areas are lit up in light grey and every other
 ///   area fades back, so only the best choices stand out. The lighting is only
 ///   a hint: a press is still worth exactly the area pressed (T20 lit: a press
-///   on S20 or D20 is S20 or D20).
+///   on S20 or D20 is S20 or D20). With [bright] darts (the more optimal
+///   ones) the other lit areas turn a darker grey, and the [brightest] are
+///   lit white.
 web.Element buildDartboard({
   Multiplier? mode,
   List<BoardPoint> marks = const [],
@@ -54,6 +56,8 @@ web.Element buildDartboard({
   bool linesOnly = false,
   bool byArea = false,
   Set<DartThrow>? lit,
+  Set<DartThrow> bright = const {},
+  Set<DartThrow> brightest = const {},
   String? label,
 }) {
   final interactive = (mode != null || byArea) && onDart != null;
@@ -67,8 +71,12 @@ web.Element buildDartboard({
       isOn(zone.multiplier) && !(singleRingOnly && zone == BoardZone.innerSingle);
   final outerBullOn = isOn(Multiplier.single);
 
-  String highlight(DartThrow dart) =>
-      lit == null ? '' : (lit.contains(dart) ? ' lit' : ' dim');
+  String highlight(DartThrow dart) {
+    if (lit == null) return '';
+    if (!lit.contains(dart)) return ' dim';
+    if (brightest.contains(dart)) return ' lit brightest';
+    return bright.contains(dart) ? ' lit bright' : ' lit';
+  }
 
   /// Which area of a ring zone lights up for a lit dart. A lit single lights
   /// only the single ring between the treble and double rings (the outer
@@ -92,7 +100,9 @@ web.Element buildDartboard({
     return radius >= zone.inner && radius <= zone.outer;
   }
 
-  final root = svg('svg', cls: 'dartboard${linesOnly ? ' lines' : ''}', attrs: {
+  // With brighter darts the plain lit areas step back to a darker grey.
+  final root = svg('svg',
+      cls: 'dartboard${linesOnly ? ' lines' : ''}${bright.isNotEmpty ? ' tiers' : ''}', attrs: {
     'viewBox': '0 0 $_viewSize $_viewSize',
     'role': 'group',
     'aria-label': label ??
