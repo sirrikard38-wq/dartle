@@ -86,6 +86,11 @@ class OptimalRouteService {
         final routes = _threeDartRoutes(target);
         if (routes.isNotEmpty) return List.unmodifiable(routes);
       }
+      // A double with a backup and two darts has that one route: 28 is S14 D7.
+      if (minimum == 1 && darts == 2) {
+        final backup = AimPairs.missedDoubleRoute(target);
+        if (backup != null) return List.unmodifiable([backup]);
+      }
       final tier = _tierRoutes(target, darts);
       final routes = <CheckoutRoute>[...(tier.isEmpty ? _engine.legalRoutes(target, darts: darts) : tier)];
       // A one-dart number (50) with two darts: the aims count here too, so after
@@ -106,7 +111,8 @@ class OptimalRouteService {
   /// the two darts left, and its single leaves a two-dart finish (68: T14
   /// leaves D13, S14 leaves 54). The aims whose single leaves a double too
   /// come first - on 68 that is 18 (S18 leaves the Bull, T18 leaves D7), the
-  /// best one - then the rest; biggest number first.
+  /// best one - then those whose triple leaves a double with a backup (see
+  /// [AimPairs.missedDoubleRoute]), then the rest; biggest number first.
   List<int> threeDartAims(int target) {
     if (_engine.minimumDarts(target) != 2 || target <= AimPairs.threeDartAbove) return const [];
     final aims = [
@@ -116,8 +122,14 @@ class OptimalRouteService {
             _engine.canCheckoutIn(target - n, 2))
           n,
     ];
-    bool bothDoubles(int n) => AimPairs.finisherFor(target - n) != null;
-    return [...aims.where(bothDoubles), ...aims.where((n) => !bothDoubles(n))];
+    int rank(int n) {
+      if (AimPairs.finisherFor(target - n) != null) return 0;
+      return AimPairs.missedDoubleRoute(target - 3 * n) != null ? 1 : 2;
+    }
+
+    return [
+      for (final r in [0, 1, 2]) ...aims.where((n) => rank(n) == r),
+    ];
   }
 
   /// The darts lit before the first of three darts on a two-dart number over
@@ -145,14 +157,14 @@ class OptimalRouteService {
   /// The three-dart routes of a two-dart number over 60: the aim routes (the
   /// best aims first), the older rules' routes and their partners (see
   /// [_partnerRoutes]) - each only when it can start with one of the
-  /// [threeDartFirstDarts] (68: S19 S9 D20 and T11 S11 D12 cannot). When none
-  /// can, the older routes as they are.
+  /// [threeDartFirstDarts] (68: S19 S9 D20 and T11 S11 D12 cannot, see
+  /// [_canStart]). When none can, the older routes as they are.
   List<CheckoutRoute> _threeDartRoutes(int target) {
     final first = threeDartFirstDarts(target);
     final older = _olderThreeDartRoutes(target);
     final startable = [
       for (final route in [..._aimFirstRoutes(target, threeDartAims(target)), ...older])
-        if (route.setupDarts.any(first.contains)) route,
+        if (_canStart(target, route, first)) route,
     ];
     if (startable.isEmpty) return older;
     final routes = <CheckoutRoute>[];
@@ -160,6 +172,19 @@ class OptimalRouteService {
       if (!routes.any(route.isEquivalentTo)) routes.add(route);
     }
     return routes;
+  }
+
+  /// Can [route] be thrown with one of [first] as its first dart? When that dart
+  /// leaves a double with a backup, the backup has to follow: 88 is T20 S14 D7,
+  /// not T20 S4 D12 - but T20 S16 D6 stays, as it can start with S16 (S16 leaves
+  /// 72, then T20 D6).
+  bool _canStart(int target, CheckoutRoute route, Set<DartThrow> first) {
+    for (final (a, b) in _setupOrders(route)) {
+      if (!first.contains(a)) continue;
+      final backup = AimPairs.missedDoubleRoute(target - a.score);
+      if (backup == null || backup.darts.first == b) return true;
+    }
+    return false;
   }
 
   /// The routes of the older three-dart rules: the two setup darts of one aim
@@ -187,7 +212,7 @@ class OptimalRouteService {
       [
         for (final route in routes)
           for (final (a, b) in _setupOrders(route))
-            if (first.contains(a))
+            if (first.contains(a) && AimPairs.missedDoubleRoute(target - a.score) == null)
               if (_partner(b) case final partner?)
                 if (AimPairs.finisherFor(target - a.score - partner.score) case final finisher?)
                   CheckoutRoute([a, partner, finisher]).normalized,
@@ -213,8 +238,12 @@ class OptimalRouteService {
     }
 
     for (final n in aims) {
-      add(DartThrow(Multiplier.single, n));
-      add(DartThrow(Multiplier.treble, n));
+      final single = DartThrow(Multiplier.single, n);
+      final treble = DartThrow(Multiplier.treble, n);
+      // A triple with a backup goes first: 88 starts with T20 S14 D7.
+      final backup = AimPairs.missedDoubleRoute(target - treble.score) != null;
+      add(backup ? treble : single);
+      add(backup ? single : treble);
     }
     return routes;
   }

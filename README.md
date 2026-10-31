@@ -124,7 +124,11 @@ leaderboard shows the scores on the device, as before.
   D13, `S14` leaves 54; `OptimalRouteService.threeDartAims`). Only the aims
   are lit for the first dart, all the same (`threeDartFirstDarts`); the best
   one, whose single leaves a double too, comes first (68: `S18` leaves the
-  Bull, `T18` leaves D7, so 68 starts with `S18 S10 D20`). (1) two setup darts
+  Bull, `T18` leaves D7, so 68 starts with `S18 S10 D20`). When the triple
+  leaves a double whose single leaves a double too, only that route follows:
+  88 is `T20 S14 D7` (aim at D14; hit S14 and D7 is left), not `T20 S4 D12`
+  (`AimPairs.missedDoubleRoute`, 37 of the 43 numbers have at least one; an odd
+  double or the Bull has no such backup and keeps its routes). (1) two setup darts
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
   ... (only better doubles when there are any, then the most singles;
@@ -132,7 +136,7 @@ leaderboard shows the scores on the device, as before.
   number with a two-dart finish, then one of that number's optimal routes with
   two darts: 93 is `S19 T20 D7`, as S19 leaves 74
   (`OptimalRouteService._followUps`; with every single 97 had 52 routes and 61
-  had 147, with S15-S20 only 97 had 23; with the aims (0) it has 20). And
+  had 147, with S15-S20 only 97 had 23; with the aims (0) it has 4). And
   (3) the single and the triple of
   one number then any double (74: `S14 T14 D9`, 64: `S14 T14 D4`;
   `AimPairs.sameNumberThreeDartRoutes`). Routes (1) to (3) count only when

@@ -182,6 +182,12 @@ void main() {
       expect(advisor.nextOptimalDarts(68, 3, [d('S1')]), {d('S17'), d('T17')});
     });
 
+    test('88 with three darts: after T20 only S14 is lit, then D7; after T16 only S20', () {
+      expect(advisor.nextOptimalDarts(88, 3, [d('T20')]), {d('S14')});
+      expect(advisor.nextOptimalDarts(88, 3, [d('T20'), d('S14')]), {d('D7')});
+      expect(advisor.nextOptimalDarts(88, 3, [d('T16')]), {d('S20')});
+    });
+
     test('a finishing double that checks out is optimal with the last dart; with darts left it is a miss', () {
       expect(rate(34, 'D17', left: 1), DartQuality.optimal);
       expect(rate(34, 'D17', left: 2), DartQuality.bust); // a dart still to throw

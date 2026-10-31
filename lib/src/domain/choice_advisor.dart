@@ -1,3 +1,4 @@
+import 'aim_pairs.dart';
 import 'checkout_engine.dart';
 import 'checkout_route.dart';
 import 'dart_throw.dart';
@@ -89,6 +90,11 @@ class ChoiceAdvisor {
     final remaining = target - thrown.fold<int>(0, (sum, d) => sum + d.score);
     if (left <= 0 || remaining <= 0) return const <DartThrow>{};
     if (thrown.isEmpty) return optimalDartsIn(target, darts);
+    // A double with a backup left: only the backup follows, whatever other
+    // routes have the darts thrown in them (88: T20 leaves 28, so S14).
+    if (left == 2 && AimPairs.missedDoubleRoute(remaining) != null) {
+      return optimalDartsIn(remaining, left);
+    }
     final next = <DartThrow>{};
     for (final route in optimalRoutesIn(target, darts)) {
       final rest = _rest(route, thrown);

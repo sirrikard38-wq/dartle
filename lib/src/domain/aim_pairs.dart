@@ -95,6 +95,19 @@ abstract final class AimPairs {
     return DartThrow(Multiplier.double, left ~/ 2);
   }
 
+  /// Two darts left on a double whose single leaves a double too: you aim at
+  /// the double, and if you hit its single the next double still finishes. 28
+  /// is S14 D7, as D14 missed into S14 leaves D7 (and 88 is T20 S14 D7, not T20
+  /// S4 D12). Null for anything else: 14 has no backup (S7 leaves 7), nor has
+  /// the Bull.
+  static CheckoutRoute? missedDoubleRoute(int left) {
+    if (left % 4 != 0) return null;
+    final double = finisherFor(left);
+    final backup = finisherFor(left ~/ 2);
+    if (double == null || backup == null) return null;
+    return CheckoutRoute([_s(double.number), backup]);
+  }
+
   /// Two darts left on [target] (a two-dart number of 20 or more): both routes
   /// of every aim whose two hits each leave a finish, from the best group only
   /// (see the class comment). 43 has T11 D5 and S11 D16; 64 has T16 D8 and T8

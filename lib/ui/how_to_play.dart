@@ -80,7 +80,10 @@ web.HTMLElement buildHowToPlay(GameController game) {
             '74, then T20 D7), by the other of the aim\'s single and triple and any '
             'double (74: S14 T14 D9; 64: S14 T14 D4), or by a single or triple of a '
             'number whose single and triple both leave a double (68: T18 leaves 14, '
-            'then S2 leaves D6 and T2 leaves D4).')),
+            'then S2 leaves D6 and T2 leaves D4). When the triple leaves a double you '
+            'can halve, aim at that double: if you hit its single, the next double '
+            'still finishes, so only that route counts (88: T20 leaves D14, then S14 '
+            'and D7).')),
     section(
         tr('Bull safety'),
         tr('With two darts left on 51 to 70, aim at the number that is 50 less than '

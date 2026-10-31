@@ -802,6 +802,16 @@ void main() {
       expect(game.round!.steps.single.quality, DartQuality.optimal, reason: 'kept as rated with three darts');
     });
 
+    test('88: T20 leaves D14 - with three darts S14 is lit, switched to two darts D14', () {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(88);
+      game.chooseOtherDarts(); // three darts
+      game.selectDart(DartThrow.parse('T20'));
+      expect(game.choiceHints, {DartThrow.parse('S14')});
+      game.chooseOtherDarts(); // two darts: one left
+      expect(game.choiceHints, {DartThrow.parse('D14')});
+    });
+
     test('numbers of 40 or less, one- and three-dart numbers have no choice', () {
       for (final n in [39, 40, 150]) {
         game.startGame(null, GameMode.input);
