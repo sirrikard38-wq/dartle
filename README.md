@@ -127,8 +127,12 @@ leaderboard shows the scores on the device, as before.
   Bull, `T18` leaves D7, so 68 starts with `S18 S10 D20`). When the triple
   leaves a double whose single leaves a double too, only that route follows:
   88 is `T20 S14 D7` (aim at D14; hit S14 and D7 is left), not `T20 S4 D12`
-  (`AimPairs.missedDoubleRoute`, 37 of the 43 numbers have at least one; an odd
-  double or the Bull has no such backup and keeps its routes). (1) two setup darts
+  (`AimPairs.missedDoubleRoute`, 37 of the 43 numbers have at least one). An
+  odd double or the Bull has no such backup, so only a single that leaves a
+  better double follows the triple: 88 is `T18 S18 D8`, not `T18 S4 D15`, and
+  110 is `T20 S10 D20`, not `T20 S12 D19`
+  (`AimPairs.twoDartsOnDoubleRoutes`). A route that can start with an aim's
+  single is free of this (88: `S16 T18 D9`, as S16 leaves 72). (1) two setup darts
   from one aim - neighbours, the single and triple of a number, one of each,
   or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
   ... (only better doubles when there are any, then the most singles;
@@ -142,9 +146,6 @@ leaderboard shows the scores on the device, as before.
   `AimPairs.sameNumberThreeDartRoutes`). Routes (1) to (3) count only when
   one of their setup darts is an aim, as every route has to start with one
   (68 loses `S19 S11 D19`, `S17 S1 Bull`, `T11 S11 D12`; 74 `S10 T10 D17`).
-  After the first dart the single and the triple of one number both count
-  when both leave a double (68: `T18` leaves 14, so `T18 S2 D6` and
-  `T18 T2 D4`).
   The popup and the "Also optimal" boxes list every optimal route - the same
   as Checkout input lights up, however many (35 has 16, 61 with three darts
   has over a hundred).

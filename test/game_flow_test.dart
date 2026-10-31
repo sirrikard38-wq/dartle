@@ -812,6 +812,16 @@ void main() {
       expect(game.choiceHints, {DartThrow.parse('D14')});
     });
 
+    test('88: T18 leaves D17 - with three darts the singles that leave a good double are lit, switched to two darts D17', () {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(88);
+      game.chooseOtherDarts(); // three darts
+      game.selectDart(DartThrow.parse('T18'));
+      expect(game.choiceHints, {for (final d in ['S2', 'S6', 'S10', 'S14', 'S18']) DartThrow.parse(d)});
+      game.chooseOtherDarts(); // two darts: one left
+      expect(game.choiceHints, {DartThrow.parse('D17')});
+    });
+
     test('numbers of 40 or less, one- and three-dart numbers have no choice', () {
       for (final n in [39, 40, 150]) {
         game.startGame(null, GameMode.input);

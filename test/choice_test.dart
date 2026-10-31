@@ -188,6 +188,23 @@ void main() {
       expect(advisor.nextOptimalDarts(88, 3, [d('T16')]), {d('S20')});
     });
 
+    test('after a triple that leaves an odd double or the Bull, only the singles that leave a good double are lit', () {
+      Set<DartThrow> singles(List<int> numbers) => {for (final n in numbers) d('S$n')};
+      // 88: T18 leaves 34, and S4 would leave D15.
+      expect(advisor.nextOptimalDarts(88, 3, [d('T18')]), singles([2, 6, 10, 14, 18]));
+      expect(advisor.nextOptimalDarts(88, 3, [d('T18'), d('S18')]), {d('D8')});
+      // 68: T18 leaves 14 - no T2, and S8 would leave D3.
+      expect(advisor.nextOptimalDarts(68, 3, [d('T18')]), singles([2, 4, 6, 10, 12]));
+      // 110: T20 leaves the Bull.
+      expect(advisor.nextOptimalDarts(110, 3, [d('T20')]), singles([10, 14, 18]));
+      // A single is free when it leaves the Bull: 64 is S14, then T14 D4.
+      expect(advisor.nextOptimalDarts(64, 3, [d('S14')]), contains(d('T14')));
+    });
+
+    test('an unlit dart keeps to the same rule: D12 on 64 leaves D20, so S20 is lit', () {
+      expect(advisor.nextOptimalDarts(64, 3, [d('D12')]), {d('S20')});
+    });
+
     test('a finishing double that checks out is optimal with the last dart; with darts left it is a miss', () {
       expect(rate(34, 'D17', left: 1), DartQuality.optimal);
       expect(rate(34, 'D17', left: 2), DartQuality.bust); // a dart still to throw

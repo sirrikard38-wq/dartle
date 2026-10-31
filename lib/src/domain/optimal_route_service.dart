@@ -143,46 +143,38 @@ class OptimalRouteService {
         ],
       };
 
-  /// The single of a triple's number and the triple of a single's; null for a
-  /// double, the outer bull and the Bull.
-  static DartThrow? _partner(DartThrow dart) {
-    if (dart.number == DartThrow.bullNumber) return null;
-    return switch (dart.multiplier) {
-      Multiplier.single => DartThrow(Multiplier.treble, dart.number),
-      Multiplier.treble => DartThrow(Multiplier.single, dart.number),
-      Multiplier.double => null,
-    };
-  }
-
   /// The three-dart routes of a two-dart number over 60: the aim routes (the
-  /// best aims first), the older rules' routes and their partners (see
-  /// [_partnerRoutes]) - each only when it can start with one of the
-  /// [threeDartFirstDarts] (68: S19 S9 D20 and T11 S11 D12 cannot, see
-  /// [_canStart]). When none can, the older routes as they are.
+  /// best aims first) and the older rules' routes - each only when it can start
+  /// with one of the [threeDartFirstDarts] (68: S19 S9 D20 and T11 S11 D12
+  /// cannot, see [_canStart]). When none can, the older routes as they are.
   List<CheckoutRoute> _threeDartRoutes(int target) {
     final first = threeDartFirstDarts(target);
     final older = _olderThreeDartRoutes(target);
-    final startable = [
-      for (final route in [..._aimFirstRoutes(target, threeDartAims(target)), ...older])
-        if (_canStart(target, route, first)) route,
-    ];
-    if (startable.isEmpty) return older;
     final routes = <CheckoutRoute>[];
-    for (final route in [...startable, ..._partnerRoutes(target, startable, first)]) {
-      if (!routes.any(route.isEquivalentTo)) routes.add(route);
+    for (final route in [..._aimFirstRoutes(target, threeDartAims(target)), ...older]) {
+      if (_canStart(target, route, first) && !routes.any(route.isEquivalentTo)) routes.add(route);
     }
-    return routes;
+    return routes.isEmpty ? older : routes;
   }
 
-  /// Can [route] be thrown with one of [first] as its first dart? When that dart
-  /// leaves a double with a backup, the backup has to follow: 88 is T20 S14 D7,
-  /// not T20 S4 D12 - but T20 S16 D6 stays, as it can start with S16 (S16 leaves
-  /// 72, then T20 D6).
+  /// The only darts that may come after [first] on [target] with three darts,
+  /// empty when any dart may. A dart that leaves a double is followed by the
+  /// start of [AimPairs.twoDartsOnDoubleRoutes] (88: S14 after T20; S18 S14 S10
+  /// S6 S2 after T18). A single is free, also when it leaves the Bull (64: S14,
+  /// then T14 D4).
+  Set<DartThrow> dartsAfter(int target, DartThrow first) => first.multiplier == Multiplier.single
+      ? const {}
+      : {for (final route in AimPairs.twoDartsOnDoubleRoutes(target - first.score)) route.darts.first};
+
+  /// Can [route] be thrown with one of [first] as its first dart, followed by a
+  /// dart that may come after it ([dartsAfter])? 88 is T20 S14 D7, not T20 S4
+  /// D12 - but T20 S16 D6 stays, as it can start with S16 (S16 leaves 72, then
+  /// T20 D6).
   bool _canStart(int target, CheckoutRoute route, Set<DartThrow> first) {
     for (final (a, b) in _setupOrders(route)) {
       if (!first.contains(a)) continue;
-      final backup = AimPairs.missedDoubleRoute(target - a.score);
-      if (backup == null || backup.darts.first == b) return true;
+      final after = dartsAfter(target, a);
+      if (after.isEmpty || after.contains(b)) return true;
     }
     return false;
   }
@@ -201,22 +193,6 @@ class OptimalRouteService {
     }
     return routes;
   }
-
-  /// After the first dart, the single and the triple of one number are both
-  /// optimal when both leave a double: on 68, T18 leaves 14, where S2 leaves D6
-  /// and T2 leaves D4 - so T18 T2 D4 counts next to T18 S2 D6. For every route
-  /// that starts with one of [first], the route with the other of its second
-  /// dart's single and triple, when that leaves a double too.
-  List<CheckoutRoute> _partnerRoutes(
-          int target, List<CheckoutRoute> routes, Set<DartThrow> first) =>
-      [
-        for (final route in routes)
-          for (final (a, b) in _setupOrders(route))
-            if (first.contains(a) && AimPairs.missedDoubleRoute(target - a.score) == null)
-              if (_partner(b) case final partner?)
-                if (AimPairs.finisherFor(target - a.score - partner.score) case final finisher?)
-                  CheckoutRoute([a, partner, finisher]).normalized,
-      ];
 
   /// Both orders of a three-dart route's two setup darts.
   static List<(DartThrow, DartThrow)> _setupOrders(CheckoutRoute route) {

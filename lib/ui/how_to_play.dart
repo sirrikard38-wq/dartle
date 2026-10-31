@@ -77,13 +77,13 @@ web.HTMLElement buildHowToPlay(GameController game) {
             'leaves D13, S14 leaves 54). The best aim leaves a double with the single '
             'too (68: S18 leaves the Bull, T18 leaves D7). Every optimal route starts '
             'with an aim, followed by one of the routes of what is left (93: S19 leaves '
-            '74, then T20 D7), by the other of the aim\'s single and triple and any '
-            'double (74: S14 T14 D9; 64: S14 T14 D4), or by a single or triple of a '
-            'number whose single and triple both leave a double (68: T18 leaves 14, '
-            'then S2 leaves D6 and T2 leaves D4). When the triple leaves a double you '
-            'can halve, aim at that double: if you hit its single, the next double '
+            '74, then T20 D7) or by the other of the aim\'s single and triple and any '
+            'double (74: S14 T14 D9; 64: S14 T14 D4). When the triple leaves a double '
+            'you can halve, aim at that double: if you hit its single, the next double '
             'still finishes, so only that route counts (88: T20 leaves D14, then S14 '
-            'and D7).')),
+            'and D7). When it leaves an odd double or the Bull, only a single that '
+            'leaves a good double counts (88: T18 leaves 34, then S18 D8, S14 D10, S10 '
+            'D12, S6 D14 or S2 D16).')),
     section(
         tr('Bull safety'),
         tr('With two darts left on 51 to 70, aim at the number that is 50 less than '

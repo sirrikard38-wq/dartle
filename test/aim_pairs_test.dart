@@ -156,10 +156,27 @@ void main() {
       }
     });
 
-    test('after the first dart the single and the triple of one number both count when both leave a double: 68 T18 T2 D4', () {
-      // T18 leaves 14: S2 leaves D6 and T2 leaves D4.
+    test('an odd double or the Bull has no backup, so a single that leaves a better double follows: 88 is T18 S18 D8, not T18 S4 D15', () {
+      List<String> routes(int left) => [for (final x in AimPairs.twoDartsOnDoubleRoutes(left)) x.notation];
+      expect(routes(34), ['S18 D8', 'S14 D10', 'S10 D12', 'S6 D14', 'S2 D16']);
+      expect(routes(14), ['S12 D1', 'S10 D2', 'S6 D4', 'S4 D5', 'S2 D6']);
+      expect(routes(50), ['S18 D16', 'S14 D18', 'S10 D20']);
+      // A double with a backup has just that; 44 is no double; 2 has no single.
+      expect(routes(28), ['S14 D7']);
+      expect(routes(44), isEmpty);
+      expect(routes(2), isEmpty);
+      expect(optimal.isOptimalIn(88, 3, r('T18 S18 D8')), isTrue);
+      for (final route in ['T18 S4 D15', 'T18 S8 D13', 'T18 S12 D11', 'T18 T2 D14']) {
+        expect(optimal.isOptimalIn(88, 3, r(route)), isFalse, reason: route);
+      }
+      // 68: T18 leaves 14, and no triple follows it.
       expect(optimal.isOptimalIn(68, 3, r('T18 S2 D6')), isTrue);
-      expect(optimal.isOptimalIn(68, 3, r('T18 T2 D4')), isTrue);
+      expect(optimal.isOptimalIn(68, 3, r('T18 T2 D4')), isFalse);
+      // The Bull after a triple, and S20 first on 110 stays.
+      expect(notations(optimal.optimalRoutesIn(110, 3)),
+          {'T20 S10 D20', 'T20 S14 D18', 'T20 S18 D16', 'T20 S20 D15', 'T18 S20 D18'});
+      // It can still start with an aim's single: S16 leaves 72, then T18 D9.
+      expect(optimal.isOptimalIn(88, 3, r('S16 T18 D9')), isTrue);
     });
 
     test('a double with a backup: 88 is T20 S14 D7 (D14 missed into S14 still has D7), not T20 S4 D12', () {
@@ -179,18 +196,19 @@ void main() {
       }
       // It can still start with an aim's single: S16 leaves 72, then T20 D6.
       expect(optimal.isOptimalIn(88, 3, r('S16 T20 D6')), isTrue);
-      // T18 leaves D17, which has no backup, so its routes stay.
-      expect(optimal.isOptimalIn(88, 3, r('T18 S2 D16')), isTrue);
     });
 
-    test('every route can be thrown from an aim, with the backup after a double that has one', () {
+    test('every route can be thrown from an aim, and after its triple comes the backup or a single that leaves a better double', () {
       for (var t = AimPairs.threeDartAbove + 1; t <= CheckoutEngine.maxCheckout; t++) {
         if (engine.minimumDarts(t) != 2) continue;
         final first = optimal.threeDartFirstDarts(t);
         bool fine(DartThrow a, DartThrow b) {
           if (!first.contains(a)) return false;
+          if (!a.isTreble) return true;
           final backup = AimPairs.missedDoubleRoute(t - a.score);
-          return backup == null || backup.darts.first == b;
+          if (backup != null) return backup.darts.first == b;
+          return b.multiplier == Multiplier.single &&
+              BetterDoubles.isBetter(AimPairs.finisherFor(t - a.score - b.score)!);
         }
 
         for (final route in optimal.optimalRoutesIn(t, 3)) {

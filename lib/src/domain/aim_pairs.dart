@@ -108,6 +108,20 @@ abstract final class AimPairs {
     return CheckoutRoute([_s(double.number), backup]);
   }
 
+  /// Two darts left on a double or the Bull: the routes that may follow a triple.
+  /// A double with a backup has that one ([missedDoubleRoute]). An odd double or
+  /// the Bull has none, so a single sets up a better double: 34 (88 after T18) is
+  /// S18 D8, S14 D10, S10 D12, S6 D14 or S2 D16. Empty for any other number.
+  static List<CheckoutRoute> twoDartsOnDoubleRoutes(int left) {
+    if (finisherFor(left) == null) return const [];
+    if (missedDoubleRoute(left) case final backup?) return [backup];
+    return [
+      for (var n = DartThrow.maxBoardNumber; n >= 1; n--)
+        if (finisherFor(left - n) case final finisher? when BetterDoubles.isBetter(finisher))
+          CheckoutRoute([_s(n), finisher]),
+    ];
+  }
+
   /// Two darts left on [target] (a two-dart number of 20 or more): both routes
   /// of every aim whose two hits each leave a finish, from the best group only
   /// (see the class comment). 43 has T11 D5 and S11 D16; 64 has T16 D8 and T8
