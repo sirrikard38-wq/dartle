@@ -33,19 +33,20 @@ void main() {
       expect(text(lines), contains('No checkout'));
     });
 
-    test('57 with the first box used explains the bull-safe rule with the right numbers', () {
-      final out = text(explain(57));
+    test('67 with the first box used explains the bull-safe rule with the right numbers', () {
+      final out = text(explain(67));
       expect(out, contains('Bull-safe'));
-      expect(out, contains('single 7 leaves exactly 50'));
-      expect(out, contains('triple 7 (21) and then D18'));
-      expect(out, contains('S7 and then the Bull'));
-      expect(out, contains('T7 D18'));
+      expect(out, contains('single 17 leaves exactly 50'));
+      expect(out, contains('triple 17 (51) and then D8'));
+      expect(out, contains('S17 and then the Bull'));
+      expect(out, contains('T17 D8'));
     });
 
-    test('52 has no triple route: single and Bull only', () {
-      final out = text(explain(52));
-      expect(out, contains('no triple route for 52'));
-      expect(out, contains('S2 and then the Bull'));
+    test('up to 60 it is a single that leaves a better double, not the Bull', () {
+      final out = text(explain(57));
+      expect(out, contains('a single that leaves a better double'));
+      expect(out, isNot(contains('Bull-safe')));
+      expect(out, contains('S17 D20'));
     });
 
     test('a three-dart number with a bull-safe first dart', () {
@@ -60,9 +61,9 @@ void main() {
       expect(out, isNot(contains('T19 S1 Bull')));
     });
 
-    test('35: singles win', () {
+    test('35: neighbouring singles win', () {
       final out = text(explain(35));
-      expect(out, contains('most singles'));
+      expect(out, contains('two neighbouring singles'));
     });
 
     test('85: no single can do it, so triples', () {
@@ -80,8 +81,8 @@ void main() {
     });
 
     test('an optimal player route is confirmed', () {
-      final out = text(explain(57, player: 'S7 Bull', isOptimal: true));
-      expect(out, contains('Your route S7 Bull is one of the optimal routes.'));
+      final out = text(explain(57, player: 'S17 D20', isOptimal: true));
+      expect(out, contains('Your route S17 D20 is one of the optimal routes.'));
     });
 
     test('a route that is not optimal says why: fewer singles', () {
@@ -92,7 +93,7 @@ void main() {
     });
 
     test('a route that is not optimal says why: not bull-safe', () {
-      final out = text(explain(57, player: 'S17 D20'));
+      final out = text(explain(67, player: 'T19 D5'));
       expect(out, contains('bull-safe'));
     });
 

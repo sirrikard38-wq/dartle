@@ -7,7 +7,7 @@ import 'difficulty.dart';
 /// double.
 ///
 /// The layout follows from the darts a number is played with - the fewest it
-/// needs, or three for a two-dart number over 40 that comes with three:
+/// needs, or three for a two-dart number played with three:
 ///
 ///  * 1 dart: the first two boxes are used ([leftTwoUsed]);
 ///  * 2 darts: the left box is used ([leftUsed]);
@@ -17,7 +17,7 @@ enum BoxLayout {
   all(<int>{}),
 
   /// The first dart is used; the finish is in the right box (a two-dart
-  /// checkout). For 51 to 70 the bull-safe route is the optimal one (see
+  /// checkout). For 61 to 70 the bull-safe route is the optimal one (see
   /// `BullSafeFinish`).
   leftUsed(<int>{0}),
 
@@ -93,8 +93,7 @@ final class Challenge {
   int get dartCount => _fewestDarts ?? optimalRoute.length;
 
   /// How many darts this checkout is played with, all of which have to be
-  /// used: normally the fewest, but a two-dart number over 40 can come with
-  /// three.
+  /// used: normally the fewest, but a two-dart number can come with three.
   int get darts => _darts ?? dartCount;
 
   /// True when it is played with more darts than it needs (a two-dart number

@@ -19,9 +19,12 @@ class CheckoutCatalog {
       );
       _all.add(challenge);
       _byLevel.putIfAbsent(challenge.difficulty, () => []).add(challenge);
-      // A two-dart number over 40 can also be played with three darts.
+      // A two-dart number over 60 can also come with three darts; under 60 three
+      // darts are only a choice in the practice modes.
       if (optimal.hasThreeDartOption(target)) {
         _threeDart[target] = challenge.withDarts(3, optimal.optimalRoutesIn(target, 3).first);
+      } else if (optimal.hasPracticeThreeDartOption(target)) {
+        _practiceThreeDart[target] = challenge.withDarts(3, optimal.optimalRoutesIn(target, 3).first);
       }
     }
     // The numbers in range that no checkout exists for (159, 162, ...).
@@ -34,16 +37,18 @@ class CheckoutCatalog {
   final List<Challenge> _impossible = [];
   final Map<DifficultyLevel, List<Challenge>> _byLevel = {};
   final Map<int, Challenge> _threeDart = {};
+  final Map<int, Challenge> _practiceThreeDart = {};
 
-  /// The three-dart version of a two-dart number over 40 (null when it has
-  /// none).
+  /// The three-dart version a two-dart number over 60 can come with (null when
+  /// it has none).
   Challenge? threeDartFor(int target) => _threeDart[target];
 
   /// [challenge]'s number played with the other number of darts it allows:
-  /// three darts for a two-dart number that has them, and back. Null when
-  /// there is no other choice.
-  Challenge? otherDarts(Challenge challenge) =>
-      challenge.hasExtraDart ? forTarget(challenge.target) : threeDartFor(challenge.target);
+  /// three darts for a two-dart number that has them (under 60 by choice only),
+  /// and back. Null when there is no other choice.
+  Challenge? otherDarts(Challenge challenge) => challenge.hasExtraDart
+      ? forTarget(challenge.target)
+      : threeDartFor(challenge.target) ?? _practiceThreeDart[challenge.target];
 
   /// Every number that can be checked out.
   List<Challenge> get all => List.unmodifiable(_all);

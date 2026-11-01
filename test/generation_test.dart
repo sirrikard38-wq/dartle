@@ -208,12 +208,23 @@ void main() {
       expect(seen, {'none', '1-leftTwoUsed', '2-leftUsed', '2-all', '3-all'});
     });
 
-    test('57 is always the bull-safe T7 D18 with the left box used', () {
+    test('57 is always S17 D20 with the left box used, 67 the bull-safe T17 D8', () {
       final c = catalog.forTarget(57)!;
-      expect(c.optimalRoute.notation, 'T7 D18');
+      expect(c.optimalRoute.notation, 'S17 D20');
       expect(c.layout, BoxLayout.leftUsed);
       expect(c.dartsLeft, 2);
       expect(c.dartCount, 2);
+      expect(catalog.forTarget(67)!.optimalRoute.notation, 'T17 D8');
+    });
+
+    test('a number under 60 is never dealt with three darts, in the calculator or in practice', () {
+      for (final deal in Deal.values) {
+        final generator = ChallengeGenerator(catalog);
+        for (var i = 0; i < 400; i++) {
+          final c = generator.next(null, deal);
+          if (c.target <= 60) expect(c.darts, lessThanOrEqualTo(c.dartCount), reason: '${c.target}');
+        }
+      }
     });
   });
 

@@ -4,12 +4,11 @@ import 'checkout_route.dart';
 import 'dart_throw.dart';
 
 /// "Single, then a better double": with two darts left on 41 to 60, a single
-/// that leaves one of the [BetterDoubles] is as good as the bull-safe finish.
-/// 57 is S17 D20 as well as T7 D18 and S7 Bull; 60 is S20 D20; 52 is S12 D20,
-/// S16 D18 and S20 D16.
-///
-/// The same goes for the last two darts of a three-dart number whose first
-/// treble leaves 51 to 60: 109 is T19 and then S20 D16 as well as T19 S2 Bull.
+/// that leaves one of the [BetterDoubles] is as good as the bull-safe finish, on
+/// the last two darts of a three-dart number whose first treble leaves 51 to 60
+/// (109 is T19 and then S20 D16) and in the routes that follow the first of
+/// three darts over 60. A two-dart number itself has
+/// `AimPairs.goodSingleRoutes`.
 ///
 /// The outer bull is not a single here: it is far too hard to hit - except on
 /// 61 and 65, where nothing else can leave a better double ([outerBullRoutes]).

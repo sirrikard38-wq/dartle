@@ -56,13 +56,13 @@ class ChallengeGenerator {
         ? _weighted(pool, candidates, _oneDartPercentEach(pool, deal))
         : candidates[_random.nextInt(candidates.length)];
     _recent.add(choice.target);
-    // A two-dart number over 40 comes with three darts half of the time.
+    // A two-dart number over 60 comes with three darts half of the time.
     final threeDart = _catalog.threeDartFor(choice.target);
     if (threeDart != null && _random.nextDouble() < threeDartChance) return threeDart;
     return choice;
   }
 
-  /// How often a two-dart number over 40 that can be played with three darts
+  /// How often a two-dart number over 60 that can be played with three darts
   /// comes with three (the number itself is just as likely as before).
   static const double threeDartChance = 0.5;
 

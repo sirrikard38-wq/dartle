@@ -11,10 +11,8 @@ String _why(CheckoutEngine engine, OptimalRouteService optimal, int n, CheckoutR
   if (r.length > fewest) {
     return 'uses ${r.length} darts; the fewest is $fewest';
   }
-  if (fewest == 2 && BullSafeFinish.covers(n)) {
-    final bullSafe = BullSafeFinish.twoDartRoutes(n).map((x) => x.notation).join(' / ');
-    final single = SingleLeave.covers(n) ? ' or a single that leaves a better double' : '';
-    return 'two darts on 51 to 70: only the bull-safe $bullSafe$single';
+  if (fewest == 2 && n <= BullSafeFinish.maxRemaining) {
+    return 'two darts up to 70: only ${optimal.optimalRoutes(n).map((x) => x.notation).join(' / ')}';
   }
   final best = optimal.optimalRoutes(n).first;
   if (OptimalRouteService.singles(r) < OptimalRouteService.singles(best)) {
@@ -47,8 +45,8 @@ void main() {
         final why = _why(engine, optimal, n, x);
         final key = why.startsWith('uses ')
             ? 'More darts than the fewest'
-            : why.startsWith('two darts on 51')
-                ? 'Not the bull-safe route (2 darts, 51 to 70)'
+            : why.startsWith('two darts up to 70')
+                ? 'Not the rule of its number (2 darts, up to 70)'
                 : why.startsWith('fewer singles')
                     ? 'Fewer singles than the best routes'
                     : why.startsWith('a setup dart')
@@ -80,9 +78,9 @@ void main() {
     ..writeln('The site\'s first-choice ("Throw") routes are accepted as optimal next '
         'to the chart routes, wherever they have the fewest darts and as many '
         'singles as the best routes (for three-dart numbers whenever they have the '
-        'fewest darts). Two-dart numbers from 51 to 70 are only ever the '
-        'bull-safe routes, plus (from 51 to 60) a single that leaves a better '
-        'double.')
+        'fewest darts). Two-dart numbers up to 70 have one rule each: up to 60 a '
+        'single that leaves a better double with its near misses, on 61 to 70 only '
+        'the bull-safe routes.')
     ..writeln()
     ..writeln('## Numbers where no first-choice route of the site is optimal here')
     ..writeln()

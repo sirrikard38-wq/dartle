@@ -82,10 +82,16 @@ void main() {
         RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
 
     test('57: S7 Bull moves up next to T7 D18, T17 D3 next to S17 D20, the rest stays as it was', () {
+      final routes = [r('S7 Bull'), r('S17 D20'), r('T17 D3'), r('S19 D19'), r('T7 D18')];
       // By finisher it would be T17 D3, T7 D18, S19 D19, S17 D20, S7 Bull.
-      expect(order(optimal.optimalRoutes(57)), ['T17 D3', 'T7 D18', 'S19 D19', 'S17 D20', 'S7 Bull']);
+      expect(order(routes), ['T17 D3', 'T7 D18', 'S19 D19', 'S17 D20', 'S7 Bull']);
       // T17 D3 then goes right after its single, S17 D20.
-      expect(popup(57), ['T7 D18', 'S7 Bull', 'S19 D19', 'S17 D20', 'T17 D3']);
+      expect(RouteOrder.forPopup(routes).map((x) => x.notation),
+          ['T7 D18', 'S7 Bull', 'S19 D19', 'S17 D20', 'T17 D3']);
+    });
+
+    test('61: S11 Bull is next to T11 D14', () {
+      expect(popup(61), ['T11 D14', 'S11 Bull']);
     });
 
     test('130: T20 S20 Bull is next to T20 T20 D5', () {
@@ -110,8 +116,10 @@ void main() {
       List<String> bullOnly(int n) => RouteOrder.withBullPairsTogether(RouteOrder.byFinisher(optimal.optimalRoutes(n)))
           .map((x) => x.notation)
           .toList();
-      expect(bullOnly(51).last, 'S1 Bull');
-      expect(bullOnly(51), order(optimal.optimalRoutes(51)), reason: 'no Bull finish moved on 51');
+      final routes = [r('S1 Bull'), r('S11 D20'), r('S19 D16')];
+      final moved = RouteOrder.withBullPairsTogether(RouteOrder.byFinisher(routes));
+      expect(moved.last.notation, 'S1 Bull');
+      expect(moved.map((x) => x.notation), order(routes), reason: 'no Bull finish moved');
       expect(bullOnly(110), order(optimal.optimalRoutes(110)));
     });
 
@@ -188,8 +196,8 @@ void treblePairingTests() {
       RouteOrder.forPopup(optimal.optimalRoutes(target)).map((x) => x.notation).toList();
 
   group('RouteOrder.forPopup: a two-dart treble route right next to the single of its number', () {
-    test('23: T7 D1 next to S7 D8, T5 D4 next to S5 D9, T3 D7 next to S3 D10, T1 D10 next to S1 D11 (one side or the other)', () {
-      final list = popup(23);
+    test('23 with three darts: T7 D1 next to S7 D8, T5 D4 next to S5 D9, T3 D7 next to S3 D10, T1 D10 next to S1 D11 (one side or the other)', () {
+      final list = RouteOrder.forPopup(optimal.optimalRoutesIn(23, 3)).map((x) => x.notation).toList();
       for (final (single, treble) in [
         ('S7 D8', 'T7 D1'),
         ('S5 D9', 'T5 D4'),
@@ -202,9 +210,9 @@ void treblePairingTests() {
       }
     });
 
-    test('43: T11 D5 is next to S11 D16', () {
-      final list = popup(43);
-      expect((list.indexOf('T11 D5') - list.indexOf('S11 D16')).abs(), 1);
+    test('42: T10 D6 is next to S10 D16', () {
+      final list = popup(42);
+      expect((list.indexOf('T10 D6') - list.indexOf('S10 D16')).abs(), 1);
     });
 
     test('every number: nothing lost or added, and every treble with a single is next to it', () {

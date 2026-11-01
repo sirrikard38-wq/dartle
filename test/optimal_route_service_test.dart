@@ -120,103 +120,87 @@ void main() {
     });
   });
 
-  group('two darts over 50 up to 70: bull-safe', () {
+  group('two darts on 61 to 70: bull-safe and nothing else', () {
     test('the triple of the number whose single leaves Bull, or that single and Bull', () {
-      // Over 60 these are the optimal routes (and, on 61 and 65 only, the outer
-      // bull and a better double - see the next groups).
-      expect(notations(65), {'T15 D10', 'S15 Bull', '25 D20'});
+      expect(notations(61), {'T11 D14', 'S11 Bull'});
       expect(notations(70), {'T20 D5', 'S20 Bull'});
       expect(optimal.optimalRoute(67)!.notation, 'T17 D8'); // primary
-      // From 51 to 60 they are optimal too (see the next group), and still first.
-      expect(notations(57), containsAll(['T7 D18', 'S7 Bull']));
-      expect(notations(52), contains('S2 Bull')); // 51..54 have no triple route
-      expect(notations(51), contains('S1 Bull'));
     });
 
-    test('over 60 only the outer bull and a better double is added: 61 and 65', () {
-      // No ordinary single can leave a better double there, so the outer bull is
-      // accepted as the single.
-      for (final (target, text) in [(65, '25 D20'), (61, '25 D18')]) {
+    test('the outer bull and the aims are gone there: 61 and 65, 62, 64 and 68', () {
+      for (final (target, text) in [
+        (65, '25 D20'),
+        (61, '25 D18'),
+        (61, 'T19 D2'),
+        (61, 'T7 D20'),
+        (62, 'T18 D4'),
+        (62, 'T4 Bull'),
+        (64, 'T16 D8'),
+        (64, 'T8 D20'),
+        (64, 'D16 D16'),
+        (68, 'T6 Bull'),
+        (68, 'T10 D19'),
+      ]) {
         expect(engine.isLegalRoute(target, r(text)), isTrue, reason: text);
-        expect(optimal.isOptimal(target, r(text)), isTrue, reason: text);
+        expect(optimal.isOptimal(target, r(text)), isFalse, reason: text);
       }
-      // D19 is not a better double, so 25 D19 on 63 is still not optimal.
-      expect(engine.isLegalRoute(63, r('25 D19')), isTrue);
-      expect(optimal.isOptimal(63, r('25 D19')), isFalse);
-      // Nothing is added on the other numbers over 60.
+      // After the first treble the outer bull is still the single on 61 and 65.
       for (var t = 61; t <= 70; t++) {
         final extra = SingleLeave.outerBullRoutes(t);
         expect(extra.length, (t == 61 || t == 65) ? 1 : 0, reason: '$t');
       }
     });
 
-    test('every 2-dart target from 55 to 70 teaches the bull-safe route first', () {
-      for (var t = 55; t <= 70; t++) {
+    test('every 2-dart target from 61 to 70 teaches the bull-safe route first', () {
+      for (var t = 61; t <= 70; t++) {
         expect(optimal.optimalRoute(t)!.notation, BullSafeFinish.twoDartFinish(t)!.notation,
             reason: '$t');
         expect(engine.minimumDarts(t), 2, reason: '$t is a two-dart number');
       }
     });
 
-    test('every 2-dart target from 61 to 70 has the bull-safe routes (61, 65 the outer bull) and the aims', () {
-      // 61 is also T19 D2 and T7 D20: aiming where 19 and 7 meet on the
-      // triple ring, either hit leaves a better double.
-      expect(notations(61), containsAll(['T19 D2', 'T7 D20']));
+    test('every 2-dart target from 61 to 70 has exactly the bull-safe routes', () {
       for (var t = 61; t <= 70; t++) {
-        expect(engine.minimumDarts(t), 2, reason: '$t');
-        expect(
-            notations(t),
-            {
-              for (final x in [
-                ...BullSafeFinish.twoDartRoutes(t),
-                ...SingleLeave.outerBullRoutes(t),
-                ...AimPairs.twoDartRoutes(t),
-                if (AimPairs.sameDoubleTwice(t) case final twice?) twice,
-              ])
-                x.notation,
-            },
+        expect(notations(t), {for (final x in BullSafeFinish.twoDartRoutes(t)) x.notation},
             reason: '$t');
       }
     });
 
-    test('every 2-dart target from 51 to 60 has the bull-safe routes first', () {
+    test('no two-dart number from 51 to 60 finishes on the Bull or starts on the outer bull', () {
       for (var t = 51; t <= 60; t++) {
-        final safe = BullSafeFinish.twoDartRoutes(t).map((x) => x.notation).toList();
-        final all = optimal.optimalRoutes(t).map((x) => x.notation).toList();
-        expect(all.take(safe.length), safe, reason: '$t');
+        for (final route in optimal.optimalRoutes(t)) {
+          if (t == 50) continue;
+          expect(route.usesBull, isFalse, reason: '$t ${route.notation}');
+          expect(route.darts.first.isOuterBull, isFalse, reason: '$t ${route.notation}');
+        }
       }
     });
   });
 
-  group('two darts from 41 to 60: a single that leaves a better double is optimal too', () {
-    test('57: S17 D20 next to the bull-safe T7 D18 and S7 Bull (never the outer bull)', () {
-      expect(optimal.optimalRoutes(57).map((x) => x.notation),
-          ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3', 'S19 D19']);
+  group('two darts from 41 to 60: a single that leaves a better double, as a rule of its own', () {
+    test('57 is S17 D20, and only that', () {
+      expect(optimal.optimalRoutes(57).map((x) => x.notation), ['S17 D20']);
     });
 
-    test('60 is S20 D20 as well as T10 D15 and S10 Bull, and T16 D6 / T8 D18', () {
-      // 16 and 8 are neighbours: T16 leaves D6, T8 leaves D18.
-      expect(notations(60), {'T10 D15', 'S10 Bull', 'S20 D20', 'T16 D6', 'T8 D18'});
+    test('60 is S20 D20, and D20 D10 if the single turns into its double', () {
+      expect(notations(60), {'S20 D20', 'D20 D10'});
     });
 
-    test('51 to 54: the singles, the Bull, the trebles whose single leaves a double, and the aims', () {
-      expect(notations(51), containsAll({'S1 Bull', 'S11 D20', 'S15 D18', 'S19 D16'}));
-      expect(notations(52), {
-        'S2 Bull', 'S12 D20', 'S16 D18', 'S20 D16', // the usual ones
-        'T16 D2', 'T12 D8', // S16 leaves D18, S12 leaves D20
-        'T14 D5', 'S14 D19', // D19 is not a better double, still listed
-        'T8 D14', // T16 and T8 are neighbours: D2 or D14
-      });
+    test('51 to 54: the singles that leave a better double and their misses', () {
+      expect(notations(51), {'S19 D16', 'S15 D18', 'S11 D20'});
+      expect(notations(52), {'S20 D16', 'S16 D18', 'S12 D20', 'T16 D2', 'T12 D8', 'D20 D6', 'D16 D10', 'D12 D14'});
+      expect(notations(53), {'S17 D18', 'S13 D20', 'T17 D1'});
+      expect(notations(54), {'S18 D18', 'S14 D20', 'T14 D6'});
     });
 
-    test('S19 D19 is optimal on 57 (19 and 7 are neighbours: S7 leaves the Bull), S20 D19 not on 58', () {
+    test('S19 D19 is no longer optimal on 57: D19 is not a better double', () {
       expect(engine.isLegalRoute(57, r('S19 D19')), isTrue);
-      expect(optimal.isOptimal(57, r('S19 D19')), isTrue);
+      expect(optimal.isOptimal(57, r('S19 D19')), isFalse);
       expect(engine.isLegalRoute(58, r('S20 D19')), isTrue);
       expect(optimal.isOptimal(58, r('S20 D19')), isFalse);
     });
 
-    test('every such route is legal and optimal, from 41 to 60', () {
+    test('every SingleLeave route is legal, from 41 to 60', () {
       for (var t = SingleLeave.minTarget; t <= SingleLeave.maxTarget; t++) {
         expect(engine.minimumDarts(t), t == 50 ? 1 : 2, reason: '$t');
         final routes = SingleLeave.twoDartRoutes(t);
@@ -225,7 +209,6 @@ void main() {
           expect(engine.isLegalRoute(t, route), isTrue, reason: '$t ${route.notation}');
           expect(BetterDoubles.leavesBetterDouble(route), isTrue, reason: route.notation);
           expect(route.darts.first.multiplier, Multiplier.single, reason: route.notation);
-          if (t != 50) expect(optimal.isOptimal(t, route), isTrue, reason: '$t ${route.notation}');
         }
       }
     });
@@ -295,25 +278,27 @@ void main() {
   });
 
   group('more singles win: never a treble or double where a single will do', () {
-    test('35: S15 D10, S3 D16, S17 D9 are all optimal, and T11 D1 and T5 D10', () {
-      for (final text in ['S15 D10', 'S3 D16', 'S17 D9', 'S19 D8', 'S1 D17', 'T11 D1', 'T5 D10']) {
-        expect(optimal.isOptimal(35, r(text)), isTrue, reason: text);
+    test('35 is S19 D8, S7 D14 and S3 D16: three neighbours on the board', () {
+      expect(notations(35), {'S19 D8', 'S7 D14', 'S3 D16'});
+      for (final text in ['S15 D10', 'S17 D9', 'S1 D17', 'T11 D1', 'T5 D10']) {
+        expect(optimal.isOptimal(35, r(text)), isFalse, reason: text);
       }
     });
 
-    test('42: any single that leaves a double is optimal, and so is a triple whose single does', () {
-      expect(optimal.isOptimal(42, r('S2 D20')), isTrue);
+    test('42: the neighbouring singles that leave a better double, and their triples that do', () {
       expect(optimal.isOptimal(42, r('S10 D16')), isTrue);
-      expect(optimal.isOptimal(42, r('T2 D18')), isTrue); // S2 leaves D20
-      expect(optimal.isOptimal(42, r('T4 D15')), isTrue); // S4 leaves D19
+      expect(optimal.isOptimal(42, r('T10 D6')), isTrue); // S10 counts, T10 leaves a better double
+      expect(optimal.isOptimal(42, r('S2 D20')), isFalse); // S2 has no neighbour that counts
+      expect(optimal.isOptimal(42, r('T2 D18')), isFalse);
+      expect(optimal.isOptimal(42, r('T4 D15')), isFalse);
     });
 
-    test('a triple is not optimal when no hit next to it leaves a double: 58 T14 D8', () {
-      // S14 would leave 44; T11 and T9 (its neighbours) leave odd numbers.
-      expect(engine.isLegalRoute(58, r('T14 D8')), isTrue);
-      expect(optimal.isOptimal(58, r('T14 D8')), isFalse);
-      // T6 D20 is: T6 and T10 are neighbours, and T10 leaves D14.
-      expect(optimal.isOptimal(58, r('T6 D20')), isTrue);
+    test('a triple is optimal only as the miss of a single that counts: 58 T18 D2, not T14 D8 or T6 D20', () {
+      expect(optimal.isOptimal(58, r('T18 D2')), isTrue);
+      for (final text in ['T14 D8', 'T6 D20', 'T10 D14']) {
+        expect(engine.isLegalRoute(58, r(text)), isTrue, reason: text);
+        expect(optimal.isOptimal(58, r(text)), isFalse, reason: text);
+      }
     });
 
     test('where no single can do it, trebles of 15 and up are optimal', () {
@@ -485,7 +470,7 @@ void main() {
     });
 
     test('extras: one more route with a better double, then up to 2 others', () {
-      final routes = optimal.optimalRoutes(35);
+      final routes = optimal.optimalRoutes(48);
       expect(routes.length, greaterThan(4), reason: 'plenty to choose from');
       final primary = routes.first;
       final extras = BetterDoubles.extras(routes, exclude: [primary]);
@@ -493,12 +478,12 @@ void main() {
       expect(BetterDoubles.leavesBetterDouble(extras.first), isTrue);
       expect(extras.any((x) => x.isEquivalentTo(primary)), isFalse);
       for (final x in extras) {
-        expect(optimal.isOptimal(35, x), isTrue);
+        expect(optimal.isOptimal(48, x), isTrue);
       }
     });
 
     test('extras never repeat a route that is already on screen (the one entered)', () {
-      final routes = optimal.optimalRoutes(35);
+      final routes = optimal.optimalRoutes(48);
       final primary = routes.first;
       final entered = routes[3]; // the player entered another optimal route
       final extras = BetterDoubles.extras(routes, exclude: [primary, entered]);
@@ -511,16 +496,15 @@ void main() {
     });
 
     test('when the player entered an optimal route, the primary can be an extra', () {
-      final routes = optimal.optimalRoutes(57); // T7 D18, S7 Bull, S17 D20, T17 D3
-      final entered = routes[1];
-      final extras = BetterDoubles.extras(routes, exclude: [entered]);
-      expect(extras.map((x) => x.notation), ['T7 D18', 'S17 D20', 'T17 D3']);
+      final routes = optimal.optimalRoutes(35);
+      final extras = BetterDoubles.extras(routes, exclude: [routes[1]]);
+      expect(extras.map((x) => x.notation), [routes[0].notation, routes[2].notation]);
     });
 
-    test('43: the treble whose single also leaves a better double is among the extras', () {
-      final routes = optimal.optimalRoutes(43);
+    test('48: the treble whose single also leaves a better double is among the extras', () {
+      final routes = optimal.optimalRoutes(48);
       final extras = BetterDoubles.extras(routes, exclude: [routes.first]);
-      expect(extras.map((x) => x.notation), contains('T11 D5'));
+      expect(extras.map((x) => x.notation), contains('T8 D12'));
       expect(extras, hasLength(3));
     });
 
@@ -541,15 +525,15 @@ void main() {
 void trebleLeaveTests() {
   final engine = CheckoutEngine();
   final optimal = OptimalRouteService(engine);
-  test('43: T11 D5 is optimal because T11 and S11 both leave a better double', () {
-    expect(optimal.isOptimal(43, CheckoutRoute.parse('T11 D5')), isTrue);
-    expect(optimal.isOptimal(43, CheckoutRoute.parse('S11 D16')), isTrue);
+  test('42: T10 D6 is optimal because S10 counts and T10 leaves a better double too', () {
+    expect(optimal.isOptimal(42, CheckoutRoute.parse('T10 D6')), isTrue);
+    expect(optimal.isOptimal(42, CheckoutRoute.parse('S10 D16')), isTrue);
   });
 
-  test('only for 20 to 60: 17 has S5 D6 but not T5 D1, 29 has T9 D1', () {
+  test('the same on low numbers: 17 has S5 D6 and T5 D1, 29 has S9 D10 and T9 D1', () {
     expect(engine.isLegalRoute(17, CheckoutRoute.parse('T5 D1')), isTrue);
     expect(optimal.isOptimal(17, CheckoutRoute.parse('S5 D6')), isTrue);
-    expect(optimal.isOptimal(17, CheckoutRoute.parse('T5 D1')), isFalse);
+    expect(optimal.isOptimal(17, CheckoutRoute.parse('T5 D1')), isTrue);
     expect(optimal.isOptimal(29, CheckoutRoute.parse('T9 D1')), isTrue);
     expect(optimal.isOptimal(29, CheckoutRoute.parse('S9 D10')), isTrue);
   });

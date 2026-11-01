@@ -35,63 +35,48 @@ void main() {
       expect(best, containsAll([d('T20'), d('T11'), d('T19'), d('T14')]));
     });
 
-    test('the bull-safe routes stay optimal even with low trebles (55 -> T5 D20, S5 Bull)', () {
-      // 55 also has the singles that leave a better double: S15 D20, S19 D18,
-      // and the trebles whose single leaves a double too: T15 D5 (S15 D20) and
-      // T17 D2 (S17 D19).
-      expect(advisor.optimalDarts(55), {d('T5'), d('S5'), d('S15'), d('S19'), d('T15'), d('T17'), d('S17')});
+    test('55 lights the singles that leave a better double and their misses, no Bull', () {
+      expect(advisor.optimalDarts(55), {d('S15'), d('S19'), d('T15')});
     });
 
-    group('priority: fewest darts, bull-safe, then the most singles', () {
-      test('57: the bull-safe darts and the singles that leave a better double are lit', () {
-        // T17 D3 is there too: S17 leaves D20, T17 leaves D3 (not a better one).
-        expect(advisor.optimalDarts(57), {d('T7'), d('S7'), d('S17'), d('T17'), d('S19')});
-        expect(advisor.optimalRoutes(57).map((r) => r.notation),
-            ['T7 D18', 'S7 Bull', 'S17 D20', 'T17 D3', 'S19 D19']);
-        // S19 D19 is there too: 19 and 7 are neighbours and S7 leaves the Bull.
-        expect(advisor.optimalDarts(57), contains(d('S19')));
+    group('priority: fewest darts, then the rule of the number', () {
+      test('57 lights S17 only: the single that leaves a better double', () {
+        expect(advisor.optimalDarts(57), {d('S17')});
+        expect(advisor.optimalRoutes(57).map((r) => r.notation), ['S17 D20']);
       });
 
-      test('over 60 the bull-safe darts are lit, the outer bull on 61 and 65, and neighbour aims', () {
-        expect(advisor.optimalDarts(65), {d('T15'), d('S15'), d('S25')});
-        // 61: T19 leaves D2 and its neighbour T7 leaves D20.
-        expect(advisor.optimalDarts(61), {d('T11'), d('S11'), d('S25'), d('T19'), d('T7')});
-        expect(advisor.optimalDarts(67), {d('T17'), d('S17')}); // nothing extra here
+      test('over 60 up to 70 the bull-safe darts are lit and nothing else', () {
+        expect(advisor.optimalDarts(65), {d('T15'), d('S15')});
+        expect(advisor.optimalDarts(61), {d('T11'), d('S11')});
+        expect(advisor.optimalDarts(67), {d('T17'), d('S17')});
       });
 
-      test('65: the outer bull then D20 is optimal at every step', () {
+      test('65: the outer bull then D20 checks out, but it is not optimal any more', () {
         final r = ChoiceRound(65, advisor, layout: BoxLayout.leftUsed)
           ..throwDart(d('S25'))
           ..throwDart(d('D20'));
         expect(r.isCheckedOut, isTrue);
-        expect(r.isOptimal, isTrue);
+        expect(r.isOptimal, isFalse);
       });
 
-      test('35 lights the singles, and the trebles whose single also leaves a double', () {
-        final lit = advisor.optimalDarts(35);
-        expect(lit, isNotEmpty);
-        expect(lit, containsAll([d('S15'), d('S3'), d('S17')]));
-        // T5 D10 with S5 D15: one of the two doubles is not a better one, still lit.
-        expect(lit.where((x) => x.multiplier != Multiplier.single).toSet(),
-            {d('T11'), d('T9'), d('T7'), d('T5'), d('T3'), d('T1')});
+      test('35 lights its three neighbouring singles, and no triple', () {
+        expect(advisor.optimalDarts(35), {d('S19'), d('S7'), d('S3')});
       });
 
-      test('43: the triple of 11 is a good starting dart, its single leaves a checkout too', () {
-        final r = ChoiceRound(43, advisor, layout: BoxLayout.leftUsed);
-        expect(r.optimalDarts, containsAll([d('T11'), d('S11')]));
-        expect(advisor.rate(remaining: 43, dartsLeft: 2, dart: d('T11')), DartQuality.optimal);
-        r.throwDart(d('T11')); // leaves 10
-        expect(r.remaining, 10);
-        expect(r.optimalDarts, {d('D5')});
-        r.throwDart(d('D5'));
+      test('48 lights the neighbours S8 and S16, and T8, D8 and D16 for a near miss', () {
+        expect(advisor.optimalDarts(48), {d('S8'), d('S16'), d('T8'), d('D8'), d('D16')});
+        final r = ChoiceRound(48, advisor, layout: BoxLayout.leftUsed);
+        expect(advisor.rate(remaining: 48, dartsLeft: 2, dart: d('T8')), DartQuality.optimal);
+        r.throwDart(d('T8')); // leaves 24
+        expect(r.remaining, 24);
+        expect(r.optimalDarts, {d('D12')});
+        r.throwDart(d('D12'));
         expect(r.isCheckedOut, isTrue);
         expect(r.isOptimal, isTrue);
       });
 
-      test('58 lights the neighbours T6 and T10, but not T14 (nothing next to it leaves a double)', () {
-        expect(advisor.optimalDarts(58), containsAll([d('T6'), d('T10')])); // D20 or D14
-        expect(advisor.optimalDarts(58), contains(d('T8'))); // S8 leaves the Bull
-        expect(advisor.optimalDarts(58), isNot(contains(d('T14'))));
+      test('58 lights S18 and its miss T18, nothing else', () {
+        expect(advisor.optimalDarts(58), {d('S18'), d('T18')});
       });
 
       test('no treble can do it with a single: trebles of 15 and up are lit (85, 150)', () {
@@ -205,10 +190,43 @@ void main() {
       expect(advisor.nextOptimalDarts(64, 3, [d('D12')]), {d('S20')});
     });
 
+    test('rule 4 over 60: after an aim its neighbour lights up too (64: S18, then T4)', () {
+      expect(advisor.nextOptimalDarts(64, 3, [d('S18')]), contains(d('T4')));
+      expect(advisor.nextOptimalDarts(64, 3, [d('S18'), d('T4')]), {d('D17')});
+      expect(advisor.nextOptimalDarts(74, 3, [d('S20')]), contains(d('S20')));
+      // After a triple it stays as it was: 64, T18 leaves D5.
+      expect(advisor.nextOptimalDarts(64, 3, [d('T18')]), isNot(contains(d('S4'))));
+    });
+
+    test('three darts under 60: the aims are lit, then the double and its single', () {
+      expect(advisor.optimalDartsIn(47, 3), {
+        for (final n in [15, 13, 11, 9, 7]) ...[d('S$n'), d('T$n')],
+      });
+      expect(advisor.nextOptimalDarts(47, 3, [d('S7')]), {d('D20'), d('S20')});
+      expect(advisor.nextOptimalDarts(47, 3, [d('S7'), d('S20')]), {d('D10')});
+      // An odd double has no second chance.
+      expect(advisor.nextOptimalDarts(47, 3, [d('T7')]), {d('D13')});
+      // Any first dart that leaves a double, lit or not: S19 is no aim on 47.
+      expect(advisor.nextOptimalDarts(47, 3, [d('S19')]), {d('D14'), d('S14')});
+      // The Bull is just the Bull.
+      expect(advisor.nextOptimalDarts(59, 3, [d('S9')]), {DartThrow.bull});
+      // A single that leaves no double: the same number or a neighbour.
+      expect(advisor.nextOptimalDarts(48, 3, [d('S4')]), {d('S4'), d('T4'), d('S18')});
+      // A dart that leaves no double and is on no route: the rule of what is left.
+      expect(advisor.nextOptimalDarts(47, 3, [d('S3')]), advisor.optimalDartsIn(44, 2));
+    });
+
     test('a finishing double that checks out is optimal with the last dart; with darts left it is a miss', () {
       expect(rate(34, 'D17', left: 1), DartQuality.optimal);
       expect(rate(34, 'D17', left: 2), DartQuality.bust); // a dart still to throw
       expect(rate(34, 'D20', left: 2), DartQuality.bust); // below zero
+    });
+
+    test('unless that double is lit: under 60 it finishes with a dart left', () {
+      expect(advisor.rate(remaining: 40, dartsLeft: 2, dart: d('D20'), best: {d('D20'), d('S20')}),
+          DartQuality.optimal);
+      expect(advisor.rate(remaining: 40, dartsLeft: 2, dart: d('D20'), best: {d('S20')}),
+          DartQuality.bust);
     });
 
     test('zero without a double is a bust; leaving 1 is a bust', () {
@@ -397,19 +415,23 @@ void main() {
       final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed);
       expect(r.maxDarts, 2);
       expect(r.dartsLeft, 2);
-      expect(r.optimalDarts, {d('T7'), d('S7'), d('S17'), d('T17'), d('S19')});
+      expect(r.optimalDarts, {d('S17')});
       r.throwDart(d('S7')); // leaves exactly 50
       expect(r.remaining, 50);
       r.throwDart(d('Bull'));
       expect(r.isCheckedOut, isTrue);
-      expect(r.isOptimal, isTrue);
+      expect(r.isOptimal, isFalse); // a checkout, but not the optimal way any more
     });
 
-    test('the treble of 7 works too: T7 then D18', () {
-      final r = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
-        ..throwDart(d('T7'))
-        ..throwDart(d('D18'));
-      expect(r.isOptimal, isTrue);
+    test('over 60 the Bull is still optimal: S11 then the Bull, T11 then D14', () {
+      final bull = ChoiceRound(61, advisor, layout: BoxLayout.leftUsed)
+        ..throwDart(d('S11'))
+        ..throwDart(d('Bull'));
+      expect(bull.isOptimal, isTrue);
+      final treble = ChoiceRound(61, advisor, layout: BoxLayout.leftUsed)
+        ..throwDart(d('T11'))
+        ..throwDart(d('D14'));
+      expect(treble.isOptimal, isTrue);
     });
 
     test('S17 then D20 checks 57 out and is optimal: a single that leaves a better double', () {
@@ -421,13 +443,49 @@ void main() {
       expect(other.steps.first.quality, DartQuality.optimal);
     });
 
-    test('S19 then D19 checks 57 out and is optimal: 19 and 7 are neighbours, S7 leaves the Bull', () {
+    test('S19 then D19 checks 57 out, but D19 is not a better double, so not optimal', () {
       final other = ChoiceRound(57, advisor, layout: BoxLayout.leftUsed)
         ..throwDart(d('S19'))
         ..throwDart(d('D19'));
       expect(other.isCheckedOut, isTrue);
-      expect(other.isOptimal, isTrue);
-      expect(other.steps.first.quality, DartQuality.optimal);
+      expect(other.isOptimal, isFalse);
+      expect(other.steps.first.quality, DartQuality.fine);
+    });
+
+    test('47 with three darts: S7, then D20 with a dart in hand is checked out and optimal', () {
+      final r = ChoiceRound(47, advisor)
+        ..throwDart(d('S7'))
+        ..throwDart(d('D20'));
+      expect(r.status, RoundStatus.checkedOut);
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('47 with three darts: the double missed into S20, then D10 is optimal at every step', () {
+      final r = ChoiceRound(47, advisor)
+        ..throwDart(d('S7'))
+        ..throwDart(d('S20'));
+      expect(r.isFinished, isFalse);
+      expect(r.optimalDarts, {d('D10')});
+      r.throwDart(d('D10'));
+      expect(r.isCheckedOut, isTrue);
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('47 with three darts: S19 is no aim, so S19 then D14 checks out but is not optimal', () {
+      final r = ChoiceRound(47, advisor)
+        ..throwDart(d('S19'))
+        ..throwDart(d('D14'));
+      expect(r.status, RoundStatus.checkedOut);
+      expect(r.isOptimal, isFalse);
+      expect(r.steps.first.quality, DartQuality.fine);
+      expect(r.steps.last.quality, DartQuality.optimal);
+    });
+
+    test('over 60 a double with a dart in hand stays a miss: 88, T20, then D14', () {
+      final r = ChoiceRound(88, advisor)
+        ..throwDart(d('T20'))
+        ..throwDart(d('D14'));
+      expect(r.status, RoundStatus.finishedEarly);
     });
 
     test('132: T20, D20, D16 is optimal at every step (the outer bull is no aim)', () {

@@ -1,3 +1,4 @@
+import 'aim_pairs.dart';
 import 'better_doubles.dart';
 import 'bull_safe_finish.dart';
 import 'challenge.dart';
@@ -51,6 +52,12 @@ abstract final class RouteExplainer {
 
   static String _darts(int n) => n == 1 ? 'dart' : 'darts';
 
+  /// A two-dart number from 61 to 70.
+  static bool _isBullSafe(Challenge challenge) =>
+      challenge.dartCount == 2 &&
+      challenge.target > AimPairs.maxGoodSingleTarget &&
+      BullSafeFinish.covers(challenge.target);
+
   /// The rule that decided the route.
   static List<String> _rule(Challenge challenge, CheckoutRoute primary) {
     final target = challenge.target;
@@ -61,17 +68,23 @@ abstract final class RouteExplainer {
       return ['One dart finishes it: ${primary.notation}.'];
     }
 
-    if (fewest == 2 && BullSafeFinish.covers(target)) {
+    if (fewest == 2 && target <= AimPairs.maxGoodSingleTarget) {
+      return [
+        'With two darts up to 60 the first dart is a single that leaves a better '
+            'double. When two neighbouring singles both do, only those count.',
+        'If you miss and hit their triple or double, it still counts when it '
+            'leaves a better double too.',
+      ];
+    }
+
+    if (_isBullSafe(challenge)) {
       final n = target - BullSafeFinish.bullScore;
-      final treble = BullSafeFinish.twoDartFinish(target);
+      final treble = BullSafeFinish.twoDartFinish(target)!;
       return [
         'Bull-safe: with two darts left on $target, aim at $n, because the '
             'single $n leaves exactly 50, which is the Bull.',
-        if (treble != null)
-          'Throw the triple $n (${3 * n}) and then ${treble.darts.last.notation}, '
-              'or throw S$n and then the Bull. Both are equally good.'
-        else
-          'There is no triple route for $target, so it is S$n and then the Bull.',
+        'Throw the triple $n (${3 * n}) and then ${treble.darts.last.notation}, '
+            'or throw S$n and then the Bull. Both are equally good.',
         'If you aim at the triple and hit the single instead, you still have '
             'the Bull left, so a near miss still has a finish.',
       ];
@@ -134,9 +147,7 @@ abstract final class RouteExplainer {
     } else {
       final mine = OptimalRouteService.singles(player);
       final best = OptimalRouteService.singles(primary);
-      final bullSafe =
-          challenge.dartCount == 2 && BullSafeFinish.covers(challenge.target);
-      if (bullSafe) {
+      if (_isBullSafe(challenge)) {
         reasons.add('it should be the triple of '
             '${challenge.target - BullSafeFinish.bullScore} or its single, then a '
             'double or the Bull (the bull-safe route)');

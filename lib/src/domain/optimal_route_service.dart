@@ -12,35 +12,40 @@ import 'site_routes.dart';
 
 /// Answers "what is the optimal way to check out N?".
 ///
-/// Optimal routes, in order of priority (the first entry is the one shown as
-/// "the" answer; every entry is accepted as optimal, in any order of the setup
-/// darts):
+/// Two-dart numbers up to 70 have one rule each: up to 60 a single that leaves
+/// a better double, with its near misses ([AimPairs.goodSingleRoutes]); 61 to 70
+/// the bull-safe finish and nothing else (61: T11 D14, S11 Bull). A standard
+/// route comes first when it is one of them.
+///
+/// Every other number goes by these, in order of priority (the first entry is
+/// the one shown as "the" answer; every entry is accepted as optimal, in any
+/// order of the setup darts):
 ///
 ///  1. **Fewest darts.** A number that can be finished in 2 darts is never
 ///     played (or accepted as optimal) in 3.
-///  2. **Bull-safe**, where it applies: two-dart numbers from 51 to 70, and
-///     three-dart numbers whose first treble leaves 55 to 70 (not 51 to 54: no
-///     tiny single before the Bull, 109 is not T19 S2 Bull). The treble of the
-///     number whose single leaves 50, then the double - or that single, then
-///     the Bull. All of them are equal (57: T7 D18, S7 Bull; 119: T19 T12 D13,
-///     T19 S12 Bull). See [BullSafeFinish]. A three-dart number also accepts
-///     its standard routes. With two darts left on 41 to 60 (a two-dart number,
-///     or the last two darts after the first treble of a three-dart number) a
-///     single that leaves a better double is as good (57: S17 D20; 60: S20 D20;
-///     109: T19 S20 D16), see [SingleLeave].
+///  2. **Bull-safe**, where it applies: three-dart numbers whose first treble
+///     leaves 55 to 70 (not 51 to 54: no tiny single before the Bull, 109 is not
+///     T19 S2 Bull). The treble of the number whose single leaves 50, then the
+///     double - or that single, then the Bull. All of them are equal (119: T19
+///     T12 D13, T19 S12 Bull). See [BullSafeFinish]. A three-dart number also
+///     accepts its standard routes. With two darts left on 41 to 60 after the
+///     first treble, a single that leaves a better double is as good (109: T19
+///     S20 D16), see [SingleLeave].
 ///  3. **More singles.** It is far easier to hit a single than a double or a
 ///     treble, so the routes with the most single setup darts win (the outer
-///     bull counts as a single): 35 is S15 D10, S3 D16, S17 D9.
+///     bull counts as a single).
 ///  4. **Setup doubles last, then fewer triples.** Only sensible aims are
 ///     used (singles and T15-T20, see [NaturalAim]).
-///  5. **Aims**, with two darts left on 20 or more: a first dart whose two
-///     possible hits (the single and triple of a number, or two neighbours on
-///     the board) each leave a double is as good (43: T11 D5, S11 D16; 64: T16
-///     D8, T8 D20), from the best group only; and the same better double twice
-///     (64: D16 D16). See [AimPairs].
+///  5. **Aims**, with two darts left: a first dart whose two possible hits (the
+///     single and triple of a number, or two neighbours on the board) each leave
+///     a double is as good, from the best group only. See [AimPairs].
 ///
-/// A two-dart number over 40 can also be played with three darts; its optimal
-/// routes are then [AimPairs.threeDartRoutes] (see [optimalRoutesIn]).
+/// A two-dart number over 60 can also be played with three darts, a two-dart
+/// number under 60 only in Checkout practice and Checkout input; see
+/// [optimalRoutesIn]. Three darts over 60 are built from [_olderTwoDartRoutes]:
+/// up to 70 those are the rules above, so the one rule of a two-dart number
+/// takes nothing away from its three-dart routes (74: S14 T10 D15, as 60 was
+/// T10 D15).
 ///
 /// [chartOnlyCheckouts] (120) always keep their classic chart route. A chart
 /// route is shown first when it is one of the optimal routes. A chart entry
@@ -66,15 +71,18 @@ class OptimalRouteService {
   /// chart: standard routes that are accepted next to the rules' own routes.
   final Map<int, List<String>> _siteThrows;
   final Map<int, List<CheckoutRoute>> _cache = {};
+  final Map<int, List<CheckoutRoute>> _cacheOlder = {};
   final Map<(int, int), List<CheckoutRoute>> _cacheIn = {};
 
   /// The optimal routes for [target] played with exactly [darts] darts (all of
   /// them have to be used). With the fewest darts it needs that is
   /// [optimalRoutes]; a two-dart number over 60 with three darts uses
-  /// [AimPairs.threeDartRoutes] and the [_followUps]; anything else that has to
-  /// use more darts than it needs (after a dart that was not optimal) gets the
-  /// routes with the most singles. Empty when it cannot be done in exactly
-  /// [darts].
+  /// [AimPairs.threeDartRoutes] and the [_followUps]; a two-dart number under 60
+  /// with three darts uses [AimPairs.underSixtyRoutes], the one case that also
+  /// has routes of two darts (a lit double that finishes with a dart left);
+  /// anything else that has to use more darts than it needs (after a dart that
+  /// was not optimal) gets the routes with the most singles. Empty when it
+  /// cannot be done in exactly [darts].
   List<CheckoutRoute> optimalRoutesIn(int target, int darts) {
     final minimum = _engine.minimumDarts(target);
     if (minimum == null || darts < minimum || !_engine.canCheckoutIn(target, darts)) {
@@ -82,8 +90,10 @@ class OptimalRouteService {
     }
     if (darts == minimum) return optimalRoutes(target);
     return _cacheIn.putIfAbsent((target, darts), () {
-      if (minimum == 2 && darts == 3 && target > AimPairs.threeDartAbove) {
-        final routes = _threeDartRoutes(target);
+      if (minimum == 2 && darts == 3 && target != AimPairs.threeDartAbove) {
+        final routes = target > AimPairs.threeDartAbove
+            ? _threeDartRoutes(target)
+            : AimPairs.underSixtyRoutes(target);
         if (routes.isNotEmpty) return List.unmodifiable(routes);
       }
       // A double with a backup and two darts has that one route: 28 is S14 D7.
@@ -112,9 +122,11 @@ class OptimalRouteService {
   /// leaves D13, S14 leaves 54). The aims whose single leaves a double too
   /// come first - on 68 that is 18 (S18 leaves the Bull, T18 leaves D7), the
   /// best one - then those whose triple leaves a double with a backup (see
-  /// [AimPairs.missedDoubleRoute]), then the rest; biggest number first.
+  /// [AimPairs.missedDoubleRoute]), then the rest; biggest number first. Under
+  /// 60 they are [AimPairs.underSixtyAims].
   List<int> threeDartAims(int target) {
-    if (_engine.minimumDarts(target) != 2 || target <= AimPairs.threeDartAbove) return const [];
+    if (_engine.minimumDarts(target) != 2 || target == AimPairs.threeDartAbove) return const [];
+    if (target < AimPairs.threeDartAbove) return AimPairs.underSixtyAims(target);
     final aims = [
       for (var n = DartThrow.maxBoardNumber; n >= 1; n--)
         if (AimPairs.finisherFor(target - 3 * n) != null &&
@@ -132,10 +144,10 @@ class OptimalRouteService {
     ];
   }
 
-  /// The darts lit before the first of three darts on a two-dart number over
-  /// 60, all the same: the single and triple of every [threeDartAims] number
-  /// (68: S18 T18, S20 T20, S16 T16, S14 T14, S12 T12, S10 T10, S6 T6). Empty
-  /// for any other number.
+  /// The darts lit before the first of three darts on a two-dart number, all the
+  /// same: the single and triple of every [threeDartAims] number (68: S18 T18,
+  /// S20 T20, S16 T16, S14 T14, S12 T12, S10 T10, S6 T6). Empty for any other
+  /// number.
   Set<DartThrow> threeDartFirstDarts(int target) => {
         for (final n in threeDartAims(target)) ...[
           DartThrow(Multiplier.single, n),
@@ -144,27 +156,36 @@ class OptimalRouteService {
       };
 
   /// The three-dart routes of a two-dart number over 60: the aim routes (the
-  /// best aims first) and the older rules' routes - each only when it can start
-  /// with one of the [threeDartFirstDarts] (68: S19 S9 D20 and T11 S11 D12
-  /// cannot, see [_canStart]). When none can, the older routes as they are.
+  /// best aims first), the older rules' routes and [AimPairs.twoSinglesRoutes] -
+  /// each only when it can start with one of the [threeDartFirstDarts] (68: S19
+  /// S9 D20 and T11 S11 D12 cannot, see [_canStart]). When none can, the older
+  /// routes as they are.
   List<CheckoutRoute> _threeDartRoutes(int target) {
     final first = threeDartFirstDarts(target);
     final older = _olderThreeDartRoutes(target);
     final routes = <CheckoutRoute>[];
-    for (final route in [..._aimFirstRoutes(target, threeDartAims(target)), ...older]) {
+    for (final route in [
+      ..._aimFirstRoutes(target, threeDartAims(target)),
+      ...older,
+      ...AimPairs.twoSinglesRoutes(target),
+    ]) {
       if (_canStart(target, route, first) && !routes.any(route.isEquivalentTo)) routes.add(route);
     }
     return routes.isEmpty ? older : routes;
   }
 
   /// The only darts that may come after [first] on [target] with three darts,
-  /// empty when any dart may. A dart that leaves a double is followed by the
-  /// start of [AimPairs.twoDartsOnDoubleRoutes] (88: S14 after T20; S18 S14 S10
-  /// S6 S2 after T18). A single is free, also when it leaves the Bull (64: S14,
-  /// then T14 D4).
-  Set<DartThrow> dartsAfter(int target, DartThrow first) => first.multiplier == Multiplier.single
-      ? const {}
-      : {for (final route in AimPairs.twoDartsOnDoubleRoutes(target - first.score)) route.darts.first};
+  /// empty when any dart may. Over 60 a dart that leaves a double is followed by
+  /// the start of [AimPairs.twoDartsOnDoubleRoutes] (88: S14 after T20; S18 S14
+  /// S10 S6 S2 after T18), and a single is free, also when it leaves the Bull
+  /// (64: S14, then T14 D4). Under 60 any first dart that leaves a double is
+  /// followed by [AimPairs.doubleAndItsSingle] (47: D20 and S20 after S7).
+  Set<DartThrow> dartsAfter(int target, DartThrow first) {
+    final left = target - first.score;
+    if (target < AimPairs.threeDartAbove) return AimPairs.doubleAndItsSingle(left);
+    if (first.multiplier == Multiplier.single) return const {};
+    return {for (final route in AimPairs.twoDartsOnDoubleRoutes(left)) route.darts.first};
+  }
 
   /// Can [route] be thrown with one of [first] as its first dart, followed by a
   /// dart that may come after it ([dartsAfter])? 88 is T20 S14 D7, not T20 S4
@@ -207,7 +228,7 @@ class OptimalRouteService {
   List<CheckoutRoute> _aimFirstRoutes(int target, List<int> aims) {
     final routes = <CheckoutRoute>[];
     void add(DartThrow first) {
-      for (final rest in optimalRoutesIn(target - first.score, 2)) {
+      for (final rest in _twoDartsAfterFirst(target - first.score)) {
         final full = CheckoutRoute([first, ...rest.darts]).normalized;
         if (!routes.any(full.isEquivalentTo)) routes.add(full);
       }
@@ -247,7 +268,7 @@ class OptimalRouteService {
     for (var n = DartThrow.maxBoardNumber; n >= followUpLowestSingle; n--) {
       final left = target - n;
       if (!_engine.canCheckoutIn(left, 2)) continue;
-      for (final route in optimalRoutesIn(left, 2)) {
+      for (final route in _twoDartsAfterFirst(left)) {
         final full = CheckoutRoute([DartThrow(Multiplier.single, n), ...route.darts]).normalized;
         if (!routes.any(full.isEquivalentTo)) routes.add(full);
       }
@@ -255,12 +276,24 @@ class OptimalRouteService {
     return routes;
   }
 
+  /// What may follow the first of three darts over 60 with [left] to go: its
+  /// routes with two darts, the older ones for a two-dart number.
+  List<CheckoutRoute> _twoDartsAfterFirst(int left) =>
+      _engine.minimumDarts(left) == 2 ? _olderTwoDartRoutes(left) : optimalRoutesIn(left, 2);
+
   /// True when [target] is a two-dart number over 60 that can also be played
   /// with three darts.
   bool hasThreeDartOption(int target) =>
       _engine.minimumDarts(target) == 2 &&
       target > AimPairs.threeDartAbove &&
       optimalRoutesIn(target, 3).isNotEmpty;
+
+  /// True when [target] is a two-dart number under 60 that can be played with
+  /// three darts, by choice, in Checkout practice and Checkout input.
+  bool hasPracticeThreeDartOption(int target) =>
+      target < AimPairs.threeDartAbove &&
+      threeDartAims(target).isNotEmpty &&
+      _engine.canCheckoutIn(target, 3);
 
   /// Whether [route] is optimal for [target] played with exactly [darts] darts.
   bool isOptimalIn(int target, int darts, CheckoutRoute route) =>
@@ -276,10 +309,41 @@ class OptimalRouteService {
   List<CheckoutRoute> optimalRoutes(int target) {
     final minimum = _engine.minimumDarts(target);
     if (minimum == null) return const [];
-    return _cache.putIfAbsent(
-      target,
-      () => List.unmodifiable(_compute(target, minimum)),
-    );
+    return _cache.putIfAbsent(target, () {
+      final byRule = minimum == 2 ? _twoDartRuleRoutes(target) : const <CheckoutRoute>[];
+      return List.unmodifiable(byRule.isEmpty ? _compute(target, minimum) : byRule);
+    });
+  }
+
+  /// A two-dart number up to 70 has one rule: [AimPairs.goodSingleRoutes] up to
+  /// 60, with a standard route first when it is one of them, and the bull-safe
+  /// finish on 61 to 70. Empty for any other number.
+  List<CheckoutRoute> _twoDartRuleRoutes(int target) {
+    if (target > AimPairs.maxGoodSingleTarget) {
+      return target > BullSafeFinish.maxRemaining ? const [] : BullSafeFinish.twoDartRoutes(target);
+    }
+    final rule = AimPairs.goodSingleRoutes(target);
+    final routes = <CheckoutRoute>[];
+    for (final route in [..._standardRoutes(target).where((r) => rule.any(r.isEquivalentTo)), ...rule]) {
+      if (!routes.any(route.isEquivalentTo)) routes.add(route);
+    }
+    return routes;
+  }
+
+  /// The routes of a two-dart number by the rules that come before the ones up
+  /// to 70 ([_twoDartRuleRoutes]). What follows the first of three darts over 60
+  /// still goes by these (74: S20 T10 D12).
+  List<CheckoutRoute> _olderTwoDartRoutes(int target) =>
+      _cacheOlder.putIfAbsent(target, () => List.unmodifiable(_compute(target, 2)));
+
+  /// The standard routes of [target]: the chart's, then the site's first choices.
+  List<CheckoutRoute> _standardRoutes(int target) {
+    final chart = _chartRoute(target);
+    return [
+      if (chart != null) chart,
+      for (final text in _siteThrows[target] ?? const <String>[])
+        CheckoutRoute.parse(text),
+    ];
   }
 
   /// Whether [route] is one of the optimal routes for [target]. Order of the
@@ -312,12 +376,7 @@ class OptimalRouteService {
     }
 
     final chart = _chartRoute(target);
-    // The standard routes: the chart's, then the site's first choices.
-    final standard = [
-      if (chart != null) chart,
-      for (final text in _siteThrows[target] ?? const <String>[])
-        CheckoutRoute.parse(text),
-    ];
+    final standard = _standardRoutes(target);
     if (_chartOnly.contains(target)) {
       add(chart);
     } else if (minimum == 1) {

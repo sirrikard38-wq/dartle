@@ -80,39 +80,49 @@ leaderboard shows the scores on the device, as before.
   boxes crossed out; a **2-dart** number has its left box crossed out (the
   right box is never crossed); a **3-dart** number has none crossed out. Free
   darts always equal the fewest darts.
-- **Optimal** (see `OptimalRouteService`), in order:
+- **Optimal** (see `OptimalRouteService`). A **two-dart number up to 70** has one
+  rule of its own:
+  - up to 60 the first dart is a **single that leaves a better double**. When
+    two neighbouring singles both do, only those count, as that is where you aim.
+    With no such pair every such single counts. The near misses of those singles
+    count too: their triple or double when it leaves a better double. 48 is
+    `S8 D20`, `S16 D16`, `T8 D12`, `D16 D8`, `D8 D16`; 58 is `S18 D20`, `T18 D2`;
+    57 is only `S17 D20` (`AimPairs.goodSingleRoutes`);
+  - 61 to 70 is the **bull-safe** finish and nothing else: the triple of the
+    number whose single leaves 50, then the double, *or* that single, then the
+    Bull (61: `T11 D14`, `S11 Bull`).
+
+  Every other number goes by these, in order:
   1. the fewest darts;
-  2. **bull-safe** where it applies - 2-dart numbers from 51 to 70 (always), and
-     3-dart numbers whose first triple leaves 55-70 (not 51-54: no tiny single
-     before the Bull, so 109 is not `T19 S2 Bull`): the triple of the number
-     whose single leaves 50, then the double, *or* that single, then the Bull
-     (57: `T7 D18`, `S7 Bull`; 119: `T19 T12 D13`, `T19 S12 Bull`). A
-     three-dart number also accepts its chart route. With two darts left on 41
-     to 60 **a single that leaves a better double** (see below) is as good: 57 is
-     also `S17 D20`, 60 is also `S20 D20`; and after the first triple of a
-     three-dart number that leaves 51-60, 109 is also `T19 S20 D16`
-     (`SingleLeave`);
+  2. **bull-safe** where it applies - 3-dart numbers whose first triple leaves
+     55-70 (not 51-54: no tiny single before the Bull, so 109 is not
+     `T19 S2 Bull`): the same two ways, after the first triple (119: `T19 T12
+     D13`, `T19 S12 Bull`). A three-dart number also accepts its chart route.
+     After a first triple that leaves 51-60, a single that leaves a better double
+     is as good: 109 is also `T19 S20 D16` (`SingleLeave`);
   3. otherwise the **most singles** (they are far easier to hit; the outer bull
      is **not** a single and hardly ever an aim - it is far too hard to hit; the
-     one exception is `25 D20` on 65 and `25 D18` on 61, where no ordinary single
-     can leave a better double), then
-     setup doubles last, then fewer triples, using only sensible aims (singles,
-     T15-T20, and the better doubles as setup darts when the route also finishes
-     on a better double). 35 is `S15 D10` = `S3 D16` = `S17 D9`;
-     132 is `T20 T20 D6` = `T20 D20 D16` = `T20 T16 D12`..., never `T19 25 Bull`;
-  4. **aims**, with two darts left on 20 or more (`AimPairs`): a first dart
-     whose two possible hits - the single and triple of a number, or two
-     neighbours on the board (single/single or triple/triple) - each leave a
-     double is as good. 43 is also `T11 D5` (S11 leaves D16); 64 is also
-     `T16 D8` and `T8 D20`. Only the best group counts: aims with a better
-     double whatever is hit, else those with at least one, else the rest. The
-     older rule stays as well: on 20 to 60 both routes of every single/triple
-     pair of a number that leave a double, whatever the doubles (35: `T5 D10`,
-     `S5 D15`; `AimPairs.sameNumberRoutes`) - no route that was optimal
-     before is taken away. On 41 to 60 two neighbouring singles then a double
-     are optimal too, whatever the doubles (42: `S8 D17`, `S16 D13`;
-     `AimPairs.neighbourSingleRoutes`). The same better double twice is
-     optimal too (64: `D16 D16`).
+     one exception is `25 D20` with 65 left and `25 D18` with 61 left, after a
+     first triple), then setup doubles last, then fewer triples, using only
+     sensible aims (singles, T15-T20, and the better doubles as setup darts when
+     the route also finishes on a better double). 132 is `T20 T20 D6` =
+     `T20 D20 D16` = `T20 T16 D12`..., never `T19 25 Bull`;
+  4. **aims**, with two darts left (`AimPairs`): a first dart whose two possible
+     hits - the single and triple of a number, or two neighbours on the board
+     (single/single or triple/triple) - each leave a double is as good. Only the
+     best group counts: aims with a better double whatever is hit, else those
+     with at least one, else the rest.
+
+  What follows the first of three darts over 60 keeps the routes two darts had
+  before their rule up to 70 (`OptimalRouteService._olderTwoDartRoutes`), so that
+  rule takes nothing away from three darts: the bull-safe routes on 51-70 with the
+  singles that leave a better double, the aims (43: `T11 D5`, 64: `T16 D8`,
+  `T8 D20`), every single/triple pair of a number that leaves a double on 20 to 60
+  (35: `T5 D10`, `S5 D15`; `AimPairs.sameNumberRoutes`), two neighbouring singles
+  then a double on 41 to 60 (42: `S8 D17`, `S16 D13`;
+  `AimPairs.neighbourSingleRoutes`) and the same better double twice
+  (64: `D16 D16`).
+
   A two-dart number **over 60** can come with three darts (50% in the
   calculator and in practice; the player chooses in practice and input). Then
   all three darts must be used (checking out sooner is a miss, unless it is an
@@ -143,12 +153,27 @@ leaderboard shows the scores on the device, as before.
   had 147, with S15-S20 only 97 had 23; with the aims (0) it has 4). And
   (3) the single and the triple of
   one number then any double (74: `S14 T14 D9`, 64: `S14 T14 D4`;
-  `AimPairs.sameNumberThreeDartRoutes`). Routes (1) to (3) count only when
+  `AimPairs.sameNumberThreeDartRoutes`). And (4) when two singles and the triple
+  of a number each leave a double, any double, a dart of that number and a dart
+  of it or of a neighbour, at most one triple (64: `S16 S16 D16`, `S16 S8 D20`,
+  `S16 T8 D12`; `AimPairs.twoSinglesRoutes`). Routes (1) to (4) count only when
   one of their setup darts is an aim, as every route has to start with one
-  (68 loses `S19 S11 D19`, `S17 S1 Bull`, `T11 S11 D12`; 74 `S10 T10 D17`).
+  (68 loses `S19 S11 D19`, `S17 S1 Bull`, `T11 S11 D12`; 74 `S10 T10 D17`), and
+  a triple keeps to the darts that may follow it (64 is not `T18 S4 D3`).
+  A two-dart number **under 60** can be played with three darts too, by choice in
+  practice and input only: it starts on two darts and never comes with three
+  (not 3, and not 60, which stays on two darts). The aims are the numbers whose
+  triple leaves a double and whose single, or two of its singles, leave one too
+  (47: `S7` leaves D20, `T7` leaves D13; 48: `S4 S4` leaves D20, `T4` leaves D18;
+  `AimPairs.underSixtyAims`). After any first dart that leaves a double, that
+  double is lit, and its single when that leaves a double too
+  (`AimPairs.doubleAndItsSingle`). Here a lit double may finish with a dart left
+  and is rated optimal: 47 is `S7 D20`, or `S7 S20 D10` when the double is missed
+  (`AimPairs.underSixtyRoutes`, the one list with routes of two darts in a
+  three-dart round). A single that leaves no double goes on with (4).
   The popup and the "Also optimal" boxes list every optimal route - the same
-  as Checkout input lights up, however many (35 has 16, 61 with three darts
-  has over a hundred).
+  as Checkout input lights up, however many (61 with three darts has over a
+  hundred).
   Equal routes are all optimal, in any order of the setup darts. 120 stays
   `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
   equal route is shown first; tests verify every chart entry is legal and

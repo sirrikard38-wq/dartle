@@ -29,10 +29,11 @@ web.HTMLElement buildHowToPlay(GameController game) {
               'exact area you want. Other numbers count as the exact area you press. '
               'You must finish on a double or Bull with the last of your darts; going '
               'below zero, leaving 1 or checking out with a dart still in hand is a '
-              'miss. A two-dart number over 60 can be played with two or three darts: '
-              'before your second dart, press the boxes to choose. When a round is over, '
-              'Replay checkout plays the same number again and Next checkout moves on. '
-              'There is no clock and no score, and nothing is saved.'))
+              'miss, unless that double is lit. Most two-dart numbers can be played with '
+              'two or three darts: before your second dart, press the boxes to choose. '
+              'When a round is over, Replay checkout plays the same number again and '
+              'Next checkout moves on. There is no clock and no score, and nothing is '
+              'saved.'))
     else
       section(
           tr('The basics'),
@@ -56,39 +57,43 @@ web.HTMLElement buildHowToPlay(GameController game) {
         tr('What is optimal'),
         tr('The fewest darts comes first. A single is far easier to hit than a '
             'double or a triple, so with the same number of darts the route with the '
-            'most singles wins, and a double as a setup dart is the worst. So 35 is '
-            'S15 D10, S3 D16 or S17 D9, and they are all equally optimal. The outer '
-            'bull (25) counts as a single. Where no single can do it, triples T15 to '
-            'T20 are used.')),
+            'most singles wins, and a double as a setup dart is the worst. Where no '
+            'single can do it, triples T15 to T20 are used. With two darts up to 60 '
+            'the first dart is a single that leaves a good double: D20, D18, D16, D14, '
+            'D12, D10, D8, D6, D5, D4, D2 or D1. When two neighbouring singles on the '
+            'board both do, only those count, because that is where you aim. If you '
+            'miss and hit their triple or double, that counts too when it leaves a '
+            'good double. So 48 is S8 D20 or S16 D16, and T8 D12, D16 D8 or D8 D16. '
+            'With no such pair every single that leaves a good double counts, with its '
+            'misses: 58 is S18 D20 or T18 D2. All of these are equally optimal.')),
     section(
         tr('Aim'),
-        tr('With two darts left on 20 or more, a first dart is optimal too when '
-            'both darts you might hit leave a double: the single and the triple of a '
-            'number, or two neighbours on the board. Say 43 is left: T11 leaves D5 '
-            'and S11 leaves D16. On 64, T16 leaves D8 and its neighbour T8 leaves '
-            'D20. When some aims leave a good double whatever you hit, only those '
-            'count; otherwise the ones where at least one does. On 20 to 60 the '
-            'single and triple of a number always count when both leave a double, '
-            'whatever double (35: T5 D10 and S5 D15). On 41 to 60 two neighbouring '
-            'singles then a double count too (42: S8 D17 or S16 D13). The same good '
-            'double twice counts too (64: D16 D16). With three darts on a two-dart '
-            'number over 60, only aims are lit for the first dart: a number whose '
-            'triple leaves a double and whose single leaves a two-dart finish (68: T14 '
-            'leaves D13, S14 leaves 54). The best aim leaves a double with the single '
-            'too (68: S18 leaves the Bull, T18 leaves D7). Every optimal route starts '
-            'with an aim, followed by one of the routes of what is left (93: S19 leaves '
-            '74, then T20 D7) or by the other of the aim\'s single and triple and any '
-            'double (74: S14 T14 D9; 64: S14 T14 D4). When the triple leaves a double '
-            'you can halve, aim at that double: if you hit its single, the next double '
-            'still finishes, so only that route counts (88: T20 leaves D14, then S14 '
-            'and D7). When it leaves an odd double or the Bull, only a single that '
-            'leaves a good double counts (88: T18 leaves 34, then S18 D8, S14 D10, S10 '
-            'D12, S6 D14 or S2 D16).')),
+        tr('With three darts on a two-dart number over 60, only aims are lit for the '
+            'first dart: a number whose triple leaves a double and whose single leaves '
+            'a two-dart finish (68: T14 leaves D13, S14 leaves 54). The best aim leaves '
+            'a double with the single too (68: S18 leaves the Bull, T18 leaves D7). '
+            'Every optimal route starts with an aim, followed by one of the routes of '
+            'what is left (93: S19 leaves 74, then T20 D7) or by the other of the '
+            'aim\'s single and triple and any double (74: S14 T14 D9; 64: S14 T14 D4). '
+            'When two singles and the triple of a number all leave a double, any '
+            'double, a dart of that number or of a neighbour counts too (64: S16 S16 '
+            'D16, S16 S8 D20, S16 T8 D12). When the triple leaves a double you can '
+            'halve, aim at that double: if you hit its single, the next double still '
+            'finishes, so only that route counts (88: T20 leaves D14, then S14 and '
+            'D7). When it leaves an odd double or the Bull, only a single that leaves '
+            'a good double counts (88: T18 leaves 34, then S18 D8, S14 D10, S10 D12, '
+            'S6 D14 or S2 D16). Under 60 three darts are your choice in Checkout '
+            'practice and Checkout input. The aims are the numbers whose triple leaves '
+            'a double and whose single, or two of its singles, leave one too (47: S7 '
+            'leaves D20, T7 leaves D13; 48: S4 S4 leaves D20, T4 leaves D18). When the '
+            'first dart leaves a double, that double is the best dart and it finishes '
+            'even with a dart left. Its single is lit too when that leaves a double, '
+            'so you see what to do after a miss (47: S7, then D20, or S20 and D10).')),
     section(
         tr('Bull safety'),
-        tr('With two darts left on 51 to 70, aim at the number that is 50 less than '
-            'what is left. Say 57 is left: the single 7 leaves exactly 50, so throw '
-            'the triple T7 and then D18, or the single S7 and then the Bull. These '
+        tr('With two darts left on 61 to 70, aim at the number that is 50 less than '
+            'what is left. Say 61 is left: the single 11 leaves exactly 50, so throw '
+            'the triple T11 and then D14, or the single S11 and then the Bull. These '
             'are the optimal routes. If you aim at the triple and hit the single, you '
             'still have the Bull. For three darts the first dart should leave 55 to '
             '70 (119: T19 leaves 62, then T12 D13 or S12 Bull).')),

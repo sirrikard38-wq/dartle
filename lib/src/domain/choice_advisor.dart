@@ -69,8 +69,8 @@ class ChoiceAdvisor {
   Set<DartThrow> optimalDarts(int remaining) => _nextDarts(optimalRoutes(remaining));
 
   /// Like [optimalDarts], with exactly [darts] darts still to throw. A two-dart
-  /// number over 60 with three darts lights only its aims (68: S18 T18, S20
-  /// T20 ... - see [OptimalRouteService.threeDartFirstDarts]).
+  /// number with three darts lights only its aims (68: S18 T18, S20 T20 ... -
+  /// see [OptimalRouteService.threeDartFirstDarts]).
   Set<DartThrow> optimalDartsIn(int remaining, int darts) {
     if (darts == 3) {
       final first = _optimal.threeDartFirstDarts(remaining);
@@ -89,8 +89,9 @@ class ChoiceAdvisor {
     final remaining = target - thrown.fold<int>(0, (sum, d) => sum + d.score);
     if (left <= 0 || remaining <= 0) return const <DartThrow>{};
     if (thrown.isEmpty) return optimalDartsIn(target, darts);
-    // After a triple that leaves a double only these follow, whatever other
-    // routes have the darts thrown in them (88: T20 leaves 28, so S14).
+    // After a dart that leaves a double only these follow, whatever other routes
+    // have the darts thrown in them (88: T20 leaves 28, so S14; 47: S19 leaves
+    // 28, so D14 and S14).
     if (left == 2) {
       final after = _optimal.dartsAfter(target, thrown.single);
       if (after.isNotEmpty) return after;
@@ -140,8 +141,9 @@ class ChoiceAdvisor {
 
   /// Rates throwing [dart] with [remaining] left and [dartsLeft] darts
   /// (counting this one) still to throw. Every dart has to be used: checking
-  /// out with darts still in hand is wrong (a bust). [best] are the optimal
-  /// darts at this point when the caller knows them (see [nextOptimalDarts]).
+  /// out with darts still in hand is wrong (a bust), unless the double was lit
+  /// (47 with three darts: S7, then D20). [best] are the optimal darts at this
+  /// point when the caller knows them (see [nextOptimalDarts]).
   DartQuality rate({
     required int remaining,
     required int dartsLeft,
@@ -151,7 +153,8 @@ class ChoiceAdvisor {
     final after = remaining - dart.score;
     if (after < 0 || after == 1) return DartQuality.bust;
     if (after == 0) {
-      return dart.isFinishingDart && dartsLeft == 1 ? DartQuality.optimal : DartQuality.bust;
+      final inTime = dartsLeft == 1 || (best?.contains(dart) ?? false);
+      return dart.isFinishingDart && inTime ? DartQuality.optimal : DartQuality.bust;
     }
     if (dartsLeft <= 1 || !_engine.canCheckoutIn(after, dartsLeft - 1)) return DartQuality.poor;
     if ((best ?? optimalDartsIn(remaining, dartsLeft)).contains(dart)) {

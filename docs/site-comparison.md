@@ -4,13 +4,18 @@ How the routes on the "The Outs" pages of dartscheckoutassistant.com compare wit
 
 - Numbers with a checkout, all read from the site: 162
 - Site routes that are legal checkouts: 413
-- Optimal in the app: 292
-- Not optimal in the app: 121
+- Optimal in the app: 285
+- Not optimal in the app: 128
 
-The site's first-choice ("Throw") routes are accepted as optimal next to the chart routes, wherever they have the fewest darts and as many singles as the best routes (for three-dart numbers whenever they have the fewest darts). Two-dart numbers from 51 to 70 are only ever the bull-safe routes, plus (from 51 to 60) a single that leaves a better double.
+The site's first-choice ("Throw") routes are accepted as optimal next to the chart routes, wherever they have the fewest darts and as many singles as the best routes (for three-dart numbers whenever they have the fewest darts). Two-dart numbers up to 70 have one rule each: up to 60 a single that leaves a better double with its near misses, on 61 to 70 only the bull-safe routes.
 
 ## Numbers where no first-choice route of the site is optimal here
 
+- 19: site `S11 D4`, app `S3 D8` (two darts up to 70: only S3 D8 / S17 D1 / T3 D5)
+- 31: site `S15 D8`, app `S19 D6` (two darts up to 70: only S19 D6 / S7 D12 / S3 D14 / T7 D5)
+- 43: site `S11 D16`, app `S3 D20` (two darts up to 70: only S3 D20 / S19 D12 / S7 D18)
+- 44: site `S12 D16`, app `S16 D14` (two darts up to 70: only S16 D14 / S8 D18 / D16 D6 / T8 D10 / D8 D14)
+- 47: site `S15 D16`, app `S19 D14` (two darts up to 70: only S19 D14 / S7 D20)
 - 50: site `S10 D20`, app `Bull` (uses 2 darts; the fewest is 1)
 
 ## More darts than the fewest (64)
@@ -80,40 +85,48 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 110: `S20 T18 D18` - uses 3 darts; the fewest is 2
 - 110: `T20 S18 D16` - uses 3 darts; the fewest is 2
 
-## Not the bull-safe route (2 darts, 51 to 70) (24)
+## Not the rule of its number (2 darts, up to 70) (31)
 
-- 52: `T12 D8` - two darts on 51 to 70: only the bull-safe S2 Bull or a single that leaves a better double
-- 56: `T16 D4` - two darts on 51 to 70: only the bull-safe T6 D19 / S6 Bull or a single that leaves a better double
-- 61: `T15 D8` - two darts on 51 to 70: only the bull-safe T11 D14 / S11 Bull
-- 61: `T7 D20` - two darts on 51 to 70: only the bull-safe T11 D14 / S11 Bull
-- 62: `T10 D16` - two darts on 51 to 70: only the bull-safe T12 D13 / S12 Bull
-- 62: `T14 D10` - two darts on 51 to 70: only the bull-safe T12 D13 / S12 Bull
-- 62: `T18 D4` - two darts on 51 to 70: only the bull-safe T12 D13 / S12 Bull
-- 63: `T17 D6` - two darts on 51 to 70: only the bull-safe T13 D12 / S13 Bull
-- 64: `T16 D8` - two darts on 51 to 70: only the bull-safe T14 D11 / S14 Bull
-- 64: `T8 D20` - two darts on 51 to 70: only the bull-safe T14 D11 / S14 Bull
-- 64: `D16 D16` - two darts on 51 to 70: only the bull-safe T14 D11 / S14 Bull
-- 65: `T11 D16` - two darts on 51 to 70: only the bull-safe T15 D10 / S15 Bull
-- 65: `T19 D4` - two darts on 51 to 70: only the bull-safe T15 D10 / S15 Bull
-- 66: `T10 D18` - two darts on 51 to 70: only the bull-safe T16 D9 / S16 Bull
-- 66: `T18 D6` - two darts on 51 to 70: only the bull-safe T16 D9 / S16 Bull
-- 66: `T14 D12` - two darts on 51 to 70: only the bull-safe T16 D9 / S16 Bull
-- 67: `T9 D20` - two darts on 51 to 70: only the bull-safe T17 D8 / S17 Bull
-- 68: `T12 D16` - two darts on 51 to 70: only the bull-safe T18 D7 / S18 Bull
-- 68: `T16 D10` - two darts on 51 to 70: only the bull-safe T18 D7 / S18 Bull
-- 68: `T20 D4` - two darts on 51 to 70: only the bull-safe T18 D7 / S18 Bull
-- 69: `T15 D12` - two darts on 51 to 70: only the bull-safe T19 D6 / S19 Bull
-- 69: `T11 D18` - two darts on 51 to 70: only the bull-safe T19 D6 / S19 Bull
-- 70: `T18 D8` - two darts on 51 to 70: only the bull-safe T20 D5 / S20 Bull
-- 70: `T10 D20` - two darts on 51 to 70: only the bull-safe T20 D5 / S20 Bull
+- 19: `S11 D4` - two darts up to 70: only S3 D8 / S17 D1 / T3 D5
+- 31: `S15 D8` - two darts up to 70: only S19 D6 / S7 D12 / S3 D14 / T7 D5
+- 43: `S11 D16` - two darts up to 70: only S3 D20 / S19 D12 / S7 D18
+- 44: `S12 D16` - two darts up to 70: only S16 D14 / S8 D18 / D16 D6 / T8 D10 / D8 D14
+- 44: `S4 D20` - two darts up to 70: only S16 D14 / S8 D18 / D16 D6 / T8 D10 / D8 D14
+- 46: `S14 D16` - two darts up to 70: only S6 D20 / S10 D18 / T10 D8 / T6 D14
+- 47: `S15 D16` - two darts up to 70: only S19 D14 / S7 D20
+- 61: `25 D18` - two darts up to 70: only T11 D14 / S11 Bull
+- 61: `T15 D8` - two darts up to 70: only T11 D14 / S11 Bull
+- 61: `T7 D20` - two darts up to 70: only T11 D14 / S11 Bull
+- 62: `T10 D16` - two darts up to 70: only T12 D13 / S12 Bull
+- 62: `T14 D10` - two darts up to 70: only T12 D13 / S12 Bull
+- 62: `T18 D4` - two darts up to 70: only T12 D13 / S12 Bull
+- 63: `T17 D6` - two darts up to 70: only T13 D12 / S13 Bull
+- 64: `T16 D8` - two darts up to 70: only T14 D11 / S14 Bull
+- 64: `T8 D20` - two darts up to 70: only T14 D11 / S14 Bull
+- 64: `D16 D16` - two darts up to 70: only T14 D11 / S14 Bull
+- 65: `25 D20` - two darts up to 70: only T15 D10 / S15 Bull
+- 65: `T11 D16` - two darts up to 70: only T15 D10 / S15 Bull
+- 65: `T19 D4` - two darts up to 70: only T15 D10 / S15 Bull
+- 66: `T10 D18` - two darts up to 70: only T16 D9 / S16 Bull
+- 66: `T18 D6` - two darts up to 70: only T16 D9 / S16 Bull
+- 66: `T14 D12` - two darts up to 70: only T16 D9 / S16 Bull
+- 67: `T9 D20` - two darts up to 70: only T17 D8 / S17 Bull
+- 68: `T12 D16` - two darts up to 70: only T18 D7 / S18 Bull
+- 68: `T16 D10` - two darts up to 70: only T18 D7 / S18 Bull
+- 68: `T20 D4` - two darts up to 70: only T18 D7 / S18 Bull
+- 69: `T15 D12` - two darts up to 70: only T19 D6 / S19 Bull
+- 69: `T11 D18` - two darts up to 70: only T19 D6 / S19 Bull
+- 70: `T18 D8` - two darts up to 70: only T20 D5 / S20 Bull
+- 70: `T10 D20` - two darts up to 70: only T20 D5 / S20 Bull
 
-## A setup dart that is not a sensible aim (15)
+## A setup dart that is not a sensible aim (16)
 
 - 72: `T12 D18` - a setup dart that is not a sensible aim
 - 73: `T11 D20` - a setup dart that is not a sensible aim
 - 75: `25 Bull` - a setup dart that is not a sensible aim
 - 79: `T13 D20` - a setup dart that is not a sensible aim
 - 84: `Bull D17` - a setup dart that is not a sensible aim
+- 105: `25 D20 D20` - a setup dart that is not a sensible aim
 - 120: `S20 Bull Bull` - a setup dart that is not a sensible aim
 - 122: `Bull T16 D12` - a setup dart that is not a sensible aim
 - 125: `Bull 25 Bull` - a setup dart that is not a sensible aim
@@ -144,7 +157,3 @@ The site's first-choice ("Throw") routes are accepted as optimal next to the cha
 - 125: `T15 D20 D20` - not one of the routes the rules pick
 - 128: `T18 T18 D10` - not one of the routes the rules pick
 - 130: `T19 T19 D8` - not one of the routes the rules pick
-
-## Fewer singles than the best routes (1)
-
-- 105: `25 D20 D20` - fewer singles (1 are possible, e.g. T18 S1 Bull)

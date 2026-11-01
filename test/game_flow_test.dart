@@ -822,12 +822,61 @@ void main() {
       expect(game.choiceHints, {DartThrow.parse('D17')});
     });
 
-    test('numbers of 40 or less, one- and three-dart numbers have no choice', () {
-      for (final n in [39, 40, 150]) {
+    test('one- and three-dart numbers, 60 and 3 have no choice', () {
+      for (final n in [3, 40, 50, 60, 150]) {
         game.startGame(null, GameMode.input);
         game.enterNumber(n);
         expect(game.canChooseDarts, isFalse, reason: '$n');
       }
+    });
+
+    test('47 with three darts: S7, then D20 finishes with a dart in hand and is optimal', () async {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(47);
+      expect(game.challenge!.darts, 2); // under 60 it starts on two darts
+      expect(game.canChooseDarts, isTrue);
+      game.chooseOtherDarts();
+      expect(game.challenge!.darts, 3);
+      expect(game.choiceHints, contains(DartThrow.parse('S7')));
+      expect(game.choiceHints, isNot(contains(DartThrow.parse('S19'))));
+      game.selectDart(DartThrow.parse('S7'));
+      expect(game.choiceHints, {DartThrow.parse('D20'), DartThrow.parse('S20')});
+      game.selectDart(DartThrow.parse('D20'));
+      await game.submit();
+      expect(game.lastResult!.isCorrect, isTrue);
+      expect(game.lastResult!.isOptimal, isTrue);
+      expect(game.lastResult!.validation.outcome, AttemptOutcome.correct);
+      // The popup lists the finishes with a dart left and the routes of all three.
+      expect(game.lastResult!.optimalRoutes.map((r) => r.notation),
+          containsAll(['S7 D20', 'S20 S7 D10']));
+    });
+
+    test('47 with three darts: the double missed into S20, then D10', () async {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(47);
+      game.chooseOtherDarts();
+      game.selectDart(DartThrow.parse('S7'));
+      game.selectDart(DartThrow.parse('S20'));
+      expect(game.choiceHints, {DartThrow.parse('D10')});
+      game.selectDart(DartThrow.parse('D10'));
+      await game.submit();
+      expect(game.lastResult!.isOptimal, isTrue);
+    });
+
+    test('47: three darts back to two after the first dart lights the double of two darts', () {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(47);
+      game.chooseOtherDarts();
+      game.selectDart(DartThrow.parse('S7'));
+      expect(game.canChooseDarts, isTrue);
+      game.chooseOtherDarts();
+      expect(game.challenge!.darts, 2);
+      expect(game.choiceHints, {DartThrow.parse('D20')});
+    });
+
+    test('a number under 60 stays on two darts in the calculator', () {
+      game.startGame(null, GameMode.calculator);
+      expect(game.canChooseDarts, isFalse);
     });
 
     test('74 with three darts: T14 is lit, and T14 then D16 is good - but not in the given number of darts', () async {
