@@ -879,3 +879,38 @@ summary { cursor: pointer; color: var(--muted); }
   .tile.reveal { animation-duration: 1ms; animation-delay: 0ms; }
   .to-top, .to-top .dart-icon { transition: none; }
 }
+
+/* ---------- Learn: small keypad, Play / Learn ---------- */
+/* Tutorial Learn: a small keypad (each key about twice a phone keyboard key),
+   so the number, the darts and both boards fit above it with no scrolling.
+   Above it the page only goes up and down, never sideways. */
+.screen.tutorial .keypad {
+  width: auto; grid-template-columns: repeat(3, 64px); gap: 6px; justify-content: center;
+}
+.screen.tutorial .pad-key { height: 42px; font-size: 1.15rem; border-radius: 10px; }
+.screen.tutorial .pad-undo { font-size: 0.7rem; gap: 3px; }
+.screen.tutorial .pad-undo svg { width: 14px; height: 14px; }
+.learn-top { overflow-x: hidden; }
+.learn-top .number-display { font-size: 3.4rem; margin: 0; line-height: 1.05; }
+.learn-top > .label { margin: 4px 0 4px; }
+.learn-top > .chips { margin: 0 0 4px; }
+/* Checkout practice and Checkout input: Play and Learn at the top. */
+.screen.choice > .swipe-area { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.screen.choice .tutorial-tabs { margin: 10px 0 0; }
+.tab-page { width: 100%; display: flex; flex-direction: column; align-items: center; }
+/* Learn: the boards a little smaller, so the lines under them fit too. */
+.learn-top .number-display { font-size: 2.8rem; }
+.learn-top > .chips .chip { min-width: 38px; height: 38px; padding: 0 10px; }
+.learn-top .tutor-card { margin: 2px 0 0; gap: 2px; }
+.learn-top .tutor-boards { gap: 8px; }
+.learn-top .tutor-fig .board-figure { max-width: 140px; margin: 0 auto; }
+.learn-top .tutor-fig > .label { margin: 2px 0 2px; }
+.learn-top .board-figure .tile-row.small .tile { width: 44px; height: 36px; font-size: 0.85rem; }
+.learn-top .card-why { margin-top: 4px; }
+.screen.tutorial .keypad { margin: 4px auto 4px; }
+.learn-top .tutor-card { margin-bottom: 0; }
+.learn-top .text-link.extra-title { min-height: 0; height: auto; padding: 2px 8px; margin: 2px 0; }
+.learn-top .tutor-fig .board-figure { max-width: 124px; }
+.learn-top .number-display { font-size: 2.5rem; }
+.learn-top .card-why, .learn-top .card-line { font-size: 0.85rem; line-height: 1.25; }
+.learn-top .board-figure .hint { font-size: 0.8rem; margin: 2px 0 0; }

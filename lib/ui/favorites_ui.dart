@@ -214,3 +214,19 @@ void showFavoritesPopup(ViewContext ctx, int target) {
     pages,
   ]);
 }
+
+/// The popup with every optimal way to check out [target] ([routes]), each on
+/// its board with its boxes and the favorite dart: the favorites first, then
+/// in order of the double they finish on. "Also optimal" opens it, on the
+/// result screen and on the tutorial boards.
+void showAllOptimal(ViewContext ctx, int target, List<CheckoutRoute> routes) {
+  showModal(title: tr('Every optimal way to check out {n}', {'n': target}), showTitle: false, body: [
+    el('p', cls: 'modal-line top', text: tr('Every optimal way to check out')),
+    // The number under it, in the middle of the popup, above all the boards.
+    el('p', cls: 'modal-number', text: '$target'),
+    // The favorites first. Then in order of the dart they finish on: D1, D2 ...
+    // D20, then the Bull - but a Bull finish sits right next to the route with
+    // the treble of its single (T7 D18 and S7 Bull).
+    routeGrid(ctx, target, favoritesFirst(ctx.game.favorites, target, routes, RouteOrder.forPopup(routes))),
+  ]);
+}

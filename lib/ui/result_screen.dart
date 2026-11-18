@@ -55,23 +55,7 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   // of them, the same as Checkout input lights up. It opens from "Also optimal"
   // (there is no separate link and the popup has no title of its own). Each
   // board has the favorite dart in its corner.
-  void openPossibilities() {
-    // Every optimal route at once. The boards are centred, so a last row with
-    // fewer boards sits in the middle.
-    showModal(title: tr('Every optimal way to check out {n}', {'n': challenge.target}), showTitle: false, body: [
-      el('p', cls: 'modal-line top', text: tr('Every optimal way to check out')),
-      // The number under it, in the middle of the popup, above all the boards.
-      el('p', cls: 'modal-number', text: '${challenge.target}'),
-      // The favorites first. Then in order of the dart they finish on: D1, D2 ...
-      // D20, then the Bull - but a Bull finish sits right next to the route with
-      // the treble of its single (T7 D18 and S7 Bull).
-      routeGrid(
-          ctx,
-          challenge.target,
-          favoritesFirst(game.favorites, challenge.target, result.optimalRoutes,
-              RouteOrder.forPopup(result.optimalRoutes))),
-    ]);
-  }
+  void openPossibilities() => showAllOptimal(ctx, challenge.target, result.optimalRoutes);
 
   // One more route with a better double, then up to 2 more, shown as boxes under
   // "Also optimal". Never the route you entered or the optimal route already on

@@ -20,59 +20,78 @@ import 'view_context.dart';
 /// to the side goes from one to the other.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
-  final tabs = TutorialTab.values;
-  final index = session.tab.index;
+  // In the order of [TutorialTab]: Practice first, then Learn.
+  final area = swipeTabs(
+    ctx,
+    name: 'tutorial',
+    labels: [
+      for (final which in TutorialTab.values)
+        switch (which) { TutorialTab.practice => tr('Practice'), TutorialTab.learn => tr('Learn') },
+    ],
+    index: session.tab.index,
+    choose: (i) => session.tab = TutorialTab.values[i],
+    pageOf: (i) => el('div', cls: 'tutorial-page', children: switch (TutorialTab.values[i]) {
+      TutorialTab.learn => _learn(ctx, session),
+      TutorialTab.practice => _practice(ctx, session),
+    }),
+  )..classList.add('play-area');
+  return el('main', cls: 'screen tutorial', children: [area]);
+}
 
+/// Chips over pages side by side ([labels], the page [index] showing): a press
+/// on a chip glides its white fill over and brings the page in, a swipe moves
+/// the page with the finger and the fill with it, as in Virulja's food
+/// categories. [choose] takes the page to show next; [pageOf] draws a page.
+/// The tutorial (Practice, Learn) and Checkout practice and input (Play,
+/// Learn) have them.
+web.HTMLElement swipeTabs(
+  ViewContext ctx, {
+  required String name,
+  required List<String> labels,
+  required int index,
+  required void Function(int index) choose,
+  required web.HTMLElement Function(int index) pageOf,
+}) {
   late final web.HTMLElement row;
   late final SwipeMark mark;
+  bool exists(int i) => i >= 0 && i < labels.length;
 
   // A press glides the fill over to the chip pressed, then the page comes in.
-  void show(TutorialTab which) {
-    if (which == session.tab) return;
-    final step = which.index > index ? 1 : -1;
-    final to = row.children.item(which.index) as web.HTMLElement?;
+  void show(int which) {
+    if (which == index) return;
+    final to = row.children.item(which) as web.HTMLElement?;
     animate(const Duration(milliseconds: 160), (progress) => mark.follow(to, progress), () {
-      session.tab = which;
+      choose(which);
       ctx.rerender();
-      slideIn(step);
+      slideIn(which > index ? 1 : -1);
     });
   }
 
-  web.HTMLButtonElement tab(TutorialTab which, String label) => button(label,
-      cls: 'chip${session.tab == which ? ' selected' : ''}',
-      focusKey: 'tutorial-${which.name}',
-      attrs: {'aria-pressed': '${session.tab == which}'},
-      onPressed: (kb) {
-        ctx.keepFocus(kb ? 'tutorial-${which.name}' : null);
-        show(which);
-      });
-
-  web.HTMLElement pageOf(TutorialTab which) => el('div', cls: 'tutorial-page', children: switch (which) {
-        TutorialTab.learn => _learn(ctx, session),
-        TutorialTab.practice => _practice(ctx, session),
-      });
-
-  // In the order of [TutorialTab]: Practice first, then Learn.
   row = el('div', cls: 'chips tutorial-tabs', children: [
-    for (final which in tabs)
-      tab(which, switch (which) { TutorialTab.practice => tr('Practice'), TutorialTab.learn => tr('Learn') }),
+    for (var i = 0; i < labels.length; i++)
+      button(labels[i],
+          cls: 'chip${i == index ? ' selected' : ''}',
+          focusKey: '$name-tab-$i',
+          attrs: {'aria-pressed': '${i == index}'},
+          onPressed: (kb) {
+            ctx.keepFocus(kb ? '$name-tab-$i' : null);
+            show(i);
+          }),
   ]);
   mark = SwipeMark(row);
-  final sliding = el('div', cls: 'slide-page', children: [pageOf(session.tab)]);
-  final area = el('div', cls: 'play-area swipe-area', children: [
+  final sliding = el('div', cls: 'slide-page', children: [pageOf(index)]);
+  final area = el('div', cls: 'swipe-area', children: [
     row,
     el('div', cls: 'slide-clip', children: [sliding]),
   ]);
-  followSwipes(area, sliding, (step) => index + step >= 0 && index + step < tabs.length, (step) {
-    session.tab = tabs[index + step];
+  followSwipes(area, sliding, (step) => exists(index + step), (step) {
+    choose(index + step);
     ctx.rerender();
   },
-      peek: (step) => pageOf(tabs[index + step]),
-      follow: (step, fraction) => mark.follow(
-          index + step >= 0 && index + step < tabs.length ? row.children.item(index + step) as web.HTMLElement? : null,
-          fraction));
-
-  return el('main', cls: 'screen tutorial', children: [area]);
+      peek: (step) => pageOf(index + step),
+      follow: (step, fraction) =>
+          mark.follow(exists(index + step) ? row.children.item(index + step) as web.HTMLElement? : null, fraction));
+  return area;
 }
 
 /// The card waits this long after the last digit, so it does not jump about
@@ -289,9 +308,17 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
       el('p', cls: 'card-line', text: tr('Aim for a good number to leave.')),
     ],
     if (boards.isNotEmpty) el('div', cls: 'result-boards tutor-boards', children: boards),
-    if (card.alsoGood.isNotEmpty)
-      el('p', cls: 'card-line',
-          text: tr('Almost as good: {darts}.', {'darts': card.alsoGood.map((d) => d.notation).join(', ')})),
+    // As on the result screen: "Also optimal" opens every optimal route, or
+    // the one route there is says so.
+    if (route != null)
+      if (ctx.game.tutorial.tutor.optimalRoutes(target, card.darts) case final all when all.length > 1)
+        button(tr('Also optimal'),
+            cls: 'text-link extra-title',
+            focusKey: 'tutor-all',
+            ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': target}),
+            onPressed: (_) => showAllOptimal(ctx, target, all))
+      else
+        el('p', cls: 'hint only-one', text: tr('Only possibility')),
     if (card.whyNot case final other?) ...[
       el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),
       for (final miss in card.whyNotMisses)

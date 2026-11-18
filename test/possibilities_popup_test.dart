@@ -6,7 +6,11 @@ import 'package:test/test.dart';
 /// The "All possibilities" popup and the scrollbar, checked from the source:
 /// these parts are drawn in the browser, so the rules they follow are pinned here.
 void main() {
-  final screen = File('lib/ui/result_screen.dart').readAsStringSync();
+  // The result screen, then the popup it opens (showAllOptimal, shared with
+  // the tutorial boards).
+  final favorites = File('lib/ui/favorites_ui.dart').readAsStringSync();
+  final screen = File('lib/ui/result_screen.dart').readAsStringSync() +
+      favorites.substring(favorites.indexOf('void showAllOptimal('));
   final modal = File('lib/ui/modal.dart').readAsStringSync();
   final css = File('web/styles.css').readAsStringSync();
 
@@ -96,7 +100,8 @@ void main() {
     });
 
     test('the popup shows every route at once - no "Shoot more"', () {
-      expect(screen, contains('RouteOrder.forPopup(result.optimalRoutes)'));
+      expect(screen, contains('RouteOrder.forPopup(routes)'));
+      expect(screen, contains('showAllOptimal(ctx, challenge.target, result.optimalRoutes)'));
       expect(screen, contains('routeGrid('));
       // Every optimal route, never a shorter list (the same as Checkout input lights).
       expect(screen, isNot(contains('listed')));
@@ -107,7 +112,7 @@ void main() {
 
     test('the sentence is on the right, the number under it in the middle above the boards', () {
       final sentence = screen.indexOf("text: tr('Every optimal way to check out')");
-      final number = screen.indexOf("cls: 'modal-number', text: '\${challenge.target}'");
+      final number = screen.indexOf("cls: 'modal-number', text: '\$target'");
       final boards = screen.indexOf('routeGrid(');
       expect(sentence, greaterThan(0));
       expect(number, greaterThan(sentence));

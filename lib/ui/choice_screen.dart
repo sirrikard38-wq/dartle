@@ -5,6 +5,7 @@ import 'dom.dart';
 import 'game_screen.dart';
 import 'how_to_play.dart';
 import 'tiles.dart';
+import 'tutorial_screen.dart';
 import 'view_context.dart';
 
 /// How a dart's rating shows on its tile (white / grey / pink + marks).
@@ -37,7 +38,7 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
   final choose = game.canChooseDarts;
   final other = round.maxDarts == 3 ? 2 : 3;
 
-  return el('main', cls: 'screen game choice', children: [
+  web.HTMLElement play() => el('div', cls: 'tab-page', children: [
     el('div', cls: 'play-area', children: [
       el('p', cls: 'meta', text: tr('Finish on a double or Bull.')),
       el('p', cls: 'target', text: '${round.remaining}', attrs: {
@@ -65,5 +66,27 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
     ]),
     buildEntryPanel(ctx),
     buildHowToPlay(game),
+  ]);
+
+  // Learn: what to aim at on the number on screen with the darts left - the
+  // route and a miss, the same boards as Checkout tutorial.
+  web.HTMLElement learn() {
+    final card = game.tutorial.tutor.card(round.remaining, round.dartsLeft);
+    return el('div', cls: 'tab-page play-area', children: [
+      el('p', cls: 'target', text: '${round.remaining}'),
+      el('p', cls: 'label', text: trn(round.dartsLeft, '{n} dart in hand', '{n} darts in hand')),
+      card == null ? el('p', cls: 'hint', text: tr('This number is impossible to checkout.')) : tutorBoards(ctx, card),
+    ]);
+  }
+
+  return el('main', cls: 'screen game choice', children: [
+    swipeTabs(
+      ctx,
+      name: 'choice',
+      labels: [tr('Play'), tr('Learn')],
+      index: ctx.learning ? 1 : 0,
+      choose: (i) => ctx.learning = i == 1,
+      pageOf: (i) => i == 1 ? learn() : play(),
+    ),
   ]);
 }

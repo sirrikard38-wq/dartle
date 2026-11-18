@@ -33,6 +33,11 @@ class ViewContext {
   /// Checkout input: the digits typed so far.
   String numberBuffer = '';
 
+  /// Checkout practice and Checkout input: the Learn page is showing (the
+  /// route and a miss for the number on screen) instead of Play. It stays from
+  /// one number to the next.
+  bool learning = false;
+
   /// Where each entered dart landed on the board, aligned with
   /// `game.entered`. An entry is null when the dart was not entered by
   /// tapping the board (keyboard); its mark is drawn mid-segment.

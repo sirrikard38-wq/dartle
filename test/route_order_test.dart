@@ -189,8 +189,11 @@ void main() {
   });
 
   test('the All possibilities popup lists the routes in that order', () {
+    // The result screen and the tutorial open the same popup, showAllOptimal.
     final screen = File('lib/ui/result_screen.dart').readAsStringSync();
-    expect(screen, contains('RouteOrder.forPopup(result.optimalRoutes)'));
+    expect(screen, contains('showAllOptimal(ctx, challenge.target, result.optimalRoutes)'));
+    final popup = File('lib/ui/favorites_ui.dart').readAsStringSync();
+    expect(popup, contains('RouteOrder.forPopup(routes)'));
   });
 }
 

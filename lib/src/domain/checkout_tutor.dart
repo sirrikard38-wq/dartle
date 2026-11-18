@@ -105,6 +105,10 @@ class CheckoutTutor {
   /// darts in hand: the table's target or one almost as good.
   bool isRight(int target, int darts, DartThrow dart) => _optimal.aimsIn(target, darts).contains(dart);
 
+  /// Every optimal route of [target] with [darts] darts in hand, the table's
+  /// own first ("Also optimal" lists them).
+  List<CheckoutRoute> optimalRoutes(int target, int darts) => _optimal.optimalRoutesIn(target, darts);
+
   /// True when [route] is one of the optimal routes of [target] with [darts]
   /// darts in hand.
   bool isOptimalIn(int target, int darts, CheckoutRoute route) => _optimal.isOptimalIn(target, darts, route);
