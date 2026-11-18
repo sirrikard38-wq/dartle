@@ -727,13 +727,18 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* The keypad sits at the bottom, so a card that appears goes above it. */
 .screen.tutorial .keypad { padding: 0; margin-top: auto; }
 .pad-spacer { display: block; }
-.tutor-card {
-  width: min(100%, 380px); margin: 10px 0; padding: 12px 14px;
-  border: 2px solid var(--fg); border-radius: 10px;
-  text-align: left; display: grid; gap: 4px;
-}
+/* No box: the aim, then the route and a miss on two boards side by side. */
+.tutor-card { width: 100%; margin: 6px 0 10px; display: grid; gap: 4px; justify-items: center; }
+.tutor-boards { margin: 4px 0 2px; }
+.tutor-fig { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.tutor-fig > .label { margin: 4px 0 6px; }
+/* Learn and Practice side by side: a swipe moves the page with the finger. */
+.swipe-area { touch-action: pan-y; }
+.slide-clip { overflow-x: clip; width: 100%; flex: 1; display: flex; flex-direction: column; }
+.slide-page { flex: 1; display: flex; flex-direction: column; }
+.tutorial-page { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
 .card-aim { margin: 0; font-size: 1.15rem; font-weight: 700; }
-.card-line { margin: 0; font-size: 0.95rem; }
+.card-line { margin: 0; font-size: 0.95rem; color: var(--fg); }
 .card-why { margin: 8px 0 0; font-weight: 700; }
 .screen.tutorial .hint, .screen.tutorial .number-display.empty { color: var(--fg); }
 

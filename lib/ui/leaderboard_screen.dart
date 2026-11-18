@@ -4,21 +4,15 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
+/// The leaderboard: the players by total points, nothing else - no title and
+/// no other ranking.
 web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
   final game = ctx.game;
-  final sort = ctx.leaderboardSort;
   final list = el('ol', cls: 'rank-list');
   final status = el('p', cls: 'hint', text: tr('Loading…'));
   final note = el('p', cls: 'hint', text: '');
 
-  String metric(LeaderboardEntry e) => switch (sort) {
-        LeaderboardSort.points => '${e.totalPoints}',
-        LeaderboardSort.averageTime => formatMsAsSeconds(e.averageTimeMs),
-        LeaderboardSort.accuracy => formatPercent(e.accuracyPercent),
-        LeaderboardSort.optimalPercent => formatPercent(e.optimalPercent),
-      };
-
-  game.leaderboard(sort).then((entries) {
+  game.leaderboard(LeaderboardSort.points).then((entries) {
     final online = game.leaderboardIsOnline;
     final myId = game.leaderboardPlayerId;
     // Online rows are told apart by id (two players may share a name); local
@@ -30,7 +24,7 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
     for (final e in entries) {
       list.appendChild(el('li', cls: isMe(e) ? 'me' : null, children: [
         el('span', cls: 'name', text: e.playerName),
-        el('strong', text: metric(e)),
+        el('strong', text: '${e.totalPoints}'),
       ]));
     }
     // Only the players there are now are listed, but the board shows all its
@@ -49,18 +43,6 @@ web.HTMLElement buildLeaderboardScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen leaderboard', children: [
     el('div', cls: 'play-area', children: [
-      // The title is in the middle (the style uppercases it).
-      el('h2', text: tr('180 Leaderboard')),
-      el('div', cls: 'chips', attrs: {'role': 'group', 'aria-label': tr('Rank by')}, children: [
-        for (final option in LeaderboardSort.values)
-          button(tr(option.label),
-              cls: 'chip${option == sort ? ' selected' : ''}',
-              attrs: {'aria-pressed': '${option == sort}'},
-              onPressed: (_) {
-                ctx.leaderboardSort = option;
-                ctx.rerender();
-              }),
-      ]),
       status,
       list,
       note,

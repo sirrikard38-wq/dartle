@@ -18,6 +18,7 @@ import 'modes_screen.dart';
 import 'number_entry_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
+import 'swipes.dart';
 import 'to_top.dart';
 import 'tutorial_screen.dart';
 import 'view_context.dart';
@@ -61,6 +62,7 @@ class DartleApp {
     web.document.body!.appendChild(_toast);
     _toTop = ToTopDart();
     web.EventStreamProviders.keyDownEvent.forTarget(web.document).listen(_onKey);
+    _listenForBack();
     // Only the clock text is updated per tick, never the whole tree. The value
     // comes from the monotonic AttemptTimer, so re-renders can't skew it.
     Timer.periodic(const Duration(milliseconds: 50), (_) => _tickClock());
@@ -144,6 +146,7 @@ class DartleApp {
     if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
     if (!fullScreen) _root.appendChild(buildFooter());
+    _syncHistory();
 
     final key = _focusKey;
     _focusKey = null;
@@ -244,7 +247,53 @@ class DartleApp {
       circle: false,
       onPressed: back,
     );
+    _back = back;
     return stage;
+  }
+
+  /// What the Back dart on screen does, with its animation; null on the menu,
+  /// which has no way back.
+  Future<void> Function()? _back;
+
+  /// Whether the browser has a step of its own history for the way back.
+  bool _backEntry = false;
+
+  /// The phone's own ways back do what the Back dart does, animation and all:
+  /// the back button or the swipe from the left edge of a browser (one step
+  /// of the browser's history is kept for it whenever there is a way back), and
+  /// on an iPhone the app on the home screen, which has no swipe of its own, a
+  /// swipe from the left edge.
+  void _listenForBack() {
+    web.EventStreamProviders.popStateEvent.forTarget(web.window).listen((_) {
+      _backEntry = false;
+      _back?.call();
+    });
+    if (!isInstalledApp || !isIos) return;
+    double? startX;
+    var startY = 0.0;
+    web.EventStreamProviders.touchStartEvent.forTarget(web.document).listen((event) {
+      final touch = event.changedTouches.item(0)!;
+      startX = event.touches.length == 1 && touch.clientX < backGestureEdge ? touch.clientX.toDouble() : null;
+      startY = touch.clientY.toDouble();
+    });
+    web.EventStreamProviders.touchEndEvent.forTarget(web.document).listen((event) {
+      final from = startX;
+      startX = null;
+      if (from == null) return;
+      final touch = event.changedTouches.item(0)!;
+      final across = touch.clientX - from;
+      if (across > 70 && (touch.clientY - startY).abs() < across) _back?.call();
+    });
+  }
+
+  /// Keeps one step of the browser's history while there is a way back.
+  void _syncHistory() {
+    final deep = !(_game.phase == GamePhase.menu && (_page == MenuPage.home || _page == MenuPage.welcome));
+    if (!deep) _back = null;
+    if (deep && !_backEntry) {
+      web.window.history.pushState(null, '');
+      _backEntry = true;
+    }
   }
 
   void _showToast(String message) {

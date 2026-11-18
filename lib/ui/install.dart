@@ -111,6 +111,9 @@ bool get isInstalledApp {
   }
 }
 
+/// An iPhone or iPad.
+bool get isIos => _isIos;
+
 bool get _isIos {
   final nav = web.window.navigator;
   final ua = nav.userAgent;

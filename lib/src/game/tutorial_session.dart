@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import '../board/board_geometry.dart';
 import '../domain/checkout_engine.dart';
+import '../domain/checkout_route.dart';
 import '../domain/checkout_tutor.dart';
 import '../domain/dart_throw.dart';
 
@@ -25,10 +27,12 @@ class TutorialSession {
   String learnDigits = '';
   int learnDarts = 3;
 
-  /// Practice: the number and darts of the question, and the dart pressed.
+  /// Practice: the number and darts of the question, and the darts thrown at it
+  /// so far, with where each was pressed on the board (null when typed).
   int practiceTarget = 2;
   int practiceDarts = 1;
-  DartThrow? answer;
+  final List<DartThrow> thrown = [];
+  final List<BoardPoint?> marks = [];
 
   /// The digits the card is shown for. The card waits until the typing stops,
   /// so it does not jump about while a number is typed ([showTypedNumber]).
@@ -67,7 +71,8 @@ class TutorialSession {
   /// A new practice question: a number that can be checked out with the darts
   /// given, from one dart up to three.
   void newQuestion() {
-    answer = null;
+    thrown.clear();
+    marks.clear();
     while (true) {
       final target = CheckoutEngine.minCheckout +
           _random.nextInt(CheckoutEngine.maxCheckout - CheckoutEngine.minCheckout + 1);
@@ -81,14 +86,40 @@ class TutorialSession {
     }
   }
 
-  /// Practice: the dart pressed for the question (only the first press counts).
-  void pressAnswer(DartThrow dart) => answer ??= dart;
+  /// What is left of the practice number after the darts thrown.
+  int get practiceLeft => practiceTarget - thrown.fold<int>(0, (sum, d) => sum + d.score);
 
-  /// Whether the answer was right; null before it is given.
-  bool? get answerRight {
-    final dart = answer;
-    return dart == null ? null : tutor.isRight(practiceTarget, practiceDarts, dart);
+  /// The question is played out: every dart is thrown, it is checked out, or
+  /// it went bust (below zero, 1 left, or zero without a double).
+  bool get practiceDone {
+    final left = practiceLeft;
+    return thrown.length >= practiceDarts || left <= 1;
   }
+
+  /// Throws [dart] at the practice number, [at] where it was pressed.
+  void throwPractice(DartThrow dart, [BoardPoint? at]) {
+    if (practiceDone) return;
+    thrown.add(dart);
+    marks.add(at);
+  }
+
+  /// Takes back the last dart, while the question is still being played.
+  void undoPractice() {
+    if (thrown.isEmpty || practiceDone) return;
+    thrown.removeLast();
+    marks.removeLast();
+  }
+
+  /// The darts thrown as a route.
+  CheckoutRoute get practiceRoute => CheckoutRoute(thrown);
+
+  /// Checked out, on a double, with the darts given.
+  bool get practiceCheckedOut => practiceRoute.isCheckoutFor(practiceTarget);
+
+  /// Checked out on one of the optimal routes; null until it is played out.
+  bool? get practiceRight => practiceDone
+      ? practiceCheckedOut && tutor.isOptimalIn(practiceTarget, practiceDarts, practiceRoute)
+      : null;
 
   /// The card for the practice question.
   TutorCard get practiceCard => tutor.card(practiceTarget, practiceDarts)!;

@@ -66,6 +66,22 @@ final class TutorCard {
   final DartThrow? whyNot;
   final DartOutcome? whyNotHit;
   final List<DartOutcome> whyNotMisses;
+
+  /// The miss to show beside the route: one that still leaves a checkout, or
+  /// else the first one. Null for a pair of hits (48: S16 or S8).
+  DartOutcome? get shownMiss {
+    if (misses.isEmpty) return null;
+    return misses.firstWhere((miss) => miss.hasCheckout, orElse: () => misses.first);
+  }
+
+  /// The whole route of a dart's outcome, from [target]: the dart, then the
+  /// route of what it leaves (S20 T20 D10 for a miss into S20 on 100). Null
+  /// when it leaves no checkout.
+  CheckoutRoute? routeOf(DartOutcome outcome) {
+    if (outcome.checkedOut) return CheckoutRoute([outcome.dart]);
+    final rest = outcome.route;
+    return rest == null ? null : CheckoutRoute([outcome.dart, ...rest.darts]);
+  }
 }
 
 /// Builds the tutorial cards from the checkout tables ([OptimalRouteService]).
@@ -88,6 +104,10 @@ class CheckoutTutor {
   /// True when [dart] is one of the right first darts on [target] with [darts]
   /// darts in hand: the table's target or one almost as good.
   bool isRight(int target, int darts, DartThrow dart) => _optimal.aimsIn(target, darts).contains(dart);
+
+  /// True when [route] is one of the optimal routes of [target] with [darts]
+  /// darts in hand.
+  bool isOptimalIn(int target, int darts, CheckoutRoute route) => _optimal.isOptimalIn(target, darts, route);
 
   /// The darts a throw at [dart] most often lands in instead
   /// ([OptimalRouteService.missesOf]).

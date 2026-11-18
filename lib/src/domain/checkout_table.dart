@@ -32,8 +32,14 @@ abstract final class CheckoutTable {
   /// The row for [target] with [darts] darts in hand, or null.
   static CheckoutTableRow? row(int target, int darts) => checkoutTables[darts]?[target];
 
-  /// The first target (two for a pair of neighbours: 48 is S16 and S8).
-  static List<DartThrow> aims(CheckoutTableRow row) => _darts(row.aim);
+  /// The first target (two for a pair of neighbours: 48 is S16 and S8). The
+  /// table's BULL is the bull area when a route starts on the outer bull: 65
+  /// with three darts is 25 D20 or Bull S7 D4, so 25 and the Bull are both hits.
+  static List<DartThrow> aims(CheckoutTableRow row) {
+    final bullArea = row.aim.toUpperCase() == 'BULL' &&
+        row.route.split(' ili ').any((choice) => choice.trim().startsWith('25'));
+    return bullArea ? const [DartThrow.outerBull, DartThrow.bull] : _darts(row.aim);
+  }
 
   /// The targets almost as good as [aims].
   static List<DartThrow> alternatives(CheckoutTableRow row) => [

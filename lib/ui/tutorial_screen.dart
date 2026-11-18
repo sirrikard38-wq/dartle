@@ -1,42 +1,64 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 import 'dartboard.dart';
 import 'dom.dart';
+import 'favorites_ui.dart';
+import 'game_screen.dart';
 import 'keyboard.dart';
+import 'swipes.dart';
+import 'tiles.dart';
 import 'view_context.dart';
 
-/// Checkout tutorial: Learn (type a number, choose the darts in hand, read the
-/// card) and Practice (a number and darts are given; press where you would aim
-/// and the same card says if it was right and why).
+/// Checkout tutorial: Learn (type a number, choose the darts in hand, see the
+/// route and a miss on two boards) and Practice (a number and darts are given
+/// and played out as in Checkout calculator; then the same boards). A swipe
+/// to the side goes from one to the other.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
+  final tabs = TutorialTab.values;
+  final index = session.tab.index;
+
+  void show(TutorialTab which) {
+    if (which == session.tab) return;
+    final step = which.index > index ? 1 : -1;
+    session.tab = which;
+    ctx.rerender();
+    slideIn(step);
+  }
 
   web.HTMLButtonElement tab(TutorialTab which, String label) => button(label,
       cls: 'chip${session.tab == which ? ' selected' : ''}',
       focusKey: 'tutorial-${which.name}',
       attrs: {'aria-pressed': '${session.tab == which}'},
       onPressed: (kb) {
-        session.tab = which;
         ctx.keepFocus(kb ? 'tutorial-${which.name}' : null);
-        ctx.rerender();
+        show(which);
       });
 
-  return el('main', cls: 'screen tutorial', children: [
-    el('div', cls: 'play-area', children: [
-      el('div', cls: 'chips tutorial-tabs', children: [
-        tab(TutorialTab.learn, tr('Learn')),
-        tab(TutorialTab.practice, tr('Practice')),
-      ]),
-      ...switch (session.tab) {
+  web.HTMLElement pageOf(TutorialTab which) => el('div', cls: 'tutorial-page', children: switch (which) {
         TutorialTab.learn => _learn(ctx, session),
         TutorialTab.practice => _practice(ctx, session),
-      },
+      });
+
+  final sliding = el('div', cls: 'slide-page', children: [pageOf(session.tab)]);
+  final area = el('div', cls: 'play-area swipe-area', children: [
+    el('div', cls: 'chips tutorial-tabs', children: [
+      tab(TutorialTab.learn, tr('Learn')),
+      tab(TutorialTab.practice, tr('Practice')),
     ]),
+    el('div', cls: 'slide-clip', children: [sliding]),
   ]);
+  followSwipes(area, sliding, (step) => index + step >= 0 && index + step < tabs.length, (step) {
+    session.tab = tabs[index + step];
+    ctx.rerender();
+  }, peek: (step) => pageOf(tabs[index + step]));
+
+  return el('main', cls: 'screen tutorial', children: [area]);
 }
 
 /// The card waits this long after the last digit, so it does not jump about
@@ -58,9 +80,9 @@ void _keepKeypadInPlace(ViewContext ctx, void Function() change) {
   }
 }
 
-/// Learn: the number typed, the darts in hand, the card and the keypad. The
-/// keypad stays put: the card shows a second after the last digit, and what
-/// it adds goes above the keypad.
+/// Learn: the number typed, the darts in hand, the boards and the keypad. The
+/// keypad stays put: the boards show a second after the last digit, and what
+/// they add goes above the keypad.
 List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
   final digits = session.learnDigits;
   final card = session.learnCard;
@@ -113,7 +135,7 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
     el('p', cls: 'label', text: tr('Darts in hand')),
     el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]),
     if (card != null)
-      tutorCard(card)
+      tutorBoards(ctx, card)
     else
       el('p', cls: 'hint', text: tr('Type a number from 2 to 170.')),
     el('div', cls: 'keypad', attrs: {'aria-label': tr('Number pad')}, children: [
@@ -125,87 +147,139 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
   ];
 }
 
-/// Practice: the question, the board to answer on, then the verdict and card.
+/// Practice: the number is played out as in Checkout calculator - the boxes,
+/// what is left, the board with S, D and T, and Undo. Once every dart is
+/// thrown (or it is checked out, or bust) the verdict and the boards show.
 List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
-  final answer = session.answer;
-  final right = session.answerRight;
-  final card = session.practiceCard;
+  final darts = session.practiceDarts;
+  final layout = BoxLayout.defaultFor(darts);
+  final done = session.practiceDone;
+
+  final boxes = tileRow(session.thrown,
+      slots: Visit.darts, used: layout.used, activeIndex: session.thrown.length, showDarts: true);
+
+  if (!done) {
+    final finalBox = session.thrown.length == darts - 1;
+    return [
+      el('p', cls: 'meta', text: tr('Finish on a double or Bull in the given number of darts.')),
+      el('p', cls: 'target', text: '${session.practiceTarget}'),
+      boxes,
+      remainingLine(session.practiceTarget, session.thrown),
+      buildInputPanel(
+        multiplier: finalBox ? Multiplier.double : (ctx.pickedMultiplier ?? Multiplier.single),
+        finalBox: finalBox,
+        canUndo: session.thrown.isNotEmpty,
+        marks: markPoints(session.thrown, session.marks),
+        ringButtons: true,
+        onPickMultiplier: (m, kb, focusKey) {
+          ctx.pickedMultiplier = m;
+          ctx.keepFocus(kb ? focusKey : null);
+          ctx.rerender();
+        },
+        onDart: (dart, point, kb) {
+          session.throwPractice(dart, point);
+          ctx.rerender();
+        },
+        onUndo: (kb) {
+          ctx.keepFocus(kb ? 'undo' : null);
+          session.undoPractice();
+          ctx.rerender();
+        },
+      ),
+    ];
+  }
+
+  final right = session.practiceRight!;
+  final left = session.practiceLeft;
+  final headline = right
+      ? tr('Optimal!')
+      : session.practiceCheckedOut
+          ? tr('Checkout!')
+          : left < 0 || left == 1 || left == 0
+              ? tr('Bust')
+              : tr('Out of darts');
   return [
-    el('p', cls: 'target', text: '${session.practiceTarget}'),
-    el('p', cls: 'hint', text: trn(session.practiceDarts, '{n} dart in hand', '{n} darts in hand')),
-    if (answer == null) ...[
-      el('p', cls: 'hint', text: tr('Press where you would aim.')),
-      el('div', cls: 'board-wrap tutorial-board', children: [
-        buildDartboard(
-          byArea: true,
-          onDart: (dart, point, kb) {
-            session.pressAnswer(dart);
-            ctx.rerender();
-          },
-          label: tr('Dartboard. Press the area you want to throw.'),
-        ),
-      ]),
-    ] else ...[
-      el('p', cls: 'headline ${right! ? 'good' : 'bad'}',
-          text: right
-              ? '✓ ${tr('Right: {dart}', {'dart': answer.notation})}'
-              : '✗ ${tr('Not quite: {dart}', {'dart': answer.notation})}',
-          attrs: {'role': 'status'}),
-      tutorCard(card),
-      button(tr('Next question'),
-          cls: 'cta',
-          focusKey: 'next-question',
-          onPressed: (_) {
-            session.newQuestion();
-            ctx.keepFocus(null);
-            ctx.rerender();
-          }),
-    ],
+    el('p', cls: 'headline ${session.practiceCheckedOut ? 'good' : 'bad'}',
+        text: '${session.practiceCheckedOut ? '✓' : '✗'} $headline', attrs: {'role': 'status'}),
+    el('p', cls: 'target small', text: '${session.practiceTarget}'),
+    boxes,
+    tutorBoards(ctx, session.practiceCard),
+    button(tr('Next question'),
+        cls: 'cta',
+        focusKey: 'next-question',
+        onPressed: (_) {
+          session.newQuestion();
+          ctx.keepFocus(null);
+          ctx.rerender();
+        }),
   ];
 }
 
-/// The card: what to aim at, the route, what a hit and a miss leave, and why
-/// not the most tempting other target. Two or three short lines each.
-web.HTMLElement tutorCard(TutorCard card) {
+/// What to aim at, then two boards side by side: the route, and a miss into
+/// the next area with what it leaves (for a pair of hits, the other hit). Each
+/// board can be made a favorite. Under them the targets almost as good and,
+/// where a miss changes everything, why not the tempting other target.
+web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
   final aims = card.aims;
   final route = card.route;
-  // A hit that just goes on along the route says nothing the route does not.
-  bool sameAsRoute(DartOutcome hit) =>
-      aims.length == 1 &&
-      route != null &&
-      (hit.checkedOut ? route.length == 1 : hit.route?.notation == CheckoutRoute(route.darts.skip(1)).notation);
-  final lines = <web.HTMLElement>[
-    el('p', cls: 'card-aim',
-        text: aims.length == 2
-            ? tr('Aim between {a} and {b}.', {'a': aims[0].notation, 'b': aims[1].notation})
-            : tr('Aim at {dart}.', {'dart': aims.first.notation})),
-    if (route != null)
-      el('p', cls: 'card-line', text: tr('Route: {route}', {'route': _chain(route, card.target)}))
-    else
+  final target = card.target;
+
+  web.HTMLElement titled(String title, web.HTMLElement figure) =>
+      el('div', cls: 'tutor-fig', children: [el('p', cls: 'label', text: title), figure]);
+
+  final String aim;
+  if (aims.length == 2) {
+    aim = aims.contains(DartThrow.bull)
+        ? tr('Aim at the bull: {a} or {b}.', {'a': aims[0].notation, 'b': aims[1].notation})
+        : tr('Aim between {a} and {b}.', {'a': aims[0].notation, 'b': aims[1].notation});
+  } else {
+    aim = tr('Aim at {dart}.', {'dart': aims.first.notation});
+  }
+
+  final boards = <web.HTMLElement>[];
+  if (route != null) {
+    boards.add(titled(tr('Route'), routeFigure(ctx, target, route)));
+    if (aims.length == 2 && card.hits.length == 2) {
+      final other = card.routeOf(card.hits[1]);
+      if (other != null) boards.add(titled(tr('Or'), routeFigure(ctx, target, other)));
+    } else if (card.shownMiss case final miss?) {
+      final title = tr('Miss into {dart}', {'dart': miss.dart.notation});
+      final missRoute = card.routeOf(miss);
+      boards.add(titled(title, missRoute != null ? routeFigure(ctx, target, missRoute) : _deadEnd(card, miss)));
+    }
+  }
+
+  return el('div', cls: 'tutor-card', children: [
+    el('p', cls: 'card-aim', text: aim),
+    if (route == null)
       el('p', cls: 'card-line',
           text: trn(card.darts, 'No checkout with {n} dart: aim for a good number to leave.',
               'No checkout with {n} darts: aim for a good number to leave.')),
+    if (boards.isNotEmpty) el('div', cls: 'result-boards tutor-boards', children: boards),
     if (card.alsoGood.isNotEmpty)
       el('p', cls: 'card-line',
           text: tr('Almost as good: {darts}.', {'darts': card.alsoGood.map((d) => d.notation).join(', ')})),
-    for (final hit in card.hits)
-      if (!sameAsRoute(hit))
-        el('p', cls: 'card-line', text: _outcome(card, tr('Hit {dart}', {'dart': hit.dart.notation}), hit)),
-    for (final miss in card.misses)
-      el('p', cls: 'card-line', text: _outcome(card, tr('Miss into {dart}', {'dart': miss.dart.notation}), miss)),
     if (card.whyNot case final other?) ...[
       el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),
-      if (card.whyNotHit case final hit?)
-        el('p', cls: 'card-line', text: _outcome(card, tr('Hit {dart}', {'dart': hit.dart.notation}), hit)),
       for (final miss in card.whyNotMisses)
         el('p', cls: 'card-line', text: _outcome(card, tr('Miss into {dart}', {'dart': miss.dart.notation}), miss)),
     ],
-  ];
-  return el('div', cls: 'tutor-card', children: lines);
+  ]);
 }
 
+/// A miss that leaves no checkout: just that dart on its board, and why.
+web.HTMLElement _deadEnd(TutorCard card, DartOutcome miss) => el('figure', cls: 'board-figure', children: [
+      buildDartboard(
+        linesOnly: true,
+        marks: spreadMarks([miss.dart], const [], math.Random(routeSeed(miss.dart.notation))),
+        label: tr('Miss into {dart}', {'dart': miss.dart.notation}),
+      ),
+      tileRow([miss.dart], slots: 1, small: true, states: const [TileState.absent], label: miss.dart.notation),
+      el('p', cls: 'hint', text: _outcome(card, miss.dart.notation, miss)),
+    ]);
+
 /// One line for what a dart leaves, each dart with what is left after it:
-/// "Hit T20 (67) --> T17 (16) --> D8".
+/// "S19 (108) --> no checkout with 2 darts".
 String _outcome(TutorCard card, String what, DartOutcome outcome) {
   if (outcome.bust) return tr('{what}: bust.', {'what': what});
   if (outcome.checkedOut) return tr('{what}: checked out.', {'what': what});

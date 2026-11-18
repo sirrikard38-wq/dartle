@@ -133,28 +133,66 @@ void main() {
       expect(session.learnTarget, isNull);
     });
 
-    test('Practice: every question can be checked out, and only the first press counts', () {
+    test('Practice: every question can be checked out; it is played out with every dart', () {
       final session = TutorialSession(tutor, random: Random(7));
       for (var i = 0; i < 200; i++) {
         session.newQuestion();
         expect(session.practiceCard.route, isNotNull, reason: '${session.practiceTarget}');
-        expect(session.answer, isNull);
+        expect(session.thrown, isEmpty);
+        expect(session.practiceRight, isNull);
       }
-      final right = session.practiceCard.aims.first;
-      session.pressAnswer(right);
-      expect(session.answerRight, isTrue);
-      session.pressAnswer(d('S1'));
-      expect(session.answer, right);
+    });
+
+    test('Practice: the table route is right, shown once it is played out; undo takes a dart back', () {
+      final session = TutorialSession(tutor, random: Random(3))
+        ..practiceTarget = 127
+        ..practiceDarts = 3
+        ..throwPractice(d('T20'))
+        ..throwPractice(d('T19'));
+      expect(session.practiceDone, isFalse);
+      session.undoPractice(); // pressed the wrong one
+      expect(session.thrown, [d('T20')]);
+      session
+        ..throwPractice(d('T17'))
+        ..throwPractice(d('D8'));
+      expect(session.practiceDone, isTrue);
+      expect(session.practiceRight, isTrue);
+      session.undoPractice(); // played out: it stays
+      expect(session.thrown, hasLength(3));
       session.newQuestion();
-      expect(session.answerRight, isNull);
+      expect(session.thrown, isEmpty);
+    });
+
+    test('Practice: a route that finishes early is right when the table says so; a bust is not', () {
+      final early = TutorialSession(tutor, random: Random(3))
+        ..practiceTarget = 64
+        ..practiceDarts = 3
+        ..throwPractice(d('T16'))
+        ..throwPractice(d('D8'));
+      expect(early.practiceDone, isTrue);
+      expect(early.practiceRight, isTrue);
+      final bust = TutorialSession(tutor, random: Random(3))
+        ..practiceTarget = 40
+        ..practiceDarts = 2
+        ..throwPractice(d('T20'));
+      expect(bust.practiceDone, isTrue);
+      expect(bust.practiceRight, isFalse);
     });
 
     test('a target almost as good is right too', () {
       final session = TutorialSession(tutor, random: Random(3))
         ..practiceTarget = 62
         ..practiceDarts = 3
-        ..pressAnswer(d('T18'));
-      expect(session.answerRight, isTrue);
+        ..throwPractice(d('T18'))
+        ..throwPractice(d('D4'));
+      expect(session.practiceRight, isTrue);
+    });
+
+    test('the bull area: 65 with three darts is 25 D20 or Bull S7 D4, both hits', () {
+      final card = tutor.card(65, 3)!;
+      expect(card.aims, [DartThrow.outerBull, DartThrow.bull]);
+      expect(card.misses, isEmpty);
+      expect(card.hits.map((h) => card.routeOf(h)!.notation), ['25 D20', 'Bull S7 D4']);
     });
   });
 }

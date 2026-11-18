@@ -80,7 +80,10 @@ class OptimalRouteService {
       ...CheckoutTable.alternatives(row),
       ..._asGood(target, darts, row),
     };
-    final aimKept = aims.map((aim) => missesKept(target, darts, aim)).reduce((a, b) => a < b ? a : b);
+    // The outer bull has no next area to miss into: it says nothing here.
+    final measured = aims.where((aim) => missesOf(aim).isNotEmpty);
+    if (measured.isEmpty) return lit;
+    final aimKept = measured.map((aim) => missesKept(target, darts, aim)).reduce((a, b) => a < b ? a : b);
     for (final route in routes) {
       for (final dart in route.setupDarts) {
         if (!lit.contains(dart) && missesKept(target, darts, dart) == aimKept) lit.add(dart);
@@ -109,10 +112,15 @@ class OptimalRouteService {
     final aims = CheckoutTable.aims(row);
     int fewest(Iterable<int?> values) => values.whereType<int>().fold(99, (a, b) => a < b ? a : b);
     final aimHit = fewest(aims.map(dartsAfterHit));
-    final aimKept = fewest(aims.map((aim) => missesKept(target, darts, aim)));
-    // A single is far easier to hit than a treble, so only the same kind counts.
+    final aimKept = fewest([
+      for (final aim in aims)
+        if (missesOf(aim).isNotEmpty) missesKept(target, darts, aim),
+    ]);
+    // A single is far easier to hit than a treble, so only the same kind counts;
+    // and the bull is a kind of its own.
+    bool bullArea(DartThrow dart) => dart.number == DartThrow.bullNumber;
     bool sensible(DartThrow dart) =>
-        aims.any((aim) => aim.multiplier == dart.multiplier && aim.isBull == dart.isBull) &&
+        aims.any((aim) => aim.multiplier == dart.multiplier && bullArea(aim) == bullArea(dart)) &&
         (dart.score == target || (dart.multiplier != Multiplier.double && NaturalAim.isNatural(dart)));
     return [
       for (final dart in _candidates)

@@ -44,15 +44,12 @@ void main() {
     });
   });
 
-  group('the leaderboard title', () {
-    test('"180 LEADERBOARD" is in the middle, not at the right edge', () {
-      expect(leaderboard, contains("el('h2', text: tr('180 Leaderboard'))"));
-      expect(leaderboard, isNot(contains('screen-title-right')));
-      expect(css, isNot(contains('screen-title-right')));
-      // The heading style centres it (the screen's text is centred and uppercased).
-      final h2 = RegExp(r'\bh2 \{[^}]*\}').firstMatch(css)!.group(0)!;
-      expect(h2, contains('text-transform: uppercase'));
-      expect(css, contains('text-align: center;'));
+  group('the leaderboard', () {
+    test('only the total points: no title, no other ranking to choose', () {
+      expect(leaderboard, isNot(contains('180 Leaderboard')));
+      expect(leaderboard, isNot(contains('Rank by')));
+      expect(leaderboard, contains('LeaderboardSort.points'));
+      expect(leaderboard, isNot(contains('LeaderboardSort.values')));
     });
   });
 }

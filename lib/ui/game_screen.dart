@@ -118,6 +118,10 @@ web.HTMLElement timerLine(GameController game) => el('p',
     attrs: {'id': 'timer', 'role': 'timer', 'aria-live': 'off'},
     text: formatCountdown(game.remaining));
 
+/// The "76 left" line of Checkout calculator, for other screens that play a
+/// number the same way (Checkout tutorial's Practice).
+web.HTMLElement remainingLine(int target, List<DartThrow> entered) => _remainingLine(target, entered);
+
 /// What is left to checkout after the darts entered so far, e.g. "76 left".
 /// Just the result - no working shown. The number is centred under the big
 /// number above it; the word "left" hangs to its right and does not count (an

@@ -26,8 +26,6 @@ class ViewContext {
   /// Short message at the top of the screen.
   final void Function(String message) toast;
 
-  LeaderboardSort leaderboardSort = LeaderboardSort.points;
-
   /// Multiplier the player explicitly picked for non-final darts; null means
   /// "single". It stays selected across darts until changed.
   Multiplier? pickedMultiplier;
