@@ -61,7 +61,7 @@ void followSwipes(
       ..top = '0'
       ..left = '${step * 100}%'
       ..width = '100%'
-      ..minHeight = '${sliding.offsetHeight}px';
+      ..height = '${sliding.offsetHeight}px';
     sliding.style.position = 'relative';
     sliding.append(next);
     beside = next;

@@ -141,16 +141,34 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
       });
   undo.insertBefore(undoIcon(), undo.firstChild);
 
+  // What the number shown says, as Checkout input does: a number outside 2 to
+  // 170, or one that cannot be checked out at all (with one of the insults).
+  final shown = int.tryParse(session.shownDigits);
+  final web.HTMLElement below;
+  if (shown == null) {
+    below = el('p', cls: 'hint', text: tr('Type a number from 2 to 170.'));
+  } else if (shown < CheckoutEngine.minCheckout || shown > CheckoutEngine.maxCheckout) {
+    below = el('p', cls: 'hint', text: tr('A number from 2 to 170.'));
+  } else if (ctx.game.hasNoCheckout(shown)) {
+    below = el('div', cls: 'tutor-card', children: [
+      el('p', cls: 'impossible-title', text: tr('This number is impossible to checkout.'), attrs: {'role': 'status'}),
+      el('p', cls: 'insult', text: Phrases.randomInsult(math.Random(shown))),
+    ]);
+  } else {
+    below = card == null ? el('span') : tutorBoards(ctx, card);
+  }
+
   return [
-    el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
-        text: digits.isEmpty ? '–' : digits,
-        attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),
-    el('p', cls: 'label', text: tr('Darts in hand')),
-    el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]),
-    if (card != null)
-      tutorBoards(ctx, card)
-    else
-      el('p', cls: 'hint', text: tr('Type a number from 2 to 170.')),
+    // Everything but the keypad: it scrolls on its own when it is long, so the
+    // keypad never moves.
+    el('div', cls: 'learn-top', children: [
+      el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
+          text: digits.isEmpty ? '–' : digits,
+          attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),
+      el('p', cls: 'label', text: tr('Darts in hand')),
+      el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]),
+      below,
+    ]),
     el('div', cls: 'keypad', attrs: {'aria-label': tr('Number pad')}, children: [
       digit(1), digit(2), digit(3),
       digit(4), digit(5), digit(6),
@@ -244,7 +262,7 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
   if (aims.length == 2) {
     aim = aims.contains(DartThrow.bull)
         ? tr('Aim at the bull: {a} or {b}.', {'a': aims[0].notation, 'b': aims[1].notation})
-        : tr('Aim between {a} and {b}.', {'a': aims[0].notation, 'b': aims[1].notation});
+        : tr('Aim at {a} or {b}.', {'a': aims[0].notation, 'b': aims[1].notation});
   } else {
     aim = tr('Aim at {dart}.', {'dart': aims.first.notation});
   }
@@ -264,10 +282,10 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
 
   return el('div', cls: 'tutor-card', children: [
     el('p', cls: 'card-aim', text: aim),
-    if (route == null)
-      el('p', cls: 'card-line',
-          text: trn(card.darts, 'No checkout with {n} dart: aim for a good number to leave.',
-              'No checkout with {n} darts: aim for a good number to leave.')),
+    if (route == null) ...[
+      el('p', cls: 'card-line', text: trn(card.darts, 'No checkout with {n} dart.', 'No checkout with {n} darts.')),
+      el('p', cls: 'card-line', text: tr('Aim for a good number to leave.')),
+    ],
     if (boards.isNotEmpty) el('div', cls: 'result-boards tutor-boards', children: boards),
     if (card.alsoGood.isNotEmpty)
       el('p', cls: 'card-line',

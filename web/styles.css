@@ -734,18 +734,34 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .marker-words .chip { background: transparent !important; border-color: transparent !important; color: var(--ink) !important; }
 .chips.gliding .chip.selected { background: transparent; color: var(--fg); }
 /* The keypad sits at the bottom, so a card that appears goes above it. */
-.screen.tutorial .keypad { padding: 0; margin-top: auto; }
+.screen.tutorial .keypad { padding: 0; margin: 8px auto 10px; flex: none; }
 .pad-spacer { display: block; }
 /* No box: the aim, then the route and a miss on two boards side by side. */
 .tutor-card { width: 100%; margin: 6px 0 10px; display: grid; gap: 4px; justify-items: center; }
 .tutor-boards { margin: 4px 0 2px; }
 .tutor-fig { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .tutor-fig > .label { margin: 4px 0 6px; }
-/* Learn and Practice side by side: a swipe moves the page with the finger. */
+/* Learn and Practice side by side: a swipe moves the page with the finger.
+   The tutorial is exactly as tall as the screen between the header and the
+   links at the foot, and each page scrolls on its own inside it: so the Learn
+   keypad stands at the bottom whatever is shown, and does not move when the
+   page changes. */
+.screen.tutorial {
+  flex: none;
+  height: calc(100vh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  min-height: 460px;
+}
+.screen.tutorial .play-area { min-height: 0; padding-bottom: 0; }
 .swipe-area { touch-action: pan-y; }
-.slide-clip { overflow-x: clip; width: 100%; flex: 1; display: flex; flex-direction: column; }
-.slide-page { flex: 1; display: flex; flex-direction: column; }
-.tutorial-page { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
+.slide-clip { overflow-x: clip; width: 100%; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.slide-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tutorial-page {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; width: 100%;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.learn-top { flex: 1; min-height: 0; overflow-y: auto; width: 100%; display: flex; flex-direction: column; align-items: center; }
+.tutorial-page:has(.learn-top) { overflow: hidden; }
 .card-aim { margin: 0; font-size: 1.15rem; font-weight: 700; }
 .card-line { margin: 0; font-size: 0.95rem; color: var(--fg); }
 .card-why { margin: 8px 0 0; font-weight: 700; }
