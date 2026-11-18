@@ -242,12 +242,18 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
     ctx.rerender();
   }
 
+  // Always at the foot, while playing and after: another number, or this one
+  // again from the first dart.
+  final actions = el('div', cls: 'practice-actions', children: [
+    button(tr('Next checkout'), cls: 'cta', focusKey: 'next', onPressed: (_) => again(session.newQuestion)),
+    button(tr('Replay checkout'), cls: 'cta secondary', focusKey: 'replay', onPressed: (_) => again(session.replay)),
+  ]);
+
   final judged = session.result;
   if (judged != null) {
     return [
-      ...resultView(ctx, judged, session.marks),
-      button(tr('Next checkout'), cls: 'cta', focusKey: 'next', onPressed: (_) => again(session.newQuestion)),
-      button(tr('Replay checkout'), cls: 'cta secondary', focusKey: 'replay', onPressed: (_) => again(session.replay)),
+      el('div', cls: 'practice-result', children: resultView(ctx, judged, session.marks)),
+      actions,
     ];
   }
 
@@ -292,6 +298,7 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
       },
       onNoCheckout: (kb) => again(session.pressNoCheckout),
     ),
+    actions,
   ];
 }
 
