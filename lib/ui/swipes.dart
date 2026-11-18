@@ -49,6 +49,9 @@ void followSwipes(
   // favorites): a swipe on them turns their page while they have one to turn
   // to that way, and only past their last page does it move this page.
   web.Element? ownPages;
+  // How far the chip fill has followed the finger (0 to 1), and which way.
+  var followed = 0.0;
+  var followedStep = 1;
 
   void showBeside(int step) {
     if (besideStep == step) return;
@@ -114,14 +117,26 @@ void followSwipes(
     showBeside(step);
     sliding.style.transform = 'translateX(${free ? across : across * _resistance}px)';
     final width = max(sliding.offsetWidth, 1);
-    follow?.call(step, free ? min(1, across.abs() / width).toDouble() : 0);
+    followed = free ? min(1, across.abs() / width).toDouble() : 0;
+    followedStep = step;
+    follow?.call(step, followed);
   });
+
+  // The fill goes on from where the finger left it - never back to the start
+  // first - to the next chip ([to] 1) or back to its own ([to] 0).
+  void finishFollow(double to, Duration length) {
+    final from = followed;
+    final step = followedStep;
+    followed = 0;
+    if (follow == null) return;
+    animate(length, (progress) => follow(step, from + (to - from) * progress), () {});
+  }
 
   void goBack() {
     sliding.style
       ..transition = _slide
       ..transform = '';
-    follow?.call(1, 0);
+    finishFollow(0, _slideTime);
     Timer(_slideTime + const Duration(milliseconds: 40), clearBeside);
   }
 
@@ -144,7 +159,7 @@ void followSwipes(
     sliding.style
       ..transition = 'transform ${_finishTime.inMilliseconds}ms ease-out'
       ..transform = 'translateX(${-step * 100}%)';
-    animate(_finishTime, (progress) => follow?.call(step, progress), () {});
+    finishFollow(1, _finishTime);
     Timer(_finishTime, () {
       _landedAt = DateTime.now();
       move(step);
