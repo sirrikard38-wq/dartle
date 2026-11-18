@@ -723,7 +723,16 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 
 /* ---------- Checkout tutorial ---------- */
 /* Learn and Practice at the top; the card is a box of short lines, the aim first. */
-.tutorial-tabs { margin: 4px 0 10px; }
+.tutorial-tabs { margin: 4px 0 10px; position: relative; }
+/* While a swipe goes on, a white fill glides from the chosen chip to the next,
+   the words under it dark (a copy of the row inside it), as in Virulja. */
+.chip-marker {
+  position: absolute; z-index: 2; overflow: hidden; pointer-events: none;
+  background: var(--white); border-radius: 20px;
+}
+.marker-words { position: absolute; margin: 0; }
+.marker-words .chip { background: transparent !important; border-color: transparent !important; color: var(--ink) !important; }
+.chips.gliding .chip.selected { background: transparent; color: var(--fg); }
 /* The keypad sits at the bottom, so a card that appears goes above it. */
 .screen.tutorial .keypad { padding: 0; margin-top: auto; }
 .pad-spacer { display: block; }

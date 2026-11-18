@@ -23,12 +23,19 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final tabs = TutorialTab.values;
   final index = session.tab.index;
 
+  late final web.HTMLElement row;
+  late final SwipeMark mark;
+
+  // A press glides the fill over to the chip pressed, then the page comes in.
   void show(TutorialTab which) {
     if (which == session.tab) return;
     final step = which.index > index ? 1 : -1;
-    session.tab = which;
-    ctx.rerender();
-    slideIn(step);
+    final to = row.children.item(which.index) as web.HTMLElement?;
+    animate(const Duration(milliseconds: 160), (progress) => mark.follow(to, progress), () {
+      session.tab = which;
+      ctx.rerender();
+      slideIn(step);
+    });
   }
 
   web.HTMLButtonElement tab(TutorialTab which, String label) => button(label,
@@ -45,18 +52,24 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
         TutorialTab.practice => _practice(ctx, session),
       });
 
+  row = el('div', cls: 'chips tutorial-tabs', children: [
+    tab(TutorialTab.learn, tr('Learn')),
+    tab(TutorialTab.practice, tr('Practice')),
+  ]);
+  mark = SwipeMark(row);
   final sliding = el('div', cls: 'slide-page', children: [pageOf(session.tab)]);
   final area = el('div', cls: 'play-area swipe-area', children: [
-    el('div', cls: 'chips tutorial-tabs', children: [
-      tab(TutorialTab.learn, tr('Learn')),
-      tab(TutorialTab.practice, tr('Practice')),
-    ]),
+    row,
     el('div', cls: 'slide-clip', children: [sliding]),
   ]);
   followSwipes(area, sliding, (step) => index + step >= 0 && index + step < tabs.length, (step) {
     session.tab = tabs[index + step];
     ctx.rerender();
-  }, peek: (step) => pageOf(tabs[index + step]));
+  },
+      peek: (step) => pageOf(tabs[index + step]),
+      follow: (step, fraction) => mark.follow(
+          index + step >= 0 && index + step < tabs.length ? row.children.item(index + step) as web.HTMLElement? : null,
+          fraction));
 
   return el('main', cls: 'screen tutorial', children: [area]);
 }

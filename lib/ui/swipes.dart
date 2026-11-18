@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math';
 
 import 'package:web/web.dart' as web;
@@ -37,6 +38,7 @@ void followSwipes(
   bool Function(int step) canMove,
   void Function(int step) move, {
   web.HTMLElement? Function(int step)? peek,
+  void Function(int step, double fraction)? follow,
 }) {
   double? startX;
   double startY = 0;
@@ -52,11 +54,14 @@ void followSwipes(
     if (peek == null || !canMove(step)) return;
     final next = peek(step);
     if (next == null) return;
+    // As tall as the page that is there, so what sits at its foot (a keypad)
+    // is where it will be once the page is in place.
     next.style
       ..position = 'absolute'
       ..top = '0'
       ..left = '${step * 100}%'
-      ..width = '100%';
+      ..width = '100%'
+      ..minHeight = '${sliding.offsetHeight}px';
     sliding.style.position = 'relative';
     sliding.append(next);
     beside = next;
@@ -93,12 +98,15 @@ void followSwipes(
     final free = canMove(step);
     showBeside(step);
     sliding.style.transform = 'translateX(${free ? across : across * _resistance}px)';
+    final width = max(sliding.offsetWidth, 1);
+    follow?.call(step, free ? min(1, across.abs() / width).toDouble() : 0);
   });
 
   void goBack() {
     sliding.style
       ..transition = _slide
       ..transform = '';
+    follow?.call(1, 0);
     Timer(_slideTime + const Duration(milliseconds: 40), clearBeside);
   }
 
@@ -121,6 +129,7 @@ void followSwipes(
     sliding.style
       ..transition = 'transform ${_finishTime.inMilliseconds}ms ease-out'
       ..transform = 'translateX(${-step * 100}%)';
+    animate(_finishTime, (progress) => follow?.call(step, progress), () {});
     Timer(_finishTime, () {
       _landedAt = DateTime.now();
       move(step);
@@ -130,6 +139,90 @@ void followSwipes(
     startX = null;
     goBack();
   });
+}
+
+/// The fill behind the chosen chip of [row], going with a swipe to the next
+/// chip as far as the swipe has gone, the words turning dark as it covers them
+/// (the food categories of Virulja do the same).
+class SwipeMark {
+  SwipeMark(this.row);
+
+  final web.HTMLElement row;
+  web.HTMLElement? _mark;
+  web.HTMLElement? _words;
+
+  web.HTMLElement? get _chosen => row.querySelector('.chip.selected') as web.HTMLElement?;
+
+  /// Moves the fill [fraction] of the way from the chosen chip to [to].
+  void follow(web.HTMLElement? to, double fraction) {
+    final from = _chosen;
+    if (from == null || to == null || fraction <= 0) {
+      clear();
+      return;
+    }
+    var mark = _mark;
+    if (mark == null) {
+      // The same chips again inside the fill, in dark, laid exactly over the
+      // row's own: only what the fill covers of them shows.
+      final words = (row.cloneNode(true) as web.HTMLElement)
+        ..className = 'chips marker-words'
+        ..style.width = '${row.clientWidth}px';
+      mark = (web.document.createElement('span') as web.HTMLElement)
+        ..className = 'chip-marker'
+        ..append(words);
+      mark.style
+        ..top = '${from.offsetTop}px'
+        ..height = '${from.offsetHeight}px';
+      row
+        ..append(mark)
+        ..classList.add('gliding');
+      _mark = mark;
+      _words = words;
+    }
+    final left = from.offsetLeft + (to.offsetLeft - from.offsetLeft) * fraction;
+    mark.style
+      ..left = '${left}px'
+      ..width = '${from.offsetWidth + (to.offsetWidth - from.offsetWidth) * fraction}px';
+    _words?.style
+      ?..left = '${-left}px'
+      ..top = '${-from.offsetTop}px';
+  }
+
+  /// Takes the fill away, the row as it was.
+  void clear() {
+    _mark?.remove();
+    _mark = null;
+    _words = null;
+    row.classList.remove('gliding');
+  }
+}
+
+/// Calls [frame] with the progress, from 0 to 1, on every frame for [length],
+/// then [end].
+void animate(Duration length, void Function(double progress) frame, void Function() end) {
+  final started = web.window.performance.now();
+  var finished = false;
+
+  void finish() {
+    if (finished) return;
+    finished = true;
+    frame(1);
+    end();
+  }
+
+  void tick(double now) {
+    if (finished) return;
+    final time = (now - started) / length.inMilliseconds;
+    if (time >= 1) {
+      finish();
+    } else {
+      frame(1 - pow(1 - max(time, 0), 3).toDouble());
+      web.window.requestAnimationFrame(tick.toJS);
+    }
+  }
+
+  web.window.requestAnimationFrame(tick.toJS);
+  Timer(length * 2, finish);
 }
 
 /// Brings the freshly drawn page in from the side it comes from (+1: from the
