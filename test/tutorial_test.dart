@@ -23,13 +23,34 @@ void main() {
       expect(card.whyNotMisses.single.hasCheckout, isFalse);
     });
 
-    test('48 with two darts: between S16 and S8; not S20, as S5 and S1 leave no checkout', () {
+    test('48 with two darts: between S16 and S8, a hit each', () {
       final card = tutor.card(48, 2)!;
       expect(card.aims, [d('S16'), d('S8')]);
       expect(card.hits.map((h) => h.route!.notation), ['D16', 'D20']);
       expect(card.misses, isEmpty);
-      expect(card.whyNot, d('S20'));
-      expect(card.whyNotMisses.map((m) => m.hasCheckout), [false, false]);
+      expect(card.whyNot, isNull);
+    });
+
+    test('why not only where a miss changes the outcome: not on 100, not on 149', () {
+      expect(tutor.card(100, 3)!.whyNot, isNull); // S20 and S19 both still leave a checkout
+      expect(tutor.card(149, 3)!.whyNot, isNull); // S20 and S19 both leave none
+      expect(tutor.card(61, 2)!.whyNot, d('T19')); // S11 leaves the Bull, S19 leaves 42
+      final engine = CheckoutEngine();
+      var cards = 0, withWhy = 0;
+      for (final target in engine.checkoutableTargets) {
+        for (var darts = engine.minimumDarts(target)!; darts <= 3; darts++) {
+          cards++;
+          if (tutor.card(target, darts)!.whyNot != null) withWhy++;
+        }
+      }
+      expect(withWhy, lessThan(cards ~/ 5), reason: 'most numbers have none');
+    });
+
+    test('149 with three darts: T19 first is right too - S20 and S19 both leave no checkout', () {
+      expect(tutor.isRight(149, 3, d('T19')), isTrue);
+      expect(tutor.isRight(149, 3, d('T20')), isTrue);
+      // 127: T19 is no part of the route, and S19 leaves 108.
+      expect(tutor.isRight(127, 3, d('T19')), isFalse);
     });
 
     test('why not is only ever a sensible aim: no low triple, no double that does not finish', () {

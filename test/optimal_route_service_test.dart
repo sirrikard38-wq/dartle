@@ -69,9 +69,18 @@ void main() {
       expect(optimal.aimsIn(62, 3).map((d) => d.notation).toSet(), {'T10', 'T14', 'T18'});
     });
 
-    test('127 with three darts is T20, not T19', () {
+    test('127 with three darts is T20, not T19; T17 can go first too', () {
       expect(optimal.optimalRoutesIn(127, 3).first.notation, 'T20 T17 D8');
-      expect(optimal.aimsIn(127, 3), {DartThrow.parse('T20')});
+      // S17 still leaves 110 (T20 Bull), as much as S20 leaves (107, T19 Bull).
+      expect(optimal.aimsIn(127, 3), {DartThrow.parse('T20'), DartThrow.parse('T17')});
+    });
+
+    test('the other dart of the table route counts when its miss is no worse: 149, T19', () {
+      // S20 leaves 129 and S19 leaves 130: no checkout either way.
+      expect(optimal.aimsIn(149, 3), contains(DartThrow.parse('T19')));
+      expect(optimal.missesKept(149, 3, DartThrow.parse('T20')), 0);
+      expect(optimal.missesKept(127, 3, DartThrow.parse('T20')), 1);
+      expect(optimal.missesKept(127, 3, DartThrow.parse('T19')), 0);
     });
 
     test('61 with three darts: the Bull area first, 25 or the Bull', () {

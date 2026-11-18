@@ -29,8 +29,8 @@ void main() {
       expect(advisor.optimalDarts(40), {d('D20')});
     });
 
-    test('121 lights the table\'s T20 and T17, almost as good', () {
-      expect(advisor.optimalDarts(121), {d('T20'), d('T17')});
+    test('121 lights the table\'s T20, T17 almost as good, and T11 of the route (S11 still leaves T20 Bull)', () {
+      expect(advisor.optimalDarts(121), {d('T20'), d('T17'), d('T11')});
     });
 
     test('55 lights S15 and S19, almost as good', () {
@@ -75,9 +75,9 @@ void main() {
         expect(advisor.optimalDarts(58), {d('S18')});
       });
 
-      test('100 lights T20, 150 T20 and T19', () {
+      test('100 lights T20; 150 T20, T19 and T18 of the route (S20 and S18 both leave no checkout)', () {
         expect(advisor.optimalDarts(100), {d('T20')});
-        expect(advisor.optimalDarts(150), {d('T20'), d('T19')});
+        expect(advisor.optimalDarts(150), {d('T20'), d('T19'), d('T18')});
       });
 
       test('a double is a lit setup dart where the table says so: 72 lights T16, D20 and D18', () {

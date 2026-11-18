@@ -1,3 +1,4 @@
+import '../board/board_geometry.dart';
 import 'checkout_engine.dart';
 import 'checkout_route.dart';
 import 'checkout_table.dart';
@@ -62,14 +63,51 @@ class OptimalRouteService {
   /// good: the table's target, the first dart of each of its routes (61 with
   /// three darts: the Bull or 25) and the targets almost as good. A setup for
   /// the next visit too, when no checkout is left with these darts.
+  ///
+  /// The other setup dart of the table's route counts too when its miss leaves
+  /// just as much as the table target's miss: then the order makes no difference.
+  /// 149 is T20 T19 D16 or T19 T20 D16, as S20 and S19 both leave no checkout.
+  /// 127 is T20 first: S20 still leaves T19 Bull.
   Set<DartThrow> aimsIn(int target, int darts) {
     final row = CheckoutTable.row(target, darts);
     if (row == null) return const {};
-    return {
-      ...CheckoutTable.aims(row),
-      for (final route in CheckoutTable.routes(row, target)) route.darts.first,
+    final aims = CheckoutTable.aims(row);
+    final routes = CheckoutTable.routes(row, target);
+    final lit = {
+      ...aims,
+      for (final route in routes) route.darts.first,
       ...CheckoutTable.alternatives(row),
     };
+    final aimKept = aims.map((aim) => missesKept(target, darts, aim)).reduce((a, b) => a < b ? a : b);
+    for (final route in routes) {
+      for (final dart in route.setupDarts) {
+        if (!lit.contains(dart) && missesKept(target, darts, dart) == aimKept) lit.add(dart);
+      }
+    }
+    return lit;
+  }
+
+  /// How many of the darts a throw at [dart] most often lands in instead
+  /// ([missesOf]) still leave a checkout with the darts after it.
+  int missesKept(int target, int darts, DartThrow dart) => missesOf(dart).where((miss) {
+        final left = target - miss.score;
+        if (left == 0) return miss.isFinishingDart;
+        return darts > 1 && left >= 2 && optimalRoutesIn(left, darts - 1).isNotEmpty;
+      }).length;
+
+  /// The darts a throw at [dart] most often lands in instead: the single of a
+  /// triple or a double, the two neighbouring singles of a single, the outer
+  /// bull for the Bull. None for the outer bull.
+  static List<DartThrow> missesOf(DartThrow dart) {
+    if (dart.isBull) return const [DartThrow.outerBull];
+    if (dart.isOuterBull) return const [];
+    if (dart.multiplier != Multiplier.single) return [DartThrow(Multiplier.single, dart.number)];
+    final i = boardOrder.indexOf(dart.number);
+    final n = boardOrder.length;
+    return [
+      DartThrow(Multiplier.single, boardOrder[(i + n - 1) % n]),
+      DartThrow(Multiplier.single, boardOrder[(i + 1) % n]),
+    ];
   }
 
   /// True when [target] is a two-dart number over 60, which can also come with

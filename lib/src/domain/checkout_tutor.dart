@@ -1,4 +1,3 @@
-import '../board/board_geometry.dart';
 import 'checkout_route.dart';
 import 'checkout_table.dart';
 import 'choice_advisor.dart';
@@ -90,20 +89,9 @@ class CheckoutTutor {
   /// darts in hand: the table's target or one almost as good.
   bool isRight(int target, int darts, DartThrow dart) => _optimal.aimsIn(target, darts).contains(dart);
 
-  /// The darts a throw at [dart] most often lands in instead: the single of a
-  /// triple or a double, the two neighbouring singles of a single, the outer
-  /// bull for the Bull. None for the outer bull.
-  static List<DartThrow> missesOf(DartThrow dart) {
-    if (dart.isBull) return const [DartThrow.outerBull];
-    if (dart.isOuterBull) return const [];
-    if (dart.multiplier != Multiplier.single) return [DartThrow(Multiplier.single, dart.number)];
-    final i = boardOrder.indexOf(dart.number);
-    final n = boardOrder.length;
-    return [
-      DartThrow(Multiplier.single, boardOrder[(i + n - 1) % n]),
-      DartThrow(Multiplier.single, boardOrder[(i + 1) % n]),
-    ];
-  }
+  /// The darts a throw at [dart] most often lands in instead
+  /// ([OptimalRouteService.missesOf]).
+  static List<DartThrow> missesOf(DartThrow dart) => OptimalRouteService.missesOf(dart);
 
   /// What [dart] leaves on [target] with [darts] darts in hand (counting it).
   DartOutcome outcome(int target, int darts, DartThrow dart) {
@@ -128,27 +116,18 @@ class CheckoutTutor {
         ? [for (final miss in missesOf(aims.single)) outcome(target, darts, miss)]
         : const <DartOutcome>[];
 
-    // Why not: a target that is not lit, whose hit checks out as well, but whose
-    // miss leaves fewer checkouts than the aim's miss does. None when there is
-    // no such target.
+    // Why not: only where the choice is not the obvious one - the aim's miss
+    // still leaves a checkout, and a target of the same kind whose hit checks
+    // out just as well leaves none when it is missed (127: S20 leaves T19 Bull,
+    // S19 leaves 108). Most numbers have none.
     DartThrow? whyNot;
-    if (routes.isNotEmpty) {
-      int kept(List<DartOutcome> outcomes) => outcomes.where((o) => o.hasCheckout).length;
-      final aimKept = aims.length == 1 ? kept(misses) : 2;
-      // Only a sensible aim tempts anyone: not T1, not a double that does not finish.
-      bool sensible(DartThrow dart) => ChoiceAdvisor.isNaturalAim(dart) || dart.score == target;
-      final tempting = [
-        for (final dart in _candidates)
-          if (!lit.contains(dart) && sensible(dart) && outcome(target, darts, dart).hasCheckout) dart,
-      ];
-      int rank(DartThrow dart) => dart.multiplier == aims.first.multiplier ? 0 : 1;
-      tempting.sort((a, b) {
-        final byKind = rank(a).compareTo(rank(b));
-        return byKind != 0 ? byKind : b.score.compareTo(a.score);
-      });
-      for (final dart in tempting) {
-        final theirs = [for (final miss in missesOf(dart)) outcome(target, darts, miss)];
-        if (theirs.isNotEmpty && kept(theirs) < aimKept) {
+    if (routes.isNotEmpty && aims.length == 1 && _optimal.missesKept(target, darts, aims.single) > 0) {
+      final aim = aims.single;
+      for (final dart in _candidates) {
+        if (lit.contains(dart) || dart.multiplier != aim.multiplier) continue;
+        if (!ChoiceAdvisor.isNaturalAim(dart) && dart.score != target) continue;
+        if (!outcome(target, darts, dart).hasCheckout) continue;
+        if (missesOf(dart).isNotEmpty && _optimal.missesKept(target, darts, dart) == 0) {
           whyNot = dart;
           break;
         }
