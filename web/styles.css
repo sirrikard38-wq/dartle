@@ -724,7 +724,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* ---------- Checkout tutorial ---------- */
 /* Learn and Practice at the top; the card is a box of short lines, the aim first. */
 .tutorial-tabs { margin: 4px 0 10px; }
-.screen.tutorial .keypad { padding: 0; }
+/* The keypad sits at the bottom, so a card that appears goes above it. */
+.screen.tutorial .keypad { padding: 0; margin-top: auto; }
 .pad-spacer { display: block; }
 .tutor-card {
   width: min(100%, 380px); margin: 10px 0; padding: 12px 14px;

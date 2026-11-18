@@ -119,6 +119,9 @@ void main() {
         ..typeDigit(7)
         ..typeDigit(4); // three digits at the most
       expect(session.learnTarget, 127);
+      // The card waits until the typing stops.
+      expect(session.learnCard, isNull);
+      session.showTypedNumber();
       expect(session.learnCard!.aims, [d('T20')]);
       session.learnDarts = 2;
       expect(session.learnCard!.darts, 2);

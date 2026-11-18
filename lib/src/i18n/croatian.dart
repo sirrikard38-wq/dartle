@@ -35,7 +35,7 @@ const Map<String, String> croatian = {
   'Next question': 'Sljedeće pitanje',
   'Aim between {a} and {b}.': 'Ciljaj između {a} i {b}.',
   'Aim at {dart}.': 'Ciljaj {dart}.',
-  'Route: {route}.': 'Ruta: {route}.',
+  'Route: {route}': 'Ruta: {route}',
   'No checkout with {n} dart: aim for a good number to leave.|No checkout with {n} darts: aim for a good number to leave.':
       'Nema izlaza s {n} strelicom: ciljaj dobar ostatak.|Nema izlaza s {n} strelice: ciljaj dobar ostatak.|Nema izlaza s {n} strelica: ciljaj dobar ostatak.',
   'Almost as good: {darts}.': 'Gotovo jednako dobro: {darts}.',

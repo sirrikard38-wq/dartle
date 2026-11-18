@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:js_interop';
+
 import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
@@ -36,10 +39,39 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   ]);
 }
 
-/// Learn: the number typed, the darts in hand, the card and the keypad.
+/// The card waits this long after the last digit, so it does not jump about
+/// while a number is typed.
+const Duration _cardDelay = Duration(seconds: 1);
+Timer? _cardTimer;
+
+/// Redraws the screen with [change], keeping the keypad where it is on the
+/// screen: what is above it moves instead (the page scrolls by as much as the
+/// keypad would have moved).
+void _keepKeypadInPlace(ViewContext ctx, void Function() change) {
+  double? keypadTop() => web.document.querySelector('.screen.tutorial .keypad')?.getBoundingClientRect().top;
+  final before = keypadTop();
+  change();
+  ctx.rerender();
+  final after = keypadTop();
+  if (before != null && after != null && after != before) {
+    web.window.scrollBy((0).toJS, after - before);
+  }
+}
+
+/// Learn: the number typed, the darts in hand, the card and the keypad. The
+/// keypad stays put: the card shows a second after the last digit, and what
+/// it adds goes above the keypad.
 List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
   final digits = session.learnDigits;
   final card = session.learnCard;
+
+  void typed() {
+    _cardTimer?.cancel();
+    _cardTimer = Timer(_cardDelay, () {
+      if (session.shownDigits == session.learnDigits) return;
+      _keepKeypadInPlace(ctx, session.showTypedNumber);
+    });
+  }
 
   web.HTMLButtonElement darts(int n) => button('$n',
       cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
@@ -47,9 +79,8 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
       ariaLabel: trn(n, '{n} dart in hand', '{n} darts in hand'),
       attrs: {'aria-pressed': '${session.learnDarts == n}'},
       onPressed: (kb) {
-        session.learnDarts = n;
         ctx.keepFocus(kb ? 'learn-darts-$n' : null);
-        ctx.rerender();
+        _keepKeypadInPlace(ctx, () => session.learnDarts = n);
       });
 
   web.HTMLButtonElement digit(int n) => button('$n',
@@ -59,6 +90,7 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
         session.typeDigit(n);
         ctx.keepFocus(kb ? 'learn-digit-$n' : null);
         ctx.rerender();
+        typed();
       });
 
   final undo = button(tr('UNDO'),
@@ -70,6 +102,7 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
         session.deleteDigit();
         ctx.keepFocus(kb ? 'learn-undo' : null);
         ctx.rerender();
+        typed();
       });
   undo.insertBefore(undoIcon(), undo.firstChild);
 
@@ -135,13 +168,19 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
 /// not the most tempting other target. Two or three short lines each.
 web.HTMLElement tutorCard(TutorCard card) {
   final aims = card.aims;
+  final route = card.route;
+  // A hit that just goes on along the route says nothing the route does not.
+  bool sameAsRoute(DartOutcome hit) =>
+      aims.length == 1 &&
+      route != null &&
+      (hit.checkedOut ? route.length == 1 : hit.route?.notation == CheckoutRoute(route.darts.skip(1)).notation);
   final lines = <web.HTMLElement>[
     el('p', cls: 'card-aim',
         text: aims.length == 2
             ? tr('Aim between {a} and {b}.', {'a': aims[0].notation, 'b': aims[1].notation})
             : tr('Aim at {dart}.', {'dart': aims.first.notation})),
-    if (card.route != null)
-      el('p', cls: 'card-line', text: tr('Route: {route}.', {'route': card.route!.notation}))
+    if (route != null)
+      el('p', cls: 'card-line', text: tr('Route: {route}', {'route': _chain(route, card.target)}))
     else
       el('p', cls: 'card-line',
           text: trn(card.darts, 'No checkout with {n} dart: aim for a good number to leave.',
@@ -149,7 +188,9 @@ web.HTMLElement tutorCard(TutorCard card) {
     if (card.alsoGood.isNotEmpty)
       el('p', cls: 'card-line',
           text: tr('Almost as good: {darts}.', {'darts': card.alsoGood.map((d) => d.notation).join(', ')})),
-    for (final hit in card.hits) el('p', cls: 'card-line', text: _outcome(card, tr('Hit {dart}', {'dart': hit.dart.notation}), hit)),
+    for (final hit in card.hits)
+      if (!sameAsRoute(hit))
+        el('p', cls: 'card-line', text: _outcome(card, tr('Hit {dart}', {'dart': hit.dart.notation}), hit)),
     for (final miss in card.misses)
       el('p', cls: 'card-line', text: _outcome(card, tr('Miss into {dart}', {'dart': miss.dart.notation}), miss)),
     if (card.whyNot case final other?) ...[

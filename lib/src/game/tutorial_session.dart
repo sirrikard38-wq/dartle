@@ -30,9 +30,18 @@ class TutorialSession {
   int practiceDarts = 1;
   DartThrow? answer;
 
-  /// The number to learn about, when the digits make one from 2 to 170.
-  int? get learnTarget {
-    final value = int.tryParse(learnDigits);
+  /// The digits the card is shown for. The card waits until the typing stops,
+  /// so it does not jump about while a number is typed ([showTypedNumber]).
+  String shownDigits = '';
+
+  /// Shows the card for the digits typed so far.
+  void showTypedNumber() => shownDigits = learnDigits;
+
+  /// The number typed, when the digits make one from 2 to 170.
+  int? get learnTarget => _number(learnDigits);
+
+  static int? _number(String digits) {
+    final value = int.tryParse(digits);
     return value != null && value >= CheckoutEngine.minCheckout && value <= CheckoutEngine.maxCheckout
         ? value
         : null;
@@ -49,9 +58,9 @@ class TutorialSession {
     if (learnDigits.isNotEmpty) learnDigits = learnDigits.substring(0, learnDigits.length - 1);
   }
 
-  /// The card for the number being learnt, or null.
+  /// The card for the number shown ([shownDigits]), or null.
   TutorCard? get learnCard {
-    final target = learnTarget;
+    final target = _number(shownDigits);
     return target == null ? null : tutor.card(target, learnDarts);
   }
 
