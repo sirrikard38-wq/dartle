@@ -55,7 +55,7 @@ void main() {
       final pair = CheckoutTable.row(48, 2)!;
       expect(CheckoutTable.aims(pair).map((d) => d.notation), ['S16', 'S8']);
       expect(CheckoutTable.routes(pair, 48).map((x) => x.notation), ['S16 D16', 'S8 D20']);
-      final either = CheckoutTable.row(61, 3)!;
+      final either = checkoutTables[3]![61]!;
       expect(CheckoutTable.routes(either, 61).map((x) => x.notation), ['25 D18', 'Bull S3 D4']);
       // A setup for the next visit is no route: 99 with two darts.
       expect(CheckoutTable.routes(CheckoutTable.row(99, 2)!, 99), isEmpty);
@@ -94,9 +94,22 @@ void main() {
       expect(optimal.missesKept(127, 3, DartThrow.parse('T19')), 0);
     });
 
-    test('61 with three darts: the Bull area first, 25 or the Bull', () {
-      expect(notations(61, 3), {'25 D18', 'Bull S3 D4'});
-      expect(optimal.aimsIn(61, 3), {DartThrow.bull, DartThrow.outerBull});
+    test('three darts on a two-dart number: only two-dart routes', () {
+      // 61: the table's 25 D18, not Bull S3 D4.
+      expect(notations(61, 3), {'25 D18'});
+      expect(optimal.aimsIn(61, 3), {DartThrow.outerBull});
+      // 82: Bull D16, not 25 S17 D20.
+      expect(notations(82, 3), {'Bull D16'});
+      expect(optimal.aimsIn(82, 3), {DartThrow.bull});
+      // 110: no two-dart route in the three-dart row, so the two-dart row's.
+      expect(notations(110, 3), {'T20 Bull'});
+      expect(optimal.isOptimalIn(110, 3, r('T20 S18 D16')), isFalse);
+      for (var target = 2; target <= 170; target++) {
+        if (optimal.optimalRoutesIn(target, 2).isEmpty) continue;
+        for (final route in optimal.optimalRoutesIn(target, 3)) {
+          expect(route.length, lessThanOrEqualTo(2), reason: '$target $route');
+        }
+      }
       // With two darts it is T11 D14.
       expect(notations(61, 2), {'T11 D14'});
     });

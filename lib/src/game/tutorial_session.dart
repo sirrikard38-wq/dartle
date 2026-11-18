@@ -6,8 +6,8 @@ import '../domain/checkout_route.dart';
 import '../domain/checkout_tutor.dart';
 import '../domain/dart_throw.dart';
 
-/// The two halves of Checkout tutorial.
-enum TutorialTab { learn, practice }
+/// The two halves of Checkout tutorial, in the order they stand on the screen.
+enum TutorialTab { practice, learn }
 
 /// Checkout tutorial: Learn (pick a number and the darts in hand, read the card)
 /// and Practice (a number and darts are given, press where you would aim, and
@@ -21,7 +21,7 @@ class TutorialSession {
   final CheckoutTutor tutor;
   final Random _random;
 
-  TutorialTab tab = TutorialTab.learn;
+  TutorialTab tab = TutorialTab.practice;
 
   /// Learn: the number typed so far (empty for none) and the darts in hand.
   String learnDigits = '';

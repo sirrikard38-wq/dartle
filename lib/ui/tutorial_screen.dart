@@ -52,9 +52,10 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
         TutorialTab.practice => _practice(ctx, session),
       });
 
+  // In the order of [TutorialTab]: Practice first, then Learn.
   row = el('div', cls: 'chips tutorial-tabs', children: [
-    tab(TutorialTab.learn, tr('Learn')),
-    tab(TutorialTab.practice, tr('Practice')),
+    for (final which in tabs)
+      tab(which, switch (which) { TutorialTab.practice => tr('Practice'), TutorialTab.learn => tr('Learn') }),
   ]);
   mark = SwipeMark(row);
   final sliding = el('div', cls: 'slide-page', children: [pageOf(session.tab)]);
@@ -192,7 +193,7 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
   if (!done) {
     final finalBox = session.thrown.length == darts - 1;
     return [
-      el('p', cls: 'meta', text: tr('Finish on a double or Bull in the given number of darts.')),
+      el('p', cls: 'meta', text: tr('Finish on a double or Bull.')),
       el('p', cls: 'target', text: '${session.practiceTarget}'),
       boxes,
       remainingLine(session.practiceTarget, session.thrown),
@@ -281,8 +282,9 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
   }
 
   return el('div', cls: 'tutor-card', children: [
-    el('p', cls: 'card-aim', text: aim),
+    // The boards show where to aim; only a setup, with no board, says it.
     if (route == null) ...[
+      el('p', cls: 'card-aim', text: aim),
       el('p', cls: 'card-line', text: trn(card.darts, 'No checkout with {n} dart.', 'No checkout with {n} darts.')),
       el('p', cls: 'card-line', text: tr('Aim for a good number to leave.')),
     ],

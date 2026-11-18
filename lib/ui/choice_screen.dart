@@ -39,7 +39,7 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
 
   return el('main', cls: 'screen game choice', children: [
     el('div', cls: 'play-area', children: [
-      el('p', cls: 'meta', text: tr('Finish on a double or Bull in the chosen number of darts.')),
+      el('p', cls: 'meta', text: tr('Finish on a double or Bull.')),
       el('p', cls: 'target', text: '${round.remaining}', attrs: {
         'aria-label': trn(round.dartsLeft, '{target} to checkout, {n} dart left',
             '{target} to checkout, {n} darts left', {'target': round.remaining}),

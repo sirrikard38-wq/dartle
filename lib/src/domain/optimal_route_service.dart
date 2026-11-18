@@ -33,12 +33,20 @@ class OptimalRouteService {
         return List.unmodifiable(_tableRoutes(target, darts));
       });
 
+  /// The most darts a route may use: two on a number two darts can check out,
+  /// even with three in hand ([CheckoutTable.row]).
+  int _mostDarts(int target, int darts) {
+    final minimum = _engine.minimumDarts(target);
+    return darts == 3 && minimum != null && minimum <= 2 ? 2 : darts;
+  }
+
   List<CheckoutRoute> _tableRoutes(int target, int darts) {
     final row = CheckoutTable.row(target, darts);
     if (row == null) return const [];
+    final most = _mostDarts(target, darts);
     final routes = <CheckoutRoute>[];
     void add(CheckoutRoute route) {
-      if (route.length <= darts &&
+      if (route.length <= most &&
           _engine.isLegalRoute(target, route) &&
           !routes.any(route.isEquivalentTo)) {
         routes.add(route);
@@ -51,7 +59,9 @@ class OptimalRouteService {
     for (final other in [...CheckoutTable.alternatives(row), ..._asGood(target, darts, row)]) {
       final left = target - other.score;
       if (left == 0) add(CheckoutRoute([other]));
-      final rest = darts > 1 ? CheckoutTable.row(left, darts - 1) : null;
+      // What it leaves, with the darts still allowed (51 with three darts: S1
+      // leaves 50, then the Bull - not S18 D16).
+      final rest = most > 1 ? CheckoutTable.row(left, most - 1) : null;
       if (rest == null) continue;
       for (final route in CheckoutTable.routes(rest, left)) {
         add(CheckoutRoute([other, ...route.darts]));
@@ -80,6 +90,12 @@ class OptimalRouteService {
       ...CheckoutTable.alternatives(row),
       ..._asGood(target, darts, row),
     };
+    // On a number two darts can check out, a target counts only when a
+    // two-dart route starts with it.
+    if (_mostDarts(target, darts) < darts) {
+      final starts = {for (final route in optimalRoutesIn(target, darts)) route.darts.first};
+      lit.retainWhere(starts.contains);
+    }
     // The outer bull has no next area to miss into: it says nothing here.
     final measured = aims.where((aim) => missesOf(aim).isNotEmpty);
     if (measured.isEmpty) return lit;

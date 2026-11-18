@@ -188,11 +188,11 @@ void main() {
       expect(session.practiceRight, isTrue);
     });
 
-    test('the bull area: 65 with three darts is 25 D20 or Bull S7 D4, both hits', () {
+    test('65 with three darts is 25 D20: two darts, not Bull S7 D4', () {
       final card = tutor.card(65, 3)!;
-      expect(card.aims, [DartThrow.outerBull, DartThrow.bull]);
+      expect(card.aims, [DartThrow.outerBull]);
       expect(card.misses, isEmpty);
-      expect(card.hits.map((h) => card.routeOf(h)!.notation), ['25 D20', 'Bull S7 D4']);
+      expect(card.route!.notation, '25 D20');
     });
   });
 }

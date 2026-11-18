@@ -85,10 +85,7 @@ const Map<String, String> croatian = {
   'Next checkout': 'Sljedeći checkout',
 
   // ---------------------------------------------------------- game screen
-  'Finish on a double or Bull in the given number of darts.':
-      'Završi na doubleu ili Bullu u zadanom broju strelica.',
-  'Finish on a double or Bull in the chosen number of darts.':
-      'Završi na doubleu ili Bullu u odabranom broju strelica.',
+  'Finish on a double or Bull.': 'Završi na doubleu ili Bullu.',
   'Checkout {target}, {n} dart left|Checkout {target}, {n} darts left':
       'Checkout {target}, ostala {n} strelica|Checkout {target}, ostale {n} strelice|Checkout {target}, ostalo {n} strelica',
   '{target} to checkout, {n} dart left|{target} to checkout, {n} darts left':
