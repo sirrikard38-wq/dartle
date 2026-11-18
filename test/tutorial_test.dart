@@ -32,6 +32,17 @@ void main() {
       expect(card.whyNotMisses.map((m) => m.hasCheckout), [false, false]);
     });
 
+    test('why not is only ever a sensible aim: no low triple, no double that does not finish', () {
+      final engine = CheckoutEngine();
+      for (final target in engine.checkoutableTargets) {
+        for (var darts = engine.minimumDarts(target)!; darts <= 3; darts++) {
+          final other = tutor.card(target, darts)!.whyNot;
+          if (other == null) continue;
+          expect(ChoiceAdvisor.isNaturalAim(other) || other.score == target, isTrue, reason: '$target $darts $other');
+        }
+      }
+    });
+
     test('the targets almost as good are on the card: 62 with three darts, T14 and T18', () {
       final card = tutor.card(62, 3)!;
       expect(card.aims, [d('T10')]);

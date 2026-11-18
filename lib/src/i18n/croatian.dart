@@ -44,10 +44,9 @@ const Map<String, String> croatian = {
   'Why not {dart}?': 'Zašto ne {dart}?',
   '{what}: bust.': '{what}: to je bust.',
   '{what}: checked out.': '{what}: izlaz.',
-  '{what}: {left} left, then {route}.': '{what}: ostaje {left}, pa {route}.',
-  '{what}: {left} left for the next visit.': '{what}: ostaje {left} za sljedeći posjet.',
-  '{what}: {left} left, no checkout with {n} dart.|{what}: {left} left, no checkout with {n} darts.':
-      '{what}: ostaje {left}, nema izlaza s {n} strelicom.|{what}: ostaje {left}, nema izlaza s {n} strelice.|{what}: ostaje {left}, nema izlaza s {n} strelica.',
+  '{what} ({left}) --> next visit': '{what} ({left}) --> sljedeći posjet',
+  '{what} ({left}) --> no checkout with {n} dart|{what} ({left}) --> no checkout with {n} darts':
+      '{what} ({left}) --> nema izlaza s {n} strelicom|{what} ({left}) --> nema izlaza s {n} strelice|{what} ({left}) --> nema izlaza s {n} strelica',
   'Fill the boxes with the optimal checkout for the darts you have left.':
       'Popuni kućice optimalnim checkoutom za strelice koje ti ostaju.',
   'Choose your own optimal route.': 'Odaberi vlastitu optimalnu rutu.',

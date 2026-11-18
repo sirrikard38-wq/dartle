@@ -1,6 +1,7 @@
 import '../board/board_geometry.dart';
 import 'checkout_route.dart';
 import 'checkout_table.dart';
+import 'choice_advisor.dart';
 import 'dart_throw.dart';
 import 'optimal_route_service.dart';
 
@@ -134,9 +135,11 @@ class CheckoutTutor {
     if (routes.isNotEmpty) {
       int kept(List<DartOutcome> outcomes) => outcomes.where((o) => o.hasCheckout).length;
       final aimKept = aims.length == 1 ? kept(misses) : 2;
+      // Only a sensible aim tempts anyone: not T1, not a double that does not finish.
+      bool sensible(DartThrow dart) => ChoiceAdvisor.isNaturalAim(dart) || dart.score == target;
       final tempting = [
         for (final dart in _candidates)
-          if (!lit.contains(dart) && outcome(target, darts, dart).hasCheckout) dart,
+          if (!lit.contains(dart) && sensible(dart) && outcome(target, darts, dart).hasCheckout) dart,
       ];
       int rank(DartThrow dart) => dart.multiplier == aims.first.multiplier ? 0 : 1;
       tempting.sort((a, b) {

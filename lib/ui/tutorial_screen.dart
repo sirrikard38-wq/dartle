@@ -163,16 +163,28 @@ web.HTMLElement tutorCard(TutorCard card) {
   return el('div', cls: 'tutor-card', children: lines);
 }
 
-/// One line for what a dart leaves: "Hit T20: 67 left, then T17 D8."
+/// One line for what a dart leaves, each dart with what is left after it:
+/// "Hit T20 (67) --> T17 (16) --> D8".
 String _outcome(TutorCard card, String what, DartOutcome outcome) {
   if (outcome.bust) return tr('{what}: bust.', {'what': what});
   if (outcome.checkedOut) return tr('{what}: checked out.', {'what': what});
   final route = outcome.route;
-  if (route != null) {
-    return tr('{what}: {left} left, then {route}.', {'what': what, 'left': outcome.left, 'route': route.notation});
-  }
+  if (route != null) return '$what (${outcome.left}) --> ${_chain(route, outcome.left)}';
   final after = card.darts - 1;
-  if (after == 0) return tr('{what}: {left} left for the next visit.', {'what': what, 'left': outcome.left});
-  return trn(after, '{what}: {left} left, no checkout with {n} dart.', '{what}: {left} left, no checkout with {n} darts.',
+  if (after == 0) return tr('{what} ({left}) --> next visit', {'what': what, 'left': outcome.left});
+  return trn(after, '{what} ({left}) --> no checkout with {n} dart', '{what} ({left}) --> no checkout with {n} darts',
       {'what': what, 'left': outcome.left});
+}
+
+/// [route] from [start], every dart but the last with what is left after it:
+/// "T17 (16) --> D8".
+String _chain(CheckoutRoute route, int start) {
+  var left = start;
+  final parts = <String>[];
+  for (var i = 0; i < route.length; i++) {
+    final dart = route.darts[i];
+    left -= dart.score;
+    parts.add(i < route.length - 1 ? '${dart.notation} ($left)' : dart.notation);
+  }
+  return parts.join(' --> ');
 }
