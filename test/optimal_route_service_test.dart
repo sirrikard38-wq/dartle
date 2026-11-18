@@ -65,8 +65,19 @@ void main() {
   group('optimal routes', () {
     test('the table route first, then a route for each target almost as good', () {
       // 62 with three darts: T10, or T14 (20 is D10) and T18 (8 is D4).
-      expect(optimal.optimalRoutesIn(62, 3).map((x) => x.notation), ['T10 D16', 'T14 D10', 'T18 D4']);
-      expect(optimal.aimsIn(62, 3).map((d) => d.notation).toSet(), {'T10', 'T14', 'T18'});
+      expect(optimal.optimalRoutesIn(62, 3).map((x) => x.notation).take(3), ['T10 D16', 'T14 D10', 'T18 D4']);
+      expect(optimal.aimsIn(62, 3).map((d) => d.notation).toSet(), containsAll(['T10', 'T14', 'T18']));
+    });
+
+    test('a target just as good counts too: of the same kind, its hit leaves a checkout as soon, its miss as often', () {
+      // 25 with two darts: the table's S17 (S3 and S9 almost as good), and S19
+      // and S7 - S7 leaves D9, a miss into S19 leaves D3.
+      expect(optimal.aimsIn(25, 2).map((d) => d.notation).toSet(), {'S17', 'S3', 'S9', 'S19', 'S7'});
+      expect(optimal.isOptimal(25, r('S7 D9')), isTrue);
+      // S1 leaves D12, but a miss into S20 or S18 leaves nothing.
+      expect(optimal.isOptimal(25, r('S1 D12')), isFalse);
+      // A single is not a treble: 57 is S17, S19 or S7, not T17 D3.
+      expect(optimal.isOptimal(57, r('T17 D3')), isFalse);
     });
 
     test('127 with three darts is T20, not T19; T17 can go first too', () {

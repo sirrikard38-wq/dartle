@@ -4,23 +4,21 @@ How the routes on the "The Outs" pages of dartscheckoutassistant.com compare wit
 
 - Numbers with a checkout, all read from the site: 162
 - Site routes that are legal checkouts: 413
-- Optimal in the app: 228
-- Not optimal in the app: 185
+- Optimal in the app: 248
+- Not optimal in the app: 165
 
 The app's optimal routes are the checkout tables (`data/checkout-tables`): the route of each number and the routes of the targets almost as good. The site's routes are only compared with them.
 
 ## Numbers where no first-choice route of the site is optimal here
 
-- 19: site `S11 D4`, app `S3 D8` (the checkout table: S3 D8)
-- 21: site `S13 D4`, app `S17 D2` (the checkout table: S17 D2 / S3 D9 / S5 D8 / S1 D10)
-- 31: site `S15 D8`, app `S7 D12` (the checkout table: S7 D12 / S3 D14 / S19 D6)
+- 19: site `S11 D4`, app `S3 D8` (the checkout table: S3 D8 / S17 D1)
+- 21: site `S13 D4`, app `S17 D2` (the checkout table: S17 D2 / S3 D9 / S5 D8 / S1 D10 / S19 D1 / S7 D7)
+- 31: site `S15 D8`, app `S7 D12` (the checkout table: S7 D12 / S3 D14 / S19 D6 / S17 D7)
 - 43: site `S11 D16`, app `S3 D20` (the checkout table: S3 D20 / S19 D12 / S7 D18)
 - 47: site `S15 D16`, app `S7 D20` (the checkout table: S7 D20 / S19 D14)
 - 50: site `S10 D20`, app `Bull` (uses 2 darts; the fewest is 1)
-- 102: site `T16 S14 D20`, app `T20 S10 D16` (not one of the routes the rules pick)
 - 109: site `T20 S9 D20`, app `T20 S17 D16` (not one of the routes the rules pick)
 - 132: site `T20 T16 D12`, app `25 T19 Bull` (not one of the routes the rules pick)
-- 136: site `T20 T16 D14`, app `T20 T20 D8` (not one of the routes the rules pick)
 - 144: site `T20 T20 D12`, app `T20 T16 D18` (not one of the routes the rules pick)
 
 ## More darts than the fewest (64)
@@ -90,18 +88,18 @@ The app's optimal routes are the checkout tables (`data/checkout-tables`): the r
 - 110: `S20 T18 D18` - uses 3 darts; the fewest is 2
 - 110: `T20 S18 D16` - uses 3 darts; the fewest is 2
 
-## Not the checkout table's route (1 or 2 darts) (52)
+## Not the checkout table's route (1 or 2 darts) (49)
 
-- 19: `S11 D4` - the checkout table: S3 D8
-- 21: `S13 D4` - the checkout table: S17 D2 / S3 D9 / S5 D8 / S1 D10
+- 19: `S11 D4` - the checkout table: S3 D8 / S17 D1
+- 21: `S13 D4` - the checkout table: S17 D2 / S3 D9 / S5 D8 / S1 D10 / S19 D1 / S7 D7
 - 27: `S7 D10` - the checkout table: S19 D4 / S3 D12
 - 29: `S5 D12` - the checkout table: S17 D6 / S3 D13 / S13 D8 / S19 D5 / S7 D11
-- 31: `S15 D8` - the checkout table: S7 D12 / S3 D14 / S19 D6
+- 31: `S15 D8` - the checkout table: S7 D12 / S3 D14 / S19 D6 / S17 D7
 - 43: `S11 D16` - the checkout table: S3 D20 / S19 D12 / S7 D18
-- 46: `S14 D16` - the checkout table: S6 D20 / S10 D18
+- 46: `S14 D16` - the checkout table: S6 D20 / S10 D18 / S16 D15 / S8 D19
 - 47: `S15 D16` - the checkout table: S7 D20 / S19 D14
-- 52: `T12 D8` - the checkout table: S12 D20 / S20 D16 / S16 D18
-- 56: `T16 D4` - the checkout table: S16 D20 / S20 D18
+- 52: `T12 D8` - the checkout table: S12 D20 / S20 D16 / S16 D18 / S18 D17 / S14 D19 / S2 Bull
+- 56: `T16 D4` - the checkout table: S16 D20 / S20 D18 / S18 D19 / S6 Bull
 - 61: `25 D18` - the checkout table: T11 D14
 - 61: `T15 D8` - the checkout table: T11 D14
 - 61: `T7 D20` - the checkout table: T11 D14
@@ -136,28 +134,20 @@ The app's optimal routes are the checkout tables (`data/checkout-tables`): the r
 - 70: `T18 D8` - the checkout table: T20 D5
 - 70: `T10 D20` - the checkout table: T20 D5
 - 70: `S20 Bull` - the checkout table: T20 D5
-- 72: `T12 D18` - the checkout table: T16 D12 / D20 D16 / D18 D18
-- 72: `T20 D6` - the checkout table: T16 D12 / D20 D16 / D18 D18
-- 73: `T11 D20` - the checkout table: T19 D8 / T15 D14 / T13 D17
-- 74: `T18 D10` - the checkout table: T14 D16 / D20 D17 / T16 D13
-- 76: `T16 D14` - the checkout table: T20 D8 / D20 D18 / D19 D19
-- 76: `D18 D20` - the checkout table: T20 D8 / D20 D18 / D19 D19
-- 82: `Bull D16` - the checkout table: T14 D20 / T18 D14 / T16 D17
+- 72: `T12 D18` - the checkout table: T16 D12 / D20 D16 / D18 D18 / T20 D6 / T18 D9
+- 73: `T11 D20` - the checkout table: T19 D8 / T15 D14 / T13 D17 / T17 D11
+- 76: `D18 D20` - the checkout table: T20 D8 / D20 D18 / D19 D19 / T18 D11 / T16 D14
+- 82: `Bull D16` - the checkout table: T14 D20 / T18 D14 / T16 D17 / T20 D11
 - 84: `Bull D17` - the checkout table: T16 D18 / T20 D12 / T18 D15
 
-## Other (58)
+## Other (43)
 
 - 99: `S19 T20 D10` - not one of the routes the rules pick
-- 102: `T16 S14 D20` - not one of the routes the rules pick
 - 102: `T20 S6 D18` - not one of the routes the rules pick
 - 103: `S19 T20 D12` - not one of the routes the rules pick
-- 103: `T17 S12 D20` - not one of the routes the rules pick
-- 105: `S19 T18 D16` - not one of the routes the rules pick
 - 105: `T20 S5 D20` - not one of the routes the rules pick
 - 106: `S20 T18 D16` - not one of the routes the rules pick
 - 108: `S20 T20 D14` - not one of the routes the rules pick
-- 108: `T18 S14 D20` - not one of the routes the rules pick
-- 108: `T17 S17 D20` - not one of the routes the rules pick
 - 109: `T20 S9 D20` - not one of the routes the rules pick
 - 109: `S20 T19 D16` - not one of the routes the rules pick
 - 111: `T20 S11 D20` - not one of the routes the rules pick
@@ -188,37 +178,25 @@ The app's optimal routes are the checkout tables (`data/checkout-tables`): the r
 - 130: `T19 T19 D8` - not one of the routes the rules pick
 - 131: `T17 D20 D20` - not one of the routes the rules pick
 - 132: `T20 T16 D12` - not one of the routes the rules pick
-- 133: `T20 T15 D14` - not one of the routes the rules pick
-- 134: `T17 T17 D16` - not one of the routes the rules pick
 - 134: `T20 T16 D13` - not one of the routes the rules pick
 - 135: `T20 T17 D12` - not one of the routes the rules pick
-- 136: `T20 T16 D14` - not one of the routes the rules pick
 - 136: `T20 D18 D20` - not one of the routes the rules pick
-- 137: `T20 T15 D16` - not one of the routes the rules pick
-- 138: `T19 T19 D12` - not one of the routes the rules pick
-- 138: `T19 T15 D18` - not one of the routes the rules pick
 - 140: `T20 D20 D20` - not one of the routes the rules pick
-- 140: `T18 T18 D16` - not one of the routes the rules pick
-- 141: `T20 T15 D18` - not one of the routes the rules pick
 - 144: `T20 T20 D12` - not one of the routes the rules pick
-- 148: `T18 T18 D20` - not one of the routes the rules pick
 - 150: `T20 T20 D15` - not one of the routes the rules pick
 - 154: `T20 T20 D17` - not one of the routes the rules pick
-- 158: `T18 T18 Bull` - not one of the routes the rules pick
 
-## Fewer singles than the best routes (2)
+## Fewer singles than the best routes (1)
 
 - 105: `25 D20 D20` - fewer singles (1 are possible, e.g. T20 S13 D16)
-- 118: `T17 T17 D8` - fewer singles (1 are possible, e.g. T20 S18 D20)
 
-## A setup dart that is not a sensible aim (9)
+## A setup dart that is not a sensible aim (8)
 
 - 120: `S20 Bull Bull` - a setup dart that is not a sensible aim
 - 122: `25 T19 D20` - a setup dart that is not a sensible aim
 - 122: `Bull T16 D12` - a setup dart that is not a sensible aim
 - 125: `Bull 25 Bull` - a setup dart that is not a sensible aim
 - 129: `T19 T12 D18` - a setup dart that is not a sensible aim
-- 131: `T20 T13 D16` - a setup dart that is not a sensible aim
 - 132: `Bull Bull D16` - a setup dart that is not a sensible aim
 - 139: `T20 T13 D20` - a setup dart that is not a sensible aim
 - 139: `T19 Bull D16` - a setup dart that is not a sensible aim

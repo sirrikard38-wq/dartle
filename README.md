@@ -94,7 +94,10 @@ leaderboard shows the scores on the device, as before.
   - The optimal routes of a number (`OptimalRouteService`) are its table route
     (`S16/S8 D16/D20` is two routes, `25 D18 ili BULL S3 D4` either) and, for
     each target almost as good, that target and the table route of what it
-    leaves (62 with three darts: `T10 D16`, `T14 D10`, `T18 D4`).
+    leaves (62 with three darts: `T10 D16`, `T14 D10`, `T18 D4`). A target
+    just as good counts the same: of the same kind, its hit leaves a checkout in
+    no more darts and its misses keep as many checkouts (25 with two darts: the
+    table's S17, and S3, S19, S7).
   - A route may finish with a dart still in hand (64 with three darts:
     `T16 D8`): that is the optimal answer, in the calculator too. Checking out
     sooner another way is a miss, unless it is an optimal route of the fewest

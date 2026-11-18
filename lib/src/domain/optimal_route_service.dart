@@ -3,6 +3,7 @@ import 'checkout_engine.dart';
 import 'checkout_route.dart';
 import 'checkout_table.dart';
 import 'dart_throw.dart';
+import 'natural_aim.dart';
 
 /// Answers "what is the optimal way to check out N with these darts?" - from
 /// the checkout tables ([CheckoutTable]), for every number and 1, 2 or 3 darts
@@ -45,9 +46,9 @@ class OptimalRouteService {
     }
 
     CheckoutTable.routes(row, target).forEach(add);
-    // A target almost as good, then the route the table gives for what it
-    // leaves with the darts after it.
-    for (final other in CheckoutTable.alternatives(row)) {
+    // A target almost as good, or just as good, then the route the table gives
+    // for what it leaves with the darts after it.
+    for (final other in [...CheckoutTable.alternatives(row), ..._asGood(target, darts, row)]) {
       final left = target - other.score;
       if (left == 0) add(CheckoutRoute([other]));
       final rest = darts > 1 ? CheckoutTable.row(left, darts - 1) : null;
@@ -77,6 +78,7 @@ class OptimalRouteService {
       ...aims,
       for (final route in routes) route.darts.first,
       ...CheckoutTable.alternatives(row),
+      ..._asGood(target, darts, row),
     };
     final aimKept = aims.map((aim) => missesKept(target, darts, aim)).reduce((a, b) => a < b ? a : b);
     for (final route in routes) {
@@ -86,6 +88,46 @@ class OptimalRouteService {
     }
     return lit;
   }
+
+  /// The darts just as good as the table's target, biggest first: of the same
+  /// kind (a single for a single, a treble from T15 for a treble), whose hit
+  /// leaves a checkout in no more darts than the target's hit does, and whose
+  /// misses leave at least as many checkouts. 25 with two darts: the table's
+  /// S17, and S3, S19 and S7 - each leaves a double, and so does a miss into
+  /// the next area as often.
+  List<DartThrow> _asGood(int target, int darts, CheckoutTableRow row) {
+    if (CheckoutTable.routes(row, target).isEmpty) return const [];
+    // The darts a hit leaves the checkout in: 0 when it finishes, null when
+    // the darts after it cannot.
+    int? dartsAfterHit(DartThrow dart) {
+      final left = target - dart.score;
+      if (left == 0) return dart.isFinishingDart ? 0 : null;
+      final fewest = left < 2 ? null : _engine.minimumDarts(left);
+      return fewest != null && fewest <= darts - 1 ? fewest : null;
+    }
+
+    final aims = CheckoutTable.aims(row);
+    int fewest(Iterable<int?> values) => values.whereType<int>().fold(99, (a, b) => a < b ? a : b);
+    final aimHit = fewest(aims.map(dartsAfterHit));
+    final aimKept = fewest(aims.map((aim) => missesKept(target, darts, aim)));
+    // A single is far easier to hit than a treble, so only the same kind counts.
+    bool sensible(DartThrow dart) =>
+        aims.any((aim) => aim.multiplier == dart.multiplier && aim.isBull == dart.isBull) &&
+        (dart.score == target || (dart.multiplier != Multiplier.double && NaturalAim.isNatural(dart)));
+    return [
+      for (final dart in _candidates)
+        if (!aims.contains(dart) && sensible(dart))
+          if (dartsAfterHit(dart) case final after? when after <= aimHit)
+            if (missesKept(target, darts, dart) >= aimKept) dart,
+    ];
+  }
+
+  /// Every dart, biggest first.
+  static final List<DartThrow> _candidates = [
+    DartThrow.bull,
+    for (final m in [Multiplier.treble, Multiplier.double, Multiplier.single])
+      for (var n = DartThrow.maxBoardNumber; n >= 1; n--) DartThrow(m, n),
+  ];
 
   /// How many of the darts a throw at [dart] most often lands in instead
   /// ([missesOf]) still leave a checkout with the darts after it.

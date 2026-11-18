@@ -779,7 +779,7 @@ void main() {
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 3);
       expect(game.round!.maxDarts, 3);
-      expect(game.choiceHints, {DartThrow.parse('T16'), DartThrow.parse('T8')});
+      expect(game.choiceHints, {for (final d in ['T16', 'T8', 'T20', 'T18']) DartThrow.parse(d)});
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 2);
       expect(game.choiceHints, {DartThrow.parse('T14')});
@@ -794,7 +794,7 @@ void main() {
       game.startGame(null, GameMode.input);
       game.enterNumber(68);
       game.chooseOtherDarts(); // three darts
-      expect(game.choiceHints, {for (final d in ['T12', 'T20', 'T16']) DartThrow.parse(d)});
+      expect(game.choiceHints, {for (final d in ['T12', 'T20', 'T16', 'T18']) DartThrow.parse(d)});
       game.selectDart(DartThrow.parse('T12')); // leaves 32
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts(); // two darts: one left
@@ -836,7 +836,7 @@ void main() {
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 3);
-      expect(game.choiceHints, {for (final d in ['S7', 'S15', 'S19']) DartThrow.parse(d)});
+      expect(game.choiceHints, containsAll([for (final d in ['S7', 'S15', 'S19']) DartThrow.parse(d)]));
       game.selectDart(DartThrow.parse('S7'));
       expect(game.choiceHints, {DartThrow.parse('D20')});
       game.selectDart(DartThrow.parse('D20'));

@@ -62,7 +62,9 @@ web.HTMLElement buildHowToPlay(GameController game) {
             'leaves, not only at a hit: 127 with three darts is T20, as a miss into S20 '
             'leaves 107 (T19 Bull), while T19 missed into S19 leaves 108, no checkout. '
             'Targets almost as good count too and are lit as well (62 with three darts: '
-            'T10, T14 or T18). The route may finish with a dart still in hand (64 with '
+            'T10, T14 or T18), and so does any target of the same kind that leaves a '
+            'checkout just as soon, with a miss just as good (25 with two darts: S17, '
+            'S3, S19 or S7). The route may finish with a dart still in hand (64 with '
             'three darts: T16 D8). Checkout tutorial shows the card of every number.')),
     section(
         tr('Aim'),

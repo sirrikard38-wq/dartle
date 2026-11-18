@@ -20,9 +20,10 @@ void main() {
       expect(r.message, contains('48 + 24 = 72'));
     });
 
-    test('72 = D20 + D16 is equally optimal (D20 is almost as good), T20 + D6 is only right', () {
+    test('72 = D20 + D16 is equally optimal (D20 is almost as good), T20 + D6 too, T19 + D... is only right', () {
       expect(validator.validate(c72, darts('D20 D16')).isOptimal, isTrue);
-      final r = validator.validate(c72, darts('T20 D6'));
+      expect(validator.validate(c72, darts('T20 D6')).isOptimal, isTrue);
+      final r = validator.validate(c72, darts('T12 D18'));
       expect(r.isCorrect, isTrue);
       expect(r.isOptimal, isFalse);
     });
@@ -88,11 +89,13 @@ void main() {
       }
     });
 
-    test('57: only S17 D20 is optimal, every other finish is right but not optimal', () {
+    test('57: S17 D20, S19 D19 and S7 Bull are optimal, every other finish is right but not optimal', () {
       final c = catalog.forTarget(57)!;
       expect(c.dartsLeft, 2);
-      expect(validator.validate(c, darts('S17 D20')).isOptimal, isTrue);
-      for (final text in ['T7 D18', 'S7 Bull', 'S19 D19', '25 D16']) {
+      for (final text in ['S17 D20', 'S19 D19', 'S7 Bull']) {
+        expect(validator.validate(c, darts(text)).isOptimal, isTrue, reason: text);
+      }
+      for (final text in ['T7 D18', 'T17 D3', '25 D16']) {
         final r = validator.validate(c, darts(text));
         expect(r.isCorrect, isTrue, reason: text);
         expect(r.isOptimal, isFalse, reason: text);
