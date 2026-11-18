@@ -4,7 +4,8 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
-/// After Start: pick Checkout calculator, Checkout practice or Checkout input.
+/// After Start: pick Checkout calculator, Checkout practice, Checkout input or
+/// Checkout tutorial.
 web.HTMLElement buildModesScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -19,10 +20,20 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
     return b;
   }
 
+  // Checkout tutorial is not a game: it has its own page.
+  final tutorial = button('',
+      cls: 'mode-card',
+      focusKey: 'mode-tutorial',
+      ariaLabel: '${tr('Checkout tutorial')}: ${tr('Learn what to aim at, and why.')}',
+      onPressed: (_) => ctx.showPage(MenuPage.tutorial));
+  tutorial.appendChild(el('strong', text: tr('Checkout tutorial')));
+  tutorial.appendChild(el('span', text: tr('Learn what to aim at, and why.')));
+
   return el('main', cls: 'screen modes', children: [
     el('div', cls: 'play-area', children: [
       el('div', cls: 'mode-list', children: [
         for (final mode in GameMode.values) modeButton(mode),
+        tutorial,
       ]),
     ]),
   ]);

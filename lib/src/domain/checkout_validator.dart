@@ -122,6 +122,17 @@ class CheckoutValidator {
     // Exactly the free darts of the visit: all of them have to be used.
     if (route.length != challenge.dartsLeft) {
       final left = challenge.dartsLeft;
+      // The table's route can check out with a dart still in hand (64 with
+      // three darts: T16 D8): that is the optimal answer.
+      if (route.length < left && route.isCheckoutFor(target) &&
+          _optimal.isOptimalIn(target, challenge.darts, route)) {
+        return ValidationResult(
+          outcome: AttemptOutcome.correct,
+          playerRoute: route,
+          message: '${route.arithmetic}. Correct!',
+          isOptimal: true,
+        );
+      }
       // An optimal way of fewer darts: good, just not in the given number.
       if (route.length < left && route.isCheckoutFor(target) && _optimal.isOptimal(target, route)) {
         return fail(AttemptOutcome.goodButFewerDarts, goodButFewerDartsMessage(route, left));

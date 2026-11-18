@@ -11,19 +11,20 @@ void main() {
   List<DartThrow> darts(String text) => CheckoutRoute.parse(text).darts;
 
   group('CheckoutValidator', () {
-    final c72 = catalog.forTarget(72)!; // optimal T20 D6
+    final c72 = catalog.forTarget(72)!; // the table: T16 D12, almost as good D20 and D18
 
-    test('72 = T20 + D6 is correct and optimal', () {
-      final r = validator.validate(c72, darts('T20 D6'));
+    test('72 = T16 + D12 is correct and optimal', () {
+      final r = validator.validate(c72, darts('T16 D12'));
       expect(r.outcome, AttemptOutcome.correct);
       expect(r.isOptimal, isTrue);
-      expect(r.message, contains('60 + 12 = 72'));
+      expect(r.message, contains('48 + 24 = 72'));
     });
 
-    test('72 = T18 + D9 is correct and equally optimal (a treble of 15 or more)', () {
-      final r = validator.validate(c72, darts('T18 D9'));
+    test('72 = D20 + D16 is equally optimal (D20 is almost as good), T20 + D6 is only right', () {
+      expect(validator.validate(c72, darts('D20 D16')).isOptimal, isTrue);
+      final r = validator.validate(c72, darts('T20 D6'));
       expect(r.isCorrect, isTrue);
-      expect(r.isOptimal, isTrue);
+      expect(r.isOptimal, isFalse);
     });
 
     test('72 = T14 + D15 is correct but not optimal (T14 is a silly aim)', () {
@@ -75,15 +76,16 @@ void main() {
           AttemptOutcome.wrongDartCount);
     });
 
-    test('67 with the first box used: the bull-safe T17 D8 and S17 Bull are optimal', () {
+    test('67 with the first box used: the table\'s T17 D8 is optimal, S17 Bull only right', () {
       final c = catalog.forTarget(67)!;
       expect(c.dartCount, 2);
       expect(c.layout, BoxLayout.leftUsed);
       expect(validator.validate(c, darts('T17 D8')).isOptimal, isTrue);
-      expect(validator.validate(c, darts('S17 Bull')).isOptimal, isTrue);
-      final other = validator.validate(c, darts('T19 D5')); // 57 + 10 = 67
-      expect(other.isCorrect, isTrue);
-      expect(other.isOptimal, isFalse);
+      for (final text in ['S17 Bull', 'T19 D5']) {
+        final other = validator.validate(c, darts(text));
+        expect(other.isCorrect, isTrue, reason: text);
+        expect(other.isOptimal, isFalse, reason: text);
+      }
     });
 
     test('57: only S17 D20 is optimal, every other finish is right but not optimal', () {
@@ -97,47 +99,27 @@ void main() {
       }
     });
 
-    test('65: the bull-safe routes are optimal, the outer bull then D20 is only right', () {
-      final c = catalog.forTarget(65)!;
-      expect(c.dartsLeft, 2);
-      for (final text in ['T15 D10', 'S15 Bull']) {
-        final r = validator.validate(c, darts(text));
-        expect(r.isCorrect, isTrue, reason: text);
-        expect(r.isOptimal, isTrue, reason: text);
-      }
-      final r = validator.validate(c, darts('25 D20'));
-      expect(r.isCorrect, isTrue);
-      expect(r.isOptimal, isFalse);
-    });
-
-    test('119: T18 leaves 65, then the outer bull and D20 is optimal', () {
-      final r = validator.validate(catalog.forTarget(119)!, darts('T18 25 D20'));
-      expect(r.isCorrect, isTrue);
-      expect(r.isOptimal, isTrue);
-    });
-
-    test('132: T20 D20 D16 and T20 T20 D6 are optimal, T19 25 Bull is not', () {
+    test('132: the Bull area first - 25 T19 Bull or Bull T14 D20', () {
       final c = catalog.forTarget(132)!;
       expect(c.dartsLeft, 3);
-      for (final text in ['T20 D20 D16', 'T20 T20 D6', 'D20 T20 D16']) {
+      for (final text in ['25 T19 Bull', 'T19 25 Bull', 'Bull T14 D20']) {
         final r = validator.validate(c, darts(text));
         expect(r.isCorrect, isTrue, reason: text);
         expect(r.isOptimal, isTrue, reason: text);
       }
-      final outerBull = validator.validate(c, darts('T19 25 Bull'));
-      expect(outerBull.isCorrect, isTrue);
-      expect(outerBull.isOptimal, isFalse);
+      final other = validator.validate(c, darts('T20 T20 D6'));
+      expect(other.isCorrect, isTrue);
+      expect(other.isOptimal, isFalse);
     });
 
-    test('109: after T19 (52 left) a single and a better double is optimal too', () {
+    test('109: T20 S17 D16, and T19 S12 D20 and T17 S18 D20 for the targets almost as good', () {
       final c = catalog.forTarget(109)!;
       expect(c.dartsLeft, 3);
-      for (final text in ['T19 S20 D16', 'T19 S12 D20', 'S20 T19 D16']) {
+      for (final text in ['T20 S17 D16', 'S17 T20 D16', 'T19 S12 D20', 'T17 S18 D20']) {
         final r = validator.validate(c, darts(text));
         expect(r.isCorrect, isTrue, reason: text);
         expect(r.isOptimal, isTrue, reason: text);
       }
-      // T19 S2 Bull checks 109 out but is not optimal: a tiny single before the Bull.
       final bull = validator.validate(c, darts('T19 S2 Bull'));
       expect(bull.isCorrect, isTrue);
       expect(bull.isOptimal, isFalse);
@@ -165,7 +147,7 @@ void main() {
         final r = validator.validateNoCheckout(catalog.forTarget(72)!);
         expect(r.outcome, AttemptOutcome.noCheckoutWrong);
         expect(r.isCorrect, isFalse);
-        expect(r.message, contains('T20 D6'));
+        expect(r.message, contains('T16 D12'));
       });
 
       test('darts entered on a number with no checkout are wrong', () {
@@ -307,15 +289,22 @@ void goodButFewerDartsTests() {
 
   group('an optimal route of fewer darts than given', () {
     final c74 = catalog.threeDartFor(74)!; // 74 with three darts
+    final c64 = catalog.threeDartFor(64)!; // the table: T16 D8 with three darts
 
-    test('74 with three darts: T14 D16 is good, but not in the given number of darts', () {
-      expect(c74.dartsLeft, 3);
-      final r = validator.validate(c74, darts('T14 D16'));
+    test('the table\'s route with a dart still in hand is optimal: 64 with three darts, T16 D8', () {
+      expect(c64.dartsLeft, 3);
+      final r = validator.validate(c64, darts('T16 D8'));
+      expect(r.outcome, AttemptOutcome.correct);
+      expect(r.isOptimal, isTrue);
+    });
+
+    test('64 with three darts: T14 D11 is good, but not in the given number of darts', () {
+      final r = validator.validate(c64, darts('T14 D11'));
       expect(r.outcome, AttemptOutcome.goodButFewerDarts);
       expect(r.isCorrect, isTrue, reason: 'a right answer: points and the streak');
       expect(r.isOptimal, isFalse);
       expect(r.message, contains('Good, but not in the given number of darts'));
-      expect(r.message, contains('T14 D16'));
+      expect(r.message, contains('T14 D11'));
     });
 
     test('a fewer-dart checkout that is not optimal, or does not add up, is just a miss', () {
@@ -329,7 +318,8 @@ void goodButFewerDartsTests() {
     test('with the darts given it is simply correct', () {
       final r = validator.validate(c74, darts('S14 T14 D9'));
       expect(r.outcome, AttemptOutcome.correct);
-      expect(r.isOptimal, isTrue);
+      expect(r.isOptimal, isFalse);
+      expect(validator.validate(c74, darts('T14 D16')).isOptimal, isTrue);
     });
 
     test('the two-dart number on its own two darts is not affected', () {

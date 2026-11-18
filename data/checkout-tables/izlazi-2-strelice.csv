@@ -1,0 +1,170 @@
+﻿Broj,Gađaj,Ruta,Pogodak ostavlja,Promašaj ostavlja,Izlaz i dalje moguć,Pravilo,Alternativa
+2,D1,D1,IZLAZ,S1 → bust,NE,Double odmah,
+3,S1,S1 D1,2,"S20 → bust, S18 → bust",NE,Single → double,
+4,D2,D2,IZLAZ,S2 → 2,DA,Double odmah,
+5,S1,S1 D2,4,"S20 → bust, S18 → bust",NE,Single → double,
+6,D3,D3,IZLAZ,S3 → 3,NE,Double odmah,
+7,S3,S3 D2,4,"S17 → bust, S19 → bust",NE,Single → double,
+8,D4,D4,IZLAZ,S4 → 4,DA,Double odmah,
+9,S1,S1 D4,8,"S20 → bust, S18 → bust",NE,Single → double,
+10,D5,D5,IZLAZ,S5 → 5,NE,Double odmah,
+11,S3,S3 D4,8,"S17 → bust, S19 → bust",NE,Single → double,
+12,D6,D6,IZLAZ,S6 → 6,DA,Double odmah,
+13,S5,S5 D4,8,"S12 → bust, S20 → bust",NE,Single → double,S1
+14,D7,D7,IZLAZ,S7 → 7,NE,Double odmah,
+15,S7,S7 D4,8,"S19 → bust, S16 → bust",NE,Single → double,S3
+16,D8,D8,IZLAZ,S8 → 8,DA,Double odmah,
+17,S9,S9 D4,8,"S14 → 3, S12 → 5",NE,Single → double,S1
+18,D9,D9,IZLAZ,S9 → 9,NE,Double odmah,
+19,S3,S3 D8,16,"S17 → 2, S19 → bust","DA, NE",Single → double,
+20,D10,D10,IZLAZ,S10 → 10,DA,Double odmah,
+21,S17/S3,S17/S3 D2/D9,4 ili 18,–,–,Susjedni singlovi,"S5, S1"
+22,D11,D11,IZLAZ,S11 → 11,NE,Double odmah,
+23,S7,S7 D8,16,"S19 → 4, S16 → 7","DA, NE",Single → double,"S3, S3/S19"
+24,D12,D12,IZLAZ,S12 → 12,DA,Double odmah,
+25,S17,S17 D4,8,"S2 → 23, S3 → 22","NE, DA",Single → double,"S3, S9"
+26,D13,D13,IZLAZ,S13 → 13,NE,Double odmah,
+27,S19,S19 D4,8,"S3 → 24, S7 → 20",DA,Single → double,S3
+28,D14,D14,IZLAZ,S14 → 14,DA,Double odmah,
+29,S17/S3,S17/S3 D6/D13,12 ili 26,–,–,Susjedni singlovi,"S13, S19/S7"
+30,D15,D15,IZLAZ,S15 → 15,NE,Double odmah,
+31,S7,S7 D12,24,"S19 → 12, S16 → 15","DA, NE",Single → double,"S3, S3/S19"
+32,D16,D16,IZLAZ,S16 → 16,DA,Double odmah,
+33,S17,S17 D8,16,"S2 → 31, S3 → 30","NE, DA",Single → double,"S3, S1"
+34,D17,D17,IZLAZ,S17 → 17,NE,Double odmah,
+35,S3,S3 D16,32,"S17 → 18, S19 → 16",DA,Single → double,"S19, S19/S7"
+36,D18,D18,IZLAZ,S18 → 18,DA,Double odmah,
+37,S17/S3,S17/S3 D10/D17,20 ili 34,–,–,Susjedni singlovi,"S5, S13"
+38,D19,D19,IZLAZ,S19 → 19,NE,Double odmah,
+39,S7,S7 D16,32,"S19 → 20, S16 → 23","DA, NE",Single → double,"S3, S3/S19"
+40,D20,D20,IZLAZ,S20 → 20,DA,Double odmah,
+41,S17/S3,S17/S3 D12/D19,24 ili 38,–,–,Susjedni singlovi,"S9, S1"
+42,S10,S10 D16,32,"S6 → 36, S15 → 27","DA, NE",Single → double,"S6, S18/S4"
+43,S3,S3 D20,40,"S17 → 26, S19 → 24",DA,Single → double,"S19, S19/S7"
+44,S16/S8,S16/S8 D14/D18,28 ili 36,–,–,Susjedni singlovi,"S4, S12"
+45,S13,S13 D16,32,"S4 → 41, S6 → 39",NE,Single → double,"S19/S7, S5"
+46,S6/S10,S6/S10 D20/D18,40 ili 36,–,–,Susjedni singlovi,
+47,S7,S7 D20,40,"S19 → 28, S16 → 31","DA, NE",Single → double,S19
+48,S16/S8,S16/S8 D16/D20,32 ili 40,–,–,Susjedni singlovi,
+49,S17,S17 D16,32,"S2 → 47, S3 → 46",NE,Single → double,"S9, S13"
+50,S18,S18 D16,32,"S1 → 49, S4 → 46",NE,Single → double,"S10, S14"
+51,S19,S19 D16,32,"S3 → 48, S7 → 44",NE,Single → double,"S11, S15"
+52,S12,S12 D20,40,"S9 → 43, S5 → 47",NE,Single → double,"S20, S16"
+53,S13,S13 D20,40,"S4 → 49, S6 → 47",NE,Single → double,S17
+54,S14,S14 D20,40,"S11 → 43, S9 → 45",NE,Single → double,S18
+55,S15,S15 D20,40,"S10 → 45, S2 → 53",NE,Single → double,S19
+56,S16,S16 D20,40,"S7 → 49, S8 → 48",NE,Single → double,S20
+57,S17,S17 D20,40,"S2 → 55, S3 → 54",NE,Single → double,
+58,S18,S18 D20,40,"S1 → 57, S4 → 54",NE,Single → double,
+59,S19,S19 D20,40,"S3 → 56, S7 → 52",NE,Single → double,
+60,S20,S20 D20,40,"S5 → 55, S1 → 59",NE,Single → double,
+61,T11,T11 D14,28,S11 → 50,DA,"Triple → double, single → BULL",
+62,T12,T12 D13,26,S12 → 50,DA,"Triple → double, single → BULL",
+63,T13,T13 D12,24,S13 → 50,DA,"Triple → double, single → BULL",
+64,T14,T14 D11,22,S14 → 50,DA,"Triple → double, single → BULL",
+65,T15,T15 D10,20,S15 → 50,DA,"Triple → double, single → BULL",
+66,T16,T16 D9,18,S16 → 50,DA,"Triple → double, single → BULL",
+67,T17,T17 D8,16,S17 → 50,DA,"Triple → double, single → BULL",
+68,T18,T18 D7,14,S18 → 50,DA,"Triple → double, single → BULL",
+69,T19,T19 D6,12,S19 → 50,DA,"Triple → double, single → BULL",
+70,T20,T20 D5,10,S20 → 50,DA,"Triple → double, single → BULL",
+71,T13,T13 D16,32,S13 → 58,NE,Triple nužan,"T19, T17"
+72,T16,T16 D12,24,S16 → 56,NE,Triple nužan,"D20, D18"
+73,T19,T19 D8,16,S19 → 54,NE,Triple nužan,"T15, T13"
+74,T14,T14 D16,32,S14 → 60,NE,Triple nužan,"D20, T16"
+75,T17,T17 D12,24,S17 → 58,NE,Triple nužan,"25, T19"
+76,T20,T20 D8,16,S20 → 56,NE,Triple nužan,"D20, D19"
+77,T19,T19 D10,20,S19 → 58,NE,Triple nužan,"T15, T17"
+78,T18,T18 D12,24,S18 → 60,NE,Triple nužan,D20
+79,T19,T19 D11,22,S19 → 60,NE,Triple nužan,T13
+80,T20,T20 D10,20,S20 → 60,NE,Triple nužan,D20
+81,T19,T19 D12,24,S19 → 62,NE,Triple nužan,"T15, T17"
+82,T14,T14 D20,40,S14 → 68,NE,Triple nužan,"T18, T16"
+83,T17,T17 D16,32,S17 → 66,NE,Triple nužan,"T19, T15"
+84,T16,T16 D18,36,S16 → 68,NE,Triple nužan,"T20, T18"
+85,T15,T15 D20,40,S15 → 70,NE,Triple nužan,"T19, T17"
+86,T18,T18 D16,32,S18 → 68,NE,Triple nužan,"T16, T20"
+87,T17,T17 D18,36,S17 → 70,NE,Triple nužan,T19
+88,T20,T20 D14,28,S20 → 68,NE,Triple nužan,"T16, T18"
+89,T19,T19 D16,32,S19 → 70,NE,Triple nužan,T17
+90,T18,T18 D18,36,S18 → 72,NE,Triple nužan,T20
+91,T17,T17 D20,40,S17 → 74,NE,Triple nužan,T19
+92,T20,T20 D16,32,S20 → 72,NE,Triple nužan,T18
+93,T19,T19 D18,36,S19 → 74,NE,Triple nužan,
+94,T18,T18 D20,40,S18 → 76,NE,Triple nužan,T20
+95,T19,T19 D19,38,S19 → 76,NE,Triple nužan,
+96,T20,T20 D18,36,S20 → 76,NE,Triple nužan,
+97,T19,T19 D20,40,S19 → 78,NE,Triple nužan,
+98,T20,T20 D19,38,S20 → 78,NE,Triple nužan,
+99,T19,T19 S10 (ostaje 32),42,S19 → 80,–,Priprema,
+100,T20,T20 D20,40,S20 → 80,NE,Triple nužan,
+101,T17,T17 BULL,50,S17 → 84,NE,Triple nužan,
+102,T20,T20 S10 (ostaje 32),42,S20 → 82,–,Priprema,
+103,T19,T19 S6 (ostaje 40),46,S19 → 84,–,Priprema,
+104,T18,T18 BULL,50,S18 → 86,NE,Triple nužan,
+105,T20,T20 S13 (ostaje 32),45,S20 → 85,–,Priprema,
+106,T20,T20 S6 (ostaje 40),46,S20 → 86,–,Priprema,
+107,T19,T19 BULL,50,S19 → 88,NE,Triple nužan,
+108,T20,T20 S16/S8 (ostaje 32 ili 40),48,S20 → 88,–,Priprema,
+109,T20,T20 S17 (ostaje 32),49,S20 → 89,–,Priprema,
+110,T20,T20 BULL,50,S20 → 90,NE,Triple nužan,
+111,T20,T20 S19 (ostaje 32),51,S20 → 91,–,Priprema,
+112,T20,T20 S12 (ostaje 40),52,S20 → 92,–,Priprema,
+113,T20,T20 S13 (ostaje 40),53,S20 → 93,–,Priprema,
+114,T20,T20 S14 (ostaje 40),54,S20 → 94,–,Priprema,
+115,T19,T19 S18 (ostaje 40),58,S19 → 96,–,Priprema,
+116,T20,T20 S16 (ostaje 40),56,S20 → 96,–,Priprema,
+117,T20,T20 S17 (ostaje 40),57,S20 → 97,–,Priprema,
+118,T20,T20 S18 (ostaje 40),58,S20 → 98,–,Priprema,
+119,T20,T20 S19 (ostaje 40),59,S20 → 99,–,Priprema,
+120,T20,T20 S20 (ostaje 40),60,S20 → 100,–,Priprema,
+121,T20,T20 25/BULL (ostaje 36 ili 11),61,S20 → 101,–,Priprema,
+122,T20,T20 T10 (ostaje 32),62,S20 → 102,–,Priprema,
+123,T20,T20 T13 (ostaje 24),63,S20 → 103,–,Priprema,
+124,T20,T20 T16 (ostaje 16),64,S20 → 104,–,Priprema,
+125,T20,T20 25/BULL (ostaje 40 ili 15),65,S20 → 105,–,Priprema,
+126,T20,T20 T14 (ostaje 24),66,S20 → 106,–,Priprema,
+127,T20,T20 T9 (ostaje 40),67,S20 → 107,–,Priprema,
+128,T20,T20 T12 (ostaje 32),68,S20 → 108,–,Priprema,
+129,T20,T20 T15 (ostaje 24),69,S20 → 109,–,Priprema,
+130,T20,T20 T10 (ostaje 40),70,S20 → 110,–,Priprema,
+131,T20,T20 T13 (ostaje 32),71,S20 → 111,–,Priprema,
+132,T20,T20 T16 (ostaje 24),72,S20 → 112,–,Priprema,
+133,T20,T20 T19 (ostaje 16),73,S20 → 113,–,Priprema,
+134,T20,T20 T14 (ostaje 32),74,S20 → 114,–,Priprema,
+135,T20,T20 T17 (ostaje 24),75,S20 → 115,–,Priprema,
+136,T20,T20 T20 (ostaje 16),76,S20 → 116,–,Priprema,
+137,T20,T20 T19 (ostaje 20),77,S20 → 117,–,Priprema,
+138,T20,T20 T18 (ostaje 24),78,S20 → 118,–,Priprema,
+139,T19,T19 25/BULL (ostaje 57 ili 32),82,S19 → 120,–,Priprema,
+140,T20,T20 T20 (ostaje 20),80,S20 → 120,–,Priprema,
+141,T20,T20 25/BULL (ostaje 56 ili 31),81,S20 → 121,–,Priprema,
+142,T20,T20 25/BULL (ostaje 57 ili 32),82,S20 → 122,–,Priprema,
+143,T20,T20 25/BULL (ostaje 58 ili 33),83,S20 → 123,–,Priprema,
+144,T20,T20 25/BULL (ostaje 59 ili 34),84,S20 → 124,–,Priprema,
+145,T20,T20 25/BULL (ostaje 60 ili 35),85,S20 → 125,–,Priprema,
+146,T20,T20 T18 (ostaje 32),86,S20 → 126,–,Priprema,
+147,T20,T20 T17 (ostaje 36),87,S20 → 127,–,Priprema,
+148,T20,T20 T16 (ostaje 40),88,S20 → 128,–,Priprema,
+149,T20,T20 T19 (ostaje 32),89,S20 → 129,–,Priprema,
+150,T20,T20 T18 (ostaje 36),90,S20 → 130,–,Priprema,
+151,T20,T20 T17 (ostaje 40),91,S20 → 131,–,Priprema,
+152,T20,T20 T20 (ostaje 32),92,S20 → 132,–,Priprema,
+153,T20,T20 T19 (ostaje 36),93,S20 → 133,–,Priprema,
+154,T20,T20 T18 (ostaje 40),94,S20 → 134,–,Priprema,
+155,T20,T20 T19 (ostaje 38),95,S20 → 135,–,Priprema,
+156,T20,T20 T20 (ostaje 36),96,S20 → 136,–,Priprema,
+157,T20,T20 T19 (ostaje 40),97,S20 → 137,–,Priprema,
+158,T20,T20 T20 (ostaje 38),98,S20 → 138,–,Priprema,
+159,T20,T20 T19 (ostaje 42),99,S20 → 139,–,Nema izlaza,
+160,T20,T20 T20 (ostaje 40),100,S20 → 140,–,Priprema,
+161,T20,T20 T19 (ostaje 44),101,S20 → 141,–,Priprema,
+162,T20,T20 T20 (ostaje 42),102,S20 → 142,–,Nema izlaza,
+163,T20,T20 T19 (ostaje 46),103,S20 → 143,–,Nema izlaza,
+164,T20,T20 T20 (ostaje 44),104,S20 → 144,–,Priprema,
+165,T20,T20 T20 (ostaje 45),105,S20 → 145,–,Nema izlaza,
+166,T20,T20 T20 (ostaje 46),106,S20 → 146,–,Nema izlaza,
+167,T20,T20 T20 (ostaje 47),107,S20 → 147,–,Priprema,
+168,T20,T20 T20 (ostaje 48),108,S20 → 148,–,Nema izlaza,
+169,T20,T20 T20 (ostaje 49),109,S20 → 149,–,Nema izlaza,
+170,T20,T20 T20 (ostaje 50),110,S20 → 150,–,Priprema,

@@ -102,13 +102,13 @@ void main() {
     });
   });
 
-  test('the game makes every only route a favorite: 170, 40, 57, and none on 58', () async {
+  test('the game makes every only route a favorite: 170, 40, 57, and none on 48', () async {
     final game = createGameController(InMemoryStorageService());
     await game.init();
     expect(game.favorites.isFavorite(170, r('T20 T20 Bull')), isTrue);
     expect(game.favorites.isFavorite(40, r('D20')), isTrue);
     expect(game.favorites.isFavorite(57, r('S17 D20')), isTrue);
-    expect(game.favorites.hasAny(58), isFalse); // two optimal routes
+    expect(game.favorites.hasAny(48), isFalse); // S16 D16 and S8 D20
   });
 
   test('the game loads them and keeps them across starts', () async {

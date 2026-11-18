@@ -48,31 +48,17 @@ void main() {
     });
   });
 
-  group('the site\'s first choices are accepted next to the chart', () {
-    test('82: T14 D20 as well as the chart\'s Bull D16', () {
-      expect(optimal.isOptimal(82, r('T14 D20')), isTrue);
-      expect(optimal.isOptimal(82, r('Bull D16')), isTrue);
-    });
-
-    test('three-dart numbers: T19 S6 D20 on 103', () {
-      expect(optimal.isOptimal(103, r('T19 S6 D20')), isTrue);
-      expect(optimal.isOptimal(116, r('T19 S19 D20')), isTrue);
-    });
-
-    test('135: the site\'s Bull T15 D20 is accepted - the outer bull is not a single', () {
-      expect(optimal.isOptimal(135, r('Bull T15 D20')), isTrue);
-      expect(optimal.isOptimal(135, r('T20 T17 D12')), isTrue);
-    });
-
-    test('130: the backup S20 T20 Bull is bull-safe, T19 T19 D8 is only an option', () {
-      expect(optimal.isOptimal(130, r('S20 T20 Bull')), isTrue);
-      expect(optimal.isOptimal(130, r('T19 T19 D8')), isFalse);
-    });
-
-    test('your rules win where they disagree with the site', () {
-      // The site starts 50 with S10 D20, but one dart (the Bull) is fewer.
+  group('the checkout tables win where they disagree with the site', () {
+    test('the site starts 50 with S10 D20, but one dart (the Bull) is fewer', () {
       expect(optimal.isOptimal(50, r('S10 D20')), isFalse);
-      // First box used on 62: only the bull-safe route, not the site's T10 D16.
+    });
+
+    test('82 with two darts: the table\'s T14 D20, not the site\'s Bull D16', () {
+      expect(optimal.isOptimal(82, r('T14 D20')), isTrue);
+      expect(optimal.isOptimal(82, r('Bull D16')), isFalse);
+    });
+
+    test('62 with two darts: the table\'s T12 D13, not the site\'s T10 D16', () {
       expect(optimal.isOptimal(62, r('T10 D16')), isFalse);
       expect(optimal.isOptimal(62, r('T12 D13')), isTrue);
     });

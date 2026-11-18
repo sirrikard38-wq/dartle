@@ -741,15 +741,19 @@ void main() {
       expect(c.layout, BoxLayout.all);
       expect(c.dartsLeft, 3);
       expect(game.currentOptimalRoutes, isNotEmpty);
-      expect(game.currentOptimalRoutes.every((r) => r.length == 3), isTrue);
+      expect(game.currentOptimalRoutes.every((r) => r.length <= 3), isTrue);
       await solveOptimally();
       expect(game.lastResult!.isCorrect, isTrue);
       expect(game.lastResult!.isOptimal, isTrue);
-      expect(game.lastResult!.optimalRoutes.every((r) => r.length == 3), isTrue);
     });
 
+    // A two-dart number whose two-dart route is not its route with three darts
+    // (64: T14 D11 with two, T16 D8 with three).
+    bool differsWithThree(Challenge c) =>
+        c.hasExtraDart && !optimalService.isOptimalIn(c.target, 3, optimalService.optimalRoute(c.target)!);
+
     test('checking out in two darts with an optimal route is good, but not in the given number of darts - and it counts', () async {
-      dealUntil((c) => c.hasExtraDart);
+      dealUntil(differsWithThree);
       final c = game.challenge!;
       final two = optimalService.optimalRoute(c.target)!;
       for (final d in two.darts) {
@@ -775,9 +779,10 @@ void main() {
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 3);
       expect(game.round!.maxDarts, 3);
-      expect(game.choiceHints, contains(DartThrow.parse('S16')));
+      expect(game.choiceHints, {DartThrow.parse('T16'), DartThrow.parse('T8')});
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 2);
+      expect(game.choiceHints, {DartThrow.parse('T14')});
       // Not once two darts are thrown.
       game.chooseOtherDarts();
       game.selectDart(DartThrow.parse('S16'));
@@ -789,44 +794,38 @@ void main() {
       game.startGame(null, GameMode.input);
       game.enterNumber(68);
       game.chooseOtherDarts(); // three darts
-      expect(game.choiceHints, containsAll([for (final d in ['S18', 'T18', 'T14']) DartThrow.parse(d)]));
-      expect(game.choiceHints, isNot(contains(DartThrow.parse('S19'))));
-      game.selectDart(DartThrow.parse('T14')); // leaves 26
+      expect(game.choiceHints, {for (final d in ['T12', 'T20', 'T16']) DartThrow.parse(d)});
+      game.selectDart(DartThrow.parse('T12')); // leaves 32
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts(); // two darts: one left
       expect(game.challenge!.darts, 2);
-      expect(game.entered, [DartThrow.parse('T14')]);
-      expect(game.round!.remaining, 26);
+      expect(game.entered, [DartThrow.parse('T12')]);
+      expect(game.round!.remaining, 32);
       expect(game.round!.dartsLeft, 1);
-      expect(game.choiceHints, {DartThrow.parse('D13')});
+      expect(game.choiceHints, {DartThrow.parse('D16')});
       expect(game.round!.steps.single.quality, DartQuality.optimal, reason: 'kept as rated with three darts');
     });
 
-    test('88: T20 leaves D14 - with three darts S14 is lit, switched to two darts D14', () {
+    test('88: T20 leaves D14 - lit with three darts and with two', () {
       game.startGame(null, GameMode.input);
       game.enterNumber(88);
       game.chooseOtherDarts(); // three darts
       game.selectDart(DartThrow.parse('T20'));
-      expect(game.choiceHints, {DartThrow.parse('S14')});
+      expect(game.choiceHints, {DartThrow.parse('D14')});
       game.chooseOtherDarts(); // two darts: one left
       expect(game.choiceHints, {DartThrow.parse('D14')});
     });
 
-    test('88: T18 leaves D17 - with three darts the singles that leave a good double are lit, switched to two darts D17', () {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(88);
-      game.chooseOtherDarts(); // three darts
-      game.selectDart(DartThrow.parse('T18'));
-      expect(game.choiceHints, {for (final d in ['S2', 'S6', 'S10', 'S14', 'S18']) DartThrow.parse(d)});
-      game.chooseOtherDarts(); // two darts: one left
-      expect(game.choiceHints, {DartThrow.parse('D17')});
-    });
-
-    test('one- and three-dart numbers, 60 and 3 have no choice', () {
-      for (final n in [3, 40, 50, 60, 150]) {
+    test('one- and three-dart numbers have no choice; every two-dart number has', () {
+      for (final n in [40, 50, 150]) {
         game.startGame(null, GameMode.input);
         game.enterNumber(n);
         expect(game.canChooseDarts, isFalse, reason: '$n');
+      }
+      for (final n in [3, 47, 60, 61]) {
+        game.startGame(null, GameMode.input);
+        game.enterNumber(n);
+        expect(game.canChooseDarts, isTrue, reason: '$n');
       }
     });
 
@@ -837,21 +836,20 @@ void main() {
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 3);
-      expect(game.choiceHints, contains(DartThrow.parse('S7')));
-      expect(game.choiceHints, isNot(contains(DartThrow.parse('S19'))));
+      expect(game.choiceHints, {for (final d in ['S7', 'S15', 'S19']) DartThrow.parse(d)});
       game.selectDart(DartThrow.parse('S7'));
-      expect(game.choiceHints, {DartThrow.parse('D20'), DartThrow.parse('S20')});
+      expect(game.choiceHints, {DartThrow.parse('D20')});
       game.selectDart(DartThrow.parse('D20'));
       await game.submit();
       expect(game.lastResult!.isCorrect, isTrue);
       expect(game.lastResult!.isOptimal, isTrue);
       expect(game.lastResult!.validation.outcome, AttemptOutcome.correct);
-      // The popup lists the finishes with a dart left and the routes of all three.
+      // The popup lists the table's route and those of the targets almost as good.
       expect(game.lastResult!.optimalRoutes.map((r) => r.notation),
-          containsAll(['S7 D20', 'S20 S7 D10']));
+          containsAll(['S7 D20', 'S15 D16', 'S19 D14']));
     });
 
-    test('47 with three darts: the double missed into S20, then D10', () async {
+    test('47 with three darts: the double missed into S20, then D10 checks out', () async {
       game.startGame(null, GameMode.input);
       game.enterNumber(47);
       game.chooseOtherDarts();
@@ -860,7 +858,8 @@ void main() {
       expect(game.choiceHints, {DartThrow.parse('D10')});
       game.selectDart(DartThrow.parse('D10'));
       await game.submit();
-      expect(game.lastResult!.isOptimal, isTrue);
+      expect(game.lastResult!.isCorrect, isTrue);
+      expect(game.lastResult!.isOptimal, isFalse, reason: 'S20 was not the lit D20');
     });
 
     test('47: three darts back to two after the first dart lights the double of two darts', () {
@@ -879,7 +878,7 @@ void main() {
       expect(game.canChooseDarts, isFalse);
     });
 
-    test('74 with three darts: T14 is lit, and T14 then D16 is good - but not in the given number of darts', () async {
+    test('74 with three darts: T14 then D16 with a dart in hand is the table\'s route: optimal', () async {
       game.startGame(null, GameMode.input);
       game.enterNumber(74);
       game.chooseOtherDarts();
@@ -891,10 +890,20 @@ void main() {
       game.selectDart(DartThrow.parse('D16'));
       await game.submit();
       final result = game.lastResult!;
-      expect(result.validation.outcome, AttemptOutcome.goodButFewerDarts);
-      expect(result.isCorrect, isTrue, reason: 'it counts as a right answer');
-      expect(result.validation.message, contains('Good, but not in the given number of darts'));
+      expect(result.validation.outcome, AttemptOutcome.correct);
+      expect(result.isOptimal, isTrue);
       expect(result.playerRoute.isCheckoutFor(74), isTrue, reason: 'it can be a favorite');
+    });
+
+    test('64 with three darts: the two-dart T14 D11 is good, but not in the given number of darts', () async {
+      game.startGame(null, GameMode.input);
+      game.enterNumber(64);
+      game.chooseOtherDarts();
+      game.selectDart(DartThrow.parse('T14')); // not lit with three darts: T16 and T8
+      game.selectDart(DartThrow.parse('D11'));
+      await game.submit();
+      expect(game.lastResult!.isCorrect, isTrue);
+      expect(game.lastResult!.isOptimal, isFalse);
     });
 
     test('there is no choosing in the calculator', () {
@@ -935,7 +944,8 @@ void main() {
     });
 
     test('a good-but-fewer-darts finish counts as right, so it does not end the session', () async {
-      dealUntil((c) => c.hasExtraDart);
+      dealUntil((c) =>
+          c.hasExtraDart && !optimalService.isOptimalIn(c.target, 3, optimalService.optimalRoute(c.target)!));
       await useAllUndos();
       for (final d in optimalService.optimalRoute(game.challenge!.target)!.darts) {
         game.selectDart(d);

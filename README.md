@@ -1,6 +1,6 @@
 # Dartle — Darts Checkout Trainer
 
-Wordle-style trainer for 501 checkouts, in three modes:
+Wordle-style trainer for 501 checkouts, in three modes and a tutorial:
 
 - **Checkout calculator** - a number and three boxes (a visit). Boxes that are
   crossed out are darts already used; you fill the free ones. Against the
@@ -10,6 +10,8 @@ Wordle-style trainer for 501 checkouts, in three modes:
 - **Checkout practice** - choose your own darts one at a time; the optimal darts
   are lit on the board. No clock, no score, nothing saved.
 - **Checkout input** - type any number (2-170) and practise it the same way.
+- **Checkout tutorial** - learn what to aim at and why, then practise it: a card
+  per number and darts in hand, from the checkout tables.
 
 Pure Dart, compiled to JS; the only runtime dependency is `package:web`.
 
@@ -80,110 +82,42 @@ leaderboard shows the scores on the device, as before.
   boxes crossed out; a **2-dart** number has its left box crossed out (the
   right box is never crossed); a **3-dart** number has none crossed out. Free
   darts always equal the fewest darts.
-- **Optimal** (see `OptimalRouteService`). A **two-dart number up to 70** has one
-  rule of its own:
-  - up to 60 the first dart is a **single that leaves a better double**. When
-    two neighbouring singles both do, only those count, as that is where you aim.
-    With no such pair every such single counts. The near misses of those singles
-    count too: their triple or double when it leaves a better double. 48 is
-    `S8 D20`, `S16 D16`, `T8 D12`, `D16 D8`, `D8 D16`; 58 is `S18 D20`, `T18 D2`;
-    57 is only `S17 D20` (`AimPairs.goodSingleRoutes`);
-  - 61 to 70 is the **bull-safe** finish and nothing else: the triple of the
-    number whose single leaves 50, then the double, *or* that single, then the
-    Bull (61: `T11 D14`, `S11 Bull`).
-
-  Every other number goes by these, in order:
-  1. the fewest darts;
-  2. **bull-safe** where it applies - 3-dart numbers whose first triple leaves
-     55-70 (not 51-54: no tiny single before the Bull, so 109 is not
-     `T19 S2 Bull`): the same two ways, after the first triple (119: `T19 T12
-     D13`, `T19 S12 Bull`). A three-dart number also accepts its chart route.
-     After a first triple that leaves 51-60, a single that leaves a better double
-     is as good: 109 is also `T19 S20 D16` (`SingleLeave`);
-  3. otherwise the **most singles** (they are far easier to hit; the outer bull
-     is **not** a single and hardly ever an aim - it is far too hard to hit; the
-     one exception is `25 D20` with 65 left and `25 D18` with 61 left, after a
-     first triple), then setup doubles last, then fewer triples, using only
-     sensible aims (singles, T15-T20, and the better doubles as setup darts when
-     the route also finishes on a better double). 132 is `T20 T20 D6` =
-     `T20 D20 D16` = `T20 T16 D12`..., never `T19 25 Bull`;
-  4. **aims**, with two darts left (`AimPairs`): a first dart whose two possible
-     hits - the single and triple of a number, or two neighbours on the board
-     (single/single or triple/triple) - each leave a double is as good. Only the
-     best group counts: aims with a better double whatever is hit, else those
-     with at least one, else the rest.
-
-  What follows the first of three darts over 60 keeps the routes two darts had
-  before their rule up to 70 (`OptimalRouteService._olderTwoDartRoutes`), so that
-  rule takes nothing away from three darts: the bull-safe routes on 51-70 with the
-  singles that leave a better double, the aims (43: `T11 D5`, 64: `T16 D8`,
-  `T8 D20`), every single/triple pair of a number that leaves a double on 20 to 60
-  (35: `T5 D10`, `S5 D15`; `AimPairs.sameNumberRoutes`), two neighbouring singles
-  then a double on 41 to 60 (42: `S8 D17`, `S16 D13`;
-  `AimPairs.neighbourSingleRoutes`) and the same better double twice
-  (64: `D16 D16`).
-
-  A two-dart number **over 60** can come with three darts (50% in the
-  calculator and in practice; the player chooses in practice and input). Then
-  all three darts must be used (checking out sooner is a miss, unless it is an
-  optimal route of fewer darts: that counts as right and says "Good, but not in
-  the given number of darts", 74 with T14
-  D16) and the optimal routes are (0) the **aims**: the single or the triple of
-  a number whose triple leaves a double and whose single leaves a two-dart
-  finish, then an optimal two-dart route of what is left (68: `T14` leaves
-  D13, `S14` leaves 54; `OptimalRouteService.threeDartAims`). Only the aims
-  are lit for the first dart, all the same (`threeDartFirstDarts`); the best
-  one, whose single leaves a double too, comes first (68: `S18` leaves the
-  Bull, `T18` leaves D7, so 68 starts with `S18 S10 D20`). When the triple
-  leaves a double whose single leaves a double too, only that route follows:
-  88 is `T20 S14 D7` (aim at D14; hit S14 and D7 is left), not `T20 S4 D12`
-  (`AimPairs.missedDoubleRoute`, 37 of the 43 numbers have at least one). An
-  odd double or the Bull has no such backup, so only a single that leaves a
-  better double follows the triple: 88 is `T18 S18 D8`, not `T18 S4 D15`, and
-  110 is `T20 S10 D20`, not `T20 S12 D19`
-  (`AimPairs.twoDartsOnDoubleRoutes`). A route that can start with an aim's
-  single is free of this (88: `S16 T18 D9`, as S16 leaves 72). (1) two setup darts
-  from one aim - neighbours, the single and triple of a number, one of each,
-  or the same number twice - and a double: 64 is `S16 S16 D16`, `S8 S16 D20`
-  ... (only better doubles when there are any, then the most singles;
-  `AimPairs.threeDartRoutes`), and (2) a high single (S15 to S20) that leaves a
-  number with a two-dart finish, then one of that number's optimal routes with
-  two darts: 93 is `S19 T20 D7`, as S19 leaves 74
-  (`OptimalRouteService._followUps`; with every single 97 had 52 routes and 61
-  had 147, with S15-S20 only 97 had 23; with the aims (0) it has 4). And
-  (3) the single and the triple of
-  one number then any double (74: `S14 T14 D9`, 64: `S14 T14 D4`;
-  `AimPairs.sameNumberThreeDartRoutes`). And (4) when two singles and the triple
-  of a number each leave a double, any double, a dart of that number and a dart
-  of it or of a neighbour, at most one triple (64: `S16 S16 D16`, `S16 S8 D20`,
-  `S16 T8 D12`; `AimPairs.twoSinglesRoutes`). Routes (1) to (4) count only when
-  one of their setup darts is an aim, as every route has to start with one
-  (68 loses `S19 S11 D19`, `S17 S1 Bull`, `T11 S11 D12`; 74 `S10 T10 D17`), and
-  a triple keeps to the darts that may follow it (64 is not `T18 S4 D3`).
-  A two-dart number **under 60** can be played with three darts too, by choice in
-  practice and input only: it starts on two darts and never comes with three
-  (not 3, and not 60, which stays on two darts). The aims are the numbers whose
-  triple leaves a double and whose single, or two of its singles, leave one too
-  (47: `S7` leaves D20, `T7` leaves D13; 48: `S4 S4` leaves D20, `T4` leaves D18;
-  `AimPairs.underSixtyAims`). After any first dart that leaves a double, that
-  double is lit, and its single when that leaves a double too
-  (`AimPairs.doubleAndItsSingle`). Here a lit double may finish with a dart left
-  and is rated optimal: 47 is `S7 D20`, or `S7 S20 D10` when the double is missed
-  (`AimPairs.underSixtyRoutes`, the one list with routes of two darts in a
-  three-dart round). A single that leaves no double goes on with (4).
-  The popup and the "Also optimal" boxes list every optimal route - the same
-  as Checkout input lights up, however many (61 with three darts has over a
-  hundred).
-  Equal routes are all optimal, in any order of the setup darts. 120 stays
-  `T20 S20 D20`. The chart (`canonical_checkouts.dart`) only decides which
-  equal route is shown first; tests verify every chart entry is legal and
-  minimal.
+- **Optimal** comes from the **checkout tables** in `data/checkout-tables`
+  (`izlazi-1-strelica.csv`, `izlazi-2-strelice.csv`, `izlazi-3-strelice.csv`,
+  with `pikado-izlazi-kontekst.md`): for every number from 2 to 170 and 1, 2 or
+  3 darts in hand, the target to aim at, the route, and up to two targets almost
+  as good. They come from a model of the board with the spread of a real throw,
+  so they look at what a miss into the next area leaves: 127 with three darts is
+  `T20 T17 D8` (S20 leaves 107, `T19 Bull`), not T19 (S19 leaves 108).
+  `dart run tool/checkout_tables.dart` turns them into
+  `lib/src/domain/checkout_tables.dart`; `CheckoutTable` reads a row.
+  - The optimal routes of a number (`OptimalRouteService`) are its table route
+    (`S16/S8 D16/D20` is two routes, `25 D18 ili BULL S3 D4` either) and, for
+    each target almost as good, that target and the table route of what it
+    leaves (62 with three darts: `T10 D16`, `T14 D10`, `T18 D4`).
+  - A route may finish with a dart still in hand (64 with three darts:
+    `T16 D8`): that is the optimal answer, in the calculator too. Checking out
+    sooner another way is a miss, unless it is an optimal route of the fewest
+    darts ("Good, but not in the given number of darts").
+  - Practice and input light, before every dart, the table's target for what
+    is left with the darts left, and the targets almost as good
+    (`OptimalRouteService.aimsIn`). With no checkout left in the darts in hand
+    the table's setup for the next visit is lit (41 with one dart: S9).
+  - A two-dart number over 60 comes with three darts half the time in the
+    calculator; every two-dart number can be switched to three darts in
+    practice and input.
+  - The popup and the "Also optimal" boxes list every optimal route.
+- **Checkout tutorial** (`CheckoutTutor`, `TutorialSession`,
+  `lib/ui/tutorial_screen.dart`): Learn - type a number, choose 1, 2 or 3 darts
+  in hand, and read the card: what to aim at, the route, what a hit and a miss
+  into the next area leave, and why not the most tempting other target (one
+  whose miss leaves fewer checkouts). Practice - a number and darts are given,
+  press where you would aim on the board, and the same card says if it was
+  right. No clock, no score, nothing saved.
 - The first-choice ("Throw") routes from dartscheckoutassistant.com
-  (`site_routes.dart`, routes only, generated by `tool/site_routes.dart`) are
-  accepted next to the chart routes wherever they have the fewest darts and as
-  many singles as the best routes. Where they disagree with the rules above, the
-  rules win; every difference is listed in `docs/site-comparison.md`
-  (`dart run tool/site_report.dart`).
+  (`site_routes.dart`, generated by `tool/site_routes.dart`) are only compared
+  with the tables: `docs/site-comparison.md` (`dart run tool/site_report.dart`).
+  The chart (`canonical_checkouts.dart`) is kept as data; tests check it is legal.
 - **Better doubles** are a set: D20 D18 D16 D14 D12 D10 D8 D6 D5 D4 D2 D1. The
   result screen shows one more optimal route on one of them, plus up to two
   more, as boxes, and an **All possibilities** popup (every optimal route with
@@ -228,7 +162,8 @@ nothing that is no longer used.
 
 ```
 lib/src/domain       DartThrow, CheckoutRoute, CheckoutEngine, optimal routes
-                     (bull-safe, better doubles, explainer), box layouts,
+                     (the checkout tables, better doubles, the tutorial
+                     cards), box layouts,
                      catalog, generator, validator
 lib/src/content      the 1000 insults and the five praise lines, contact links
 lib/src/scoring      ScoringService (streak points)

@@ -76,7 +76,7 @@ void main() {
     test('the script waits for the fade, then goes to the menu; a second press does nothing', () {
       expect(back, contains('await playDartFade(stage);'));
       expect(back.indexOf('await playDartFade(stage);'),
-          lessThan(back.indexOf('_showPage(ViewContext.backTarget(_game.phase));')));
+          lessThan(back.indexOf('_showPage(ViewContext.backTarget(_game.phase, _page));')));
       expect(back, contains('if (leaving) return;'));
       expect(shot, contains("stage.classList.add('fading');"));
       expect(shot, contains('Duration(milliseconds: dartFadeMs)'));

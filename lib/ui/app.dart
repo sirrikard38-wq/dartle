@@ -19,6 +19,7 @@ import 'number_entry_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
 import 'to_top.dart';
+import 'tutorial_screen.dart';
 import 'view_context.dart';
 import 'welcome_screen.dart';
 
@@ -127,6 +128,7 @@ class DartleApp {
           MenuPage.modes => buildModesScreen(_ctx),
           MenuPage.favorites => buildFavoritesScreen(_ctx),
           MenuPage.leaderboard => buildLeaderboardScreen(_ctx),
+          MenuPage.tutorial => buildTutorialScreen(_ctx),
         },
     };
     // Fade a screen in only when it changes, not on every dart tapped. A popup
@@ -232,7 +234,7 @@ class DartleApp {
       if (leaving) return; // the dart is already on its way out
       leaving = true;
       await playDartFade(stage);
-      _showPage(ViewContext.backTarget(_game.phase));
+      _showPage(ViewContext.backTarget(_game.phase, _page));
     }
 
     stage = buildDartStage(

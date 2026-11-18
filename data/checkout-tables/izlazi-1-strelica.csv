@@ -1,0 +1,170 @@
+﻿Broj,Gađaj,Pogodak ostavlja,Promašaj ostavlja,Pravilo
+2,D1,IZLAZ,S1 → bust,Double odmah
+3,S1,2,"S20 → bust, S18 → bust",Priprema
+4,D2,IZLAZ,S2 → 2,Double odmah
+5,S1,4,"S20 → bust, S18 → bust",Priprema
+6,D3,IZLAZ,S3 → 3,Double odmah
+7,S3,4,"S17 → bust, S19 → bust",Priprema
+8,D4,IZLAZ,S4 → 4,Double odmah
+9,S1,8,"S20 → bust, S18 → bust",Priprema
+10,D5,IZLAZ,S5 → 5,Double odmah
+11,S3,8,"S17 → bust, S19 → bust",Priprema
+12,D6,IZLAZ,S6 → 6,Double odmah
+13,S5,8,"S12 → bust, S20 → bust",Priprema
+14,D7,IZLAZ,S7 → 7,Double odmah
+15,S7,8,"S19 → bust, S16 → bust",Priprema
+16,D8,IZLAZ,S8 → 8,Double odmah
+17,S1,16,"S20 → bust, S18 → bust",Priprema
+18,D9,IZLAZ,S9 → 9,Double odmah
+19,S3,16,"S17 → 2, S19 → bust",Priprema
+20,D10,IZLAZ,S10 → 10,Double odmah
+21,S5,16,"S12 → 9, S20 → bust",Priprema
+22,D11,IZLAZ,S11 → 11,Double odmah
+23,S7,16,"S19 → 4, S16 → 7",Priprema
+24,D12,IZLAZ,S12 → 12,Double odmah
+25,S17,8,"S2 → 23, S3 → 22",Priprema
+26,D13,IZLAZ,S13 → 13,Double odmah
+27,S19,8,"S3 → 24, S7 → 20",Priprema
+28,D14,IZLAZ,S14 → 14,Double odmah
+29,S13,16,"S4 → 25, S6 → 23",Priprema
+30,D15,IZLAZ,S15 → 15,Double odmah
+31,S7,24,"S19 → 12, S16 → 15",Priprema
+32,D16,IZLAZ,S16 → 16,Double odmah
+33,S17,16,"S2 → 31, S3 → 30",Priprema
+34,D17,IZLAZ,S17 → 17,Double odmah
+35,S3,32,"S17 → 18, S19 → 16",Priprema
+36,D18,IZLAZ,S18 → 18,Double odmah
+37,S5,32,"S12 → 25, S20 → 17",Priprema
+38,D19,IZLAZ,S19 → 19,Double odmah
+39,S7,32,"S19 → 20, S16 → 23",Priprema
+40,D20,IZLAZ,S20 → 20,Double odmah
+41,S9,32,"S14 → 27, S12 → 29",Priprema
+42,S10,32,"S6 → 36, S15 → 27",Priprema
+43,S3,40,"S17 → 26, S19 → 24",Priprema
+44,S12,32,"S9 → 35, S5 → 39",Priprema
+45,S13,32,"S4 → 41, S6 → 39",Priprema
+46,S6,40,"S13 → 33, S10 → 36",Priprema
+47,S7,40,"S19 → 28, S16 → 31",Priprema
+48,S16/S8,32 ili 40,–,Priprema
+49,S17,32,"S2 → 47, S3 → 46",Priprema
+50,BULL,IZLAZ,25 → 25,BULL
+51,S19,32,"S3 → 48, S7 → 44",Priprema
+52,S12,40,"S9 → 43, S5 → 47",Priprema
+53,S13,40,"S4 → 49, S6 → 47",Priprema
+54,S14,40,"S11 → 43, S9 → 45",Priprema
+55,S15,40,"S10 → 45, S2 → 53",Priprema
+56,S16,40,"S7 → 49, S8 → 48",Priprema
+57,S17,40,"S2 → 55, S3 → 54",Priprema
+58,S18,40,"S1 → 57, S4 → 54",Priprema
+59,S19,40,"S3 → 56, S7 → 52",Priprema
+60,S20,40,"S5 → 55, S1 → 59",Priprema
+61,BULL,"25 → 36, BULL → 11",single → 41–60,Priprema
+62,T10,32,S10 → 52,Priprema
+63,T13,24,S13 → 50,Priprema
+64,T16,16,S16 → 48,Priprema
+65,BULL,"25 → 40, BULL → 15",single → 45–64,Priprema
+66,T14,24,S14 → 52,Priprema
+67,T9,40,S9 → 58,Priprema
+68,T12,32,S12 → 56,Priprema
+69,T15,24,S15 → 54,Priprema
+70,T10,40,S10 → 60,Priprema
+71,T13,32,S13 → 58,Priprema
+72,T16,24,S16 → 56,Priprema
+73,T19,16,S19 → 54,Priprema
+74,T14,32,S14 → 60,Priprema
+75,T17,24,S17 → 58,Priprema
+76,T20,16,S20 → 56,Priprema
+77,T19,20,S19 → 58,Priprema
+78,T18,24,S18 → 60,Priprema
+79,T19,22,S19 → 60,Priprema
+80,T20,20,S20 → 60,Priprema
+81,BULL,"25 → 56, BULL → 31",single → 61–80,Priprema
+82,BULL,"25 → 57, BULL → 32",single → 62–81,Priprema
+83,BULL,"25 → 58, BULL → 33",single → 63–82,Priprema
+84,BULL,"25 → 59, BULL → 34",single → 64–83,Priprema
+85,BULL,"25 → 60, BULL → 35",single → 65–84,Priprema
+86,T18,32,S18 → 68,Priprema
+87,T17,36,S17 → 70,Priprema
+88,T16,40,S16 → 72,Priprema
+89,T19,32,S19 → 70,Priprema
+90,T18,36,S18 → 72,Priprema
+91,T17,40,S17 → 74,Priprema
+92,T20,32,S20 → 72,Priprema
+93,T19,36,S19 → 74,Priprema
+94,T18,40,S18 → 76,Priprema
+95,T19,38,S19 → 76,Priprema
+96,T20,36,S20 → 76,Priprema
+97,T19,40,S19 → 78,Priprema
+98,T20,38,S20 → 78,Priprema
+99,T19,42,S19 → 80,Priprema
+100,T20,40,S20 → 80,Priprema
+101,T19,44,S19 → 82,Priprema
+102,T20,42,S20 → 82,Priprema
+103,T19,46,S19 → 84,Priprema
+104,T20,44,S20 → 84,Priprema
+105,T20,45,S20 → 85,Priprema
+106,T20,46,S20 → 86,Priprema
+107,T20,47,S20 → 87,Priprema
+108,T20,48,S20 → 88,Priprema
+109,T20,49,S20 → 89,Priprema
+110,T20,50,S20 → 90,Priprema
+111,T20,51,S20 → 91,Priprema
+112,T20,52,S20 → 92,Priprema
+113,T20,53,S20 → 93,Priprema
+114,T20,54,S20 → 94,Priprema
+115,T19,58,S19 → 96,Priprema
+116,T20,56,S20 → 96,Priprema
+117,T20,57,S20 → 97,Priprema
+118,T20,58,S20 → 98,Priprema
+119,T20,59,S20 → 99,Priprema
+120,T20,60,S20 → 100,Priprema
+121,T20,61,S20 → 101,Priprema
+122,T19,65,S19 → 103,Priprema
+123,T20,63,S20 → 103,Priprema
+124,T20,64,S20 → 104,Priprema
+125,T20,65,S20 → 105,Priprema
+126,T20,66,S20 → 106,Priprema
+127,T20,67,S20 → 107,Priprema
+128,T20,68,S20 → 108,Priprema
+129,T20,69,S20 → 109,Priprema
+130,T20,70,S20 → 110,Priprema
+131,T20,71,S20 → 111,Priprema
+132,T20,72,S20 → 112,Priprema
+133,T20,73,S20 → 113,Priprema
+134,T20,74,S20 → 114,Priprema
+135,T20,75,S20 → 115,Priprema
+136,T20,76,S20 → 116,Priprema
+137,T20,77,S20 → 117,Priprema
+138,T20,78,S20 → 118,Priprema
+139,T19,82,S19 → 120,Priprema
+140,T20,80,S20 → 120,Priprema
+141,T20,81,S20 → 121,Priprema
+142,T20,82,S20 → 122,Priprema
+143,T20,83,S20 → 123,Priprema
+144,T20,84,S20 → 124,Priprema
+145,T20,85,S20 → 125,Priprema
+146,T20,86,S20 → 126,Priprema
+147,T20,87,S20 → 127,Priprema
+148,T20,88,S20 → 128,Priprema
+149,T20,89,S20 → 129,Priprema
+150,T20,90,S20 → 130,Priprema
+151,T20,91,S20 → 131,Priprema
+152,T20,92,S20 → 132,Priprema
+153,T20,93,S20 → 133,Priprema
+154,T20,94,S20 → 134,Priprema
+155,T20,95,S20 → 135,Priprema
+156,T20,96,S20 → 136,Priprema
+157,T20,97,S20 → 137,Priprema
+158,T20,98,S20 → 138,Priprema
+159,T20,99,S20 → 139,Nema izlaza
+160,T20,100,S20 → 140,Priprema
+161,T20,101,S20 → 141,Priprema
+162,T20,102,S20 → 142,Nema izlaza
+163,T20,103,S20 → 143,Nema izlaza
+164,T20,104,S20 → 144,Priprema
+165,T20,105,S20 → 145,Nema izlaza
+166,T20,106,S20 → 146,Nema izlaza
+167,T20,107,S20 → 147,Priprema
+168,T20,108,S20 → 148,Nema izlaza
+169,T20,109,S20 → 149,Nema izlaza
+170,T20,110,S20 → 150,Priprema

@@ -84,7 +84,7 @@ void main() {
       if (!c.hasCheckout) continue;
       expect(c.dartCount, engine.minimumDarts(c.target), reason: '${c.target}');
       expect(optimal.isOptimalIn(c.target, c.darts, c.optimalRoute), isTrue);
-      expect(c.optimalRoute.length, c.dartsLeft);
+      expect(c.optimalRoute.length, lessThanOrEqualTo(c.dartsLeft)); // 64 with three: T16 D8
       if (c.hasExtraDart) {
         expect(c.dartCount, 2, reason: '${c.target}');
         expect(c.target, greaterThan(60));
@@ -201,7 +201,7 @@ void main() {
         expect(c.dartsLeft, c.darts, reason: 'free boxes = the darts it is played with');
         expect(c.layout.free.length, c.dartsLeft);
         expect(c.optimalRoute.total, c.target);
-        expect(c.optimalRoute.length, c.dartsLeft);
+        expect(c.optimalRoute.length, lessThanOrEqualTo(c.dartsLeft));
         seen.add('${c.dartCount}-${c.layout.name}');
       }
       // A two-dart number over 40 can come with all three boxes free.

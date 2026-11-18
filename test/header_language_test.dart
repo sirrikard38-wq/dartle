@@ -87,10 +87,12 @@ void mirrorAndBackTests() {
 
     test('from the modes, Favorites and the Leaderboard (all menu pages): the menu', () {
       expect(ViewContext.backTarget(GamePhase.menu), MenuPage.home);
+      // Checkout tutorial goes back to the game modes it was chosen from.
+      expect(ViewContext.backTarget(GamePhase.menu, MenuPage.tutorial), MenuPage.modes);
     });
 
     test('the dart uses it', () {
-      expect(app, contains('_showPage(ViewContext.backTarget(_game.phase));'));
+      expect(app, contains('_showPage(ViewContext.backTarget(_game.phase, _page));'));
       expect(app, isNot(contains('_showPage(MenuPage.home);')));
     });
   });

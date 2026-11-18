@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import '../dartle.dart';
 
 /// The pages shown while the game phase is `menu` (i.e. away from a checkout).
-enum MenuPage { welcome, home, modes, favorites, leaderboard }
+enum MenuPage { welcome, home, modes, favorites, leaderboard, tutorial }
 
 /// What every screen builder needs from the app shell.
 class ViewContext {
@@ -73,10 +73,10 @@ class ViewContext {
 
   /// Where the Back dart goes: one step back. From a checkout (a game, its
   /// result, typing a number for Checkout input) that is the list of game modes
-  /// you chose from; from the modes, Favorites and the Leaderboard it is the menu
-  /// (Start, Favorites, Leaderboard).
-  static MenuPage backTarget(GamePhase phase) =>
-      phase == GamePhase.menu ? MenuPage.home : MenuPage.modes;
+  /// you chose from, and so it is from Checkout tutorial ([page]); from the modes,
+  /// Favorites and the Leaderboard it is the menu (Start, Favorites, Leaderboard).
+  static MenuPage backTarget(GamePhase phase, [MenuPage? page]) =>
+      phase == GamePhase.menu && page != MenuPage.tutorial ? MenuPage.home : MenuPage.modes;
 
   /// The multiplier a new checkout starts with: Triple when the best route has
   /// a triple in it, and also for a number with no checkout; otherwise Single

@@ -23,11 +23,10 @@ enum DartQuality {
 /// Rates the darts a player chooses in "Checkout practice" and lights up the
 /// best ones.
 ///
-/// "Optimal" follows [OptimalRouteService]: the fewest darts, then the
-/// bull-safe routes where they apply, then the routes with the most singles.
-/// So a lit dart is a setup dart of an optimal route: 57 with the first box
-/// used lights T7 and S7 (the treble and the single that leaves the Bull);
-/// 35 lights the singles.
+/// "Optimal" follows the checkout tables ([OptimalRouteService]): before every
+/// dart the table's target for the number and the darts left is lit, with the
+/// targets almost as good (62 with three darts: T10, T14 and T18; 48 with two:
+/// S16 and S8).
 class ChoiceAdvisor {
   ChoiceAdvisor(this._engine, this._optimal);
 
@@ -62,67 +61,26 @@ class ChoiceAdvisor {
   List<CheckoutRoute> optimalRoutesIn(int remaining, int darts) =>
       _optimal.optimalRoutesIn(remaining, darts);
 
-  /// The darts that are an equally optimal NEXT throw for [remaining]: the
-  /// setup darts of every optimal route, or just the finishing double when one
-  /// dart finishes it. The order of the setup darts does not matter, so any of
-  /// them can be thrown first.
-  Set<DartThrow> optimalDarts(int remaining) => _nextDarts(optimalRoutes(remaining));
-
-  /// Like [optimalDarts], with exactly [darts] darts still to throw. A two-dart
-  /// number with three darts lights only its aims (68: S18 T18, S20 T20 ... -
-  /// see [OptimalRouteService.threeDartFirstDarts]).
-  Set<DartThrow> optimalDartsIn(int remaining, int darts) {
-    if (darts == 3) {
-      final first = _optimal.threeDartFirstDarts(remaining);
-      if (first.isNotEmpty) return first;
-    }
-    return _nextDarts(optimalRoutesIn(remaining, darts));
+  /// The darts that are an equally optimal NEXT throw for [remaining] with the
+  /// fewest darts it needs (see [optimalDartsIn]).
+  Set<DartThrow> optimalDarts(int remaining) {
+    final fewest = _engine.minimumDarts(remaining);
+    return fewest == null ? const <DartThrow>{} : optimalDartsIn(remaining, fewest);
   }
 
-  /// The equally optimal next darts for [target] played with exactly [darts]
-  /// darts, once [thrown] are in: the rest of every optimal route that has the
-  /// darts thrown so far among its setup darts (in any order) - on 85 with three
-  /// darts, S15 is followed by T10 (T10 S15 D20). After a dart that is in none
-  /// of them, the optimal darts for what is left.
+  /// The darts to aim at on [remaining] with [darts] darts in hand: the checkout
+  /// table's target and the targets almost as good
+  /// ([OptimalRouteService.aimsIn]). 62 with three darts: T10, T14 and T18.
+  Set<DartThrow> optimalDartsIn(int remaining, int darts) => _optimal.aimsIn(remaining, darts);
+
+  /// The equally optimal next darts for [target] played with [darts] darts,
+  /// once [thrown] are in: the table's targets for what is left with the darts
+  /// left. 127 with three darts: T20, then 67 with two darts is T17.
   Set<DartThrow> nextOptimalDarts(int target, int darts, List<DartThrow> thrown) {
     final left = darts - thrown.length;
     final remaining = target - thrown.fold<int>(0, (sum, d) => sum + d.score);
     if (left <= 0 || remaining <= 0) return const <DartThrow>{};
-    if (thrown.isEmpty) return optimalDartsIn(target, darts);
-    // After a dart that leaves a double only these follow, whatever other routes
-    // have the darts thrown in them (88: T20 leaves 28, so S14; 47: S19 leaves
-    // 28, so D14 and S14).
-    if (left == 2) {
-      final after = _optimal.dartsAfter(target, thrown.single);
-      if (after.isNotEmpty) return after;
-    }
-    final next = <DartThrow>{};
-    for (final route in optimalRoutesIn(target, darts)) {
-      final rest = _rest(route, thrown);
-      if (rest == null) continue;
-      next.addAll(rest.length == 1 ? rest : rest.sublist(0, rest.length - 1));
-    }
-    return next.isEmpty
-        ? optimalDartsIn(remaining, left)
-        : Set<DartThrow>.unmodifiable(next);
-  }
-
-  /// [route] without [thrown] (taken from its setup darts), or null when they
-  /// are not all among them.
-  static List<DartThrow>? _rest(CheckoutRoute route, List<DartThrow> thrown) {
-    final setup = route.setupDarts.toList();
-    for (final dart in thrown) {
-      if (!setup.remove(dart)) return null;
-    }
-    return [...setup, route.darts.last];
-  }
-
-  static Set<DartThrow> _nextDarts(List<CheckoutRoute> routes) {
-    if (routes.isEmpty) return const <DartThrow>{};
-    if (routes.first.length == 1) {
-      return Set<DartThrow>.unmodifiable({for (final r in routes) r.darts.first});
-    }
-    return Set<DartThrow>.unmodifiable({for (final r in routes) ...r.setupDarts});
+    return optimalDartsIn(remaining, left);
   }
 
   /// What a press on the board is worth when the [best] darts are highlighted.
@@ -140,10 +98,12 @@ class ChoiceAdvisor {
   }
 
   /// Rates throwing [dart] with [remaining] left and [dartsLeft] darts
-  /// (counting this one) still to throw. Every dart has to be used: checking
-  /// out with darts still in hand is wrong (a bust), unless the double was lit
-  /// (47 with three darts: S7, then D20). [best] are the optimal darts at this
-  /// point when the caller knows them (see [nextOptimalDarts]).
+  /// (counting this one) still to throw. A lit dart is optimal, also a double
+  /// that checks out with a dart still in hand (40 with two darts: D20) and a
+  /// setup for the next visit when no checkout is left (41 with one dart: S9).
+  /// Checking out with an unlit dart and darts still in hand is a miss (a bust).
+  /// [best] are the optimal darts at this point when the caller knows them (see
+  /// [nextOptimalDarts]).
   DartQuality rate({
     required int remaining,
     required int dartsLeft,
@@ -152,14 +112,13 @@ class ChoiceAdvisor {
   }) {
     final after = remaining - dart.score;
     if (after < 0 || after == 1) return DartQuality.bust;
+    final lit = best ?? optimalDartsIn(remaining, dartsLeft);
     if (after == 0) {
-      final inTime = dartsLeft == 1 || (best?.contains(dart) ?? false);
+      final inTime = dartsLeft == 1 || lit.contains(dart);
       return dart.isFinishingDart && inTime ? DartQuality.optimal : DartQuality.bust;
     }
+    if (lit.contains(dart)) return DartQuality.optimal;
     if (dartsLeft <= 1 || !_engine.canCheckoutIn(after, dartsLeft - 1)) return DartQuality.poor;
-    if ((best ?? optimalDartsIn(remaining, dartsLeft)).contains(dart)) {
-      return DartQuality.optimal;
-    }
     return isNaturalAim(dart) ? DartQuality.fine : DartQuality.poor;
   }
 }

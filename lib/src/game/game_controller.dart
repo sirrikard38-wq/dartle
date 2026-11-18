@@ -5,6 +5,7 @@ import '../domain/challenge.dart';
 import '../domain/challenge_generator.dart';
 import '../domain/checkout_engine.dart';
 import '../domain/checkout_route.dart';
+import '../domain/checkout_tutor.dart';
 import '../domain/checkout_validator.dart';
 import '../domain/choice_advisor.dart';
 import '../domain/choice_round.dart';
@@ -21,6 +22,7 @@ import '../stats/statistics_service.dart';
 import '../storage/storage_service.dart';
 import '../timing/attempt_timer.dart';
 import 'game_mode.dart';
+import 'tutorial_session.dart';
 
 /// menu: away from a checkout. entering: Checkout input is waiting for a
 /// number. impossible: the number entered has no checkout. playing / result:
@@ -135,6 +137,9 @@ class GameController {
   List<AttemptRecord> _leaderboardRecord = [];
   late final HistoryRepository _leaderboardRecordRepo =
       HistoryRepository(_storage, key: leaderboardRecordKey);
+
+  /// Checkout tutorial: the cards and the state of Learn and Practice.
+  late final TutorialSession tutorial = TutorialSession(CheckoutTutor(_optimal), random: _random);
 
   /// The routes the player marked with the dart icon, saved on this device. A
   /// number with only one optimal route has it as a favorite from the start.
