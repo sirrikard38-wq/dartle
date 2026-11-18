@@ -110,7 +110,12 @@ void main() {
   group('the tutorial session', () {
     test('Learn: digits make the number, from 2 to 170', () {
       final session = TutorialSession(tutor, random: Random(1));
-      expect(session.learnCard, isNull);
+      // Learn starts on the Practice question, with its darts.
+      final question = session.practiceTarget;
+      expect(session.learnTarget, question);
+      expect(session.learnCard!.target, question);
+      expect(session.learnCard!.darts, session.practiceDarts);
+      // The first digit typed starts a new number.
       session.typeDigit(0); // no leading zero
       expect(session.learnDigits, '');
       session
@@ -120,8 +125,10 @@ void main() {
         ..typeDigit(4); // three digits at the most
       expect(session.learnTarget, 127);
       // The card waits until the typing stops.
-      expect(session.learnCard, isNull);
-      session.showTypedNumber();
+      expect(session.learnCard!.target, question);
+      session
+        ..learnDarts = 3
+        ..showTypedNumber();
       expect(session.learnCard!.aims, [d('T20')]);
       session.learnDarts = 2;
       expect(session.learnCard!.darts, 2);
@@ -131,6 +138,10 @@ void main() {
         ..deleteDigit()
         ..deleteDigit();
       expect(session.learnTarget, isNull);
+      // A new question is in Learn too.
+      session.newQuestion();
+      expect(session.learnTarget, session.practiceTarget);
+      expect(session.learnDarts, session.practiceDarts);
     });
 
     test('Practice: every question can be checked out; it is played out with every dart', () {

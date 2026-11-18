@@ -51,15 +51,31 @@ class TutorialSession {
         : null;
   }
 
+  /// Learn holds the Practice question's number, not one typed: the first
+  /// digit typed starts a new number instead of adding to it.
+  bool _fromPractice = false;
+
   /// Types a digit of the number to learn about (three at the most, no
   /// leading zero).
   void typeDigit(int digit) {
+    if (_fromPractice) {
+      _fromPractice = false;
+      learnDigits = '';
+    }
     if (learnDigits.length >= 3 || (learnDigits.isEmpty && digit == 0)) return;
     learnDigits += '$digit';
   }
 
   void deleteDigit() {
+    _fromPractice = false;
     if (learnDigits.isNotEmpty) learnDigits = learnDigits.substring(0, learnDigits.length - 1);
+  }
+
+  /// Learn shows the Practice question: its number with its darts in hand.
+  void _learnPracticeQuestion() {
+    learnDigits = shownDigits = '$practiceTarget';
+    learnDarts = practiceDarts;
+    _fromPractice = true;
   }
 
   /// The card for the number shown ([shownDigits]), or null.
@@ -69,7 +85,7 @@ class TutorialSession {
   }
 
   /// A new practice question: a number that can be checked out with the darts
-  /// given, from one dart up to three.
+  /// given, from one dart up to three. Learn shows it too.
   void newQuestion() {
     thrown.clear();
     marks.clear();
@@ -81,6 +97,7 @@ class TutorialSession {
       if (card?.route != null) {
         practiceTarget = target;
         practiceDarts = darts;
+        _learnPracticeQuestion();
         return;
       }
     }

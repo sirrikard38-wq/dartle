@@ -36,7 +36,8 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 /// * [states] colours the tiles and plays the flip reveal (result screen only:
 ///   the boxes stay plain while you play).
 /// * [activeIndex] outlines the free box that will receive the next dart.
-/// * [showDarts] puts small darts in each box: one in each box.
+/// * [showDarts] puts a small dart in each empty box; a filled box shows only
+///   the dart's name.
 /// * [used] are the boxes that are already used (crossed out in burgundy, with
 ///   their darts dotted). They cannot be filled: [darts], [states] and
 ///   [activeIndex] count only the free boxes, left to right.
@@ -79,12 +80,15 @@ web.HTMLElement _tile(DartThrow? dart,
     required bool showDarts,
     bool usedBox = false}) {
   // A coloured tile plays the animated end-of-attempt flip (`reveal`).
+  // The small dart marks a box still to throw: once a dart is in it, only
+  // the dart's name shows (S16), in the middle of the box.
+  final glyph = (showDarts && dart == null) || usedBox;
   final classes = [
     'tile',
     if (dart != null) 'filled m-${dart.multiplier.name}',
     if (active) 'active',
     if (usedBox) 'used',
-    if (showDarts || usedBox) 'has-darts',
+    if (glyph) 'has-darts',
     if (state != null) 'reveal ${state.name}',
   ].join(' ');
 
@@ -102,8 +106,8 @@ web.HTMLElement _tile(DartThrow? dart,
   }, children: [
     textNode(dart?.notation ?? ''),
     if (state != null) el('span', cls: 'mark', text: _stateMarks[state]!, attrs: {'aria-hidden': 'true'}),
-    // Every box holds one dart.
-    if (showDarts || usedBox)
+    // Every empty box holds one dart.
+    if (glyph)
       el('span', cls: 'tile-darts', attrs: {'aria-hidden': 'true'}, children: [
         dartGlyph() as web.Node,
       ]),
