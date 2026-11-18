@@ -123,9 +123,13 @@ void main() {
         expect(r.isCorrect, isTrue, reason: text);
         expect(r.isOptimal, isTrue, reason: text);
       }
-      final bull = validator.validate(c, darts('T19 S2 Bull'));
-      expect(bull.isCorrect, isTrue);
-      expect(bull.isOptimal, isFalse);
+      // After the first dart, any optimal finish of what is left: T19 leaves
+      // 52, and S2 Bull is one of 52's (as S20 D18 is one of 56's on 116).
+      expect(validator.validate(c, darts('T19 S2 Bull')).isOptimal, isTrue);
+      // T12 D8 is no optimal way to finish 52: right, but not optimal.
+      final treble = validator.validate(c, darts('T19 T12 D8'));
+      expect(treble.isCorrect, isTrue);
+      expect(treble.isOptimal, isFalse);
     });
 
     test('170 accepts only T20 T20 Bull', () {

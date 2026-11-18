@@ -94,6 +94,16 @@ void main() {
       expect(optimal.missesKept(127, 3, DartThrow.parse('T19')), 0);
     });
 
+    test("116: T20 S20 D18 - the table's alternative T20, then one of 56's own finishes", () {
+      // Aim at T20: a hit leaves 56 (S16 D20, or S20 D18), and S20 still
+      // leaves 96 (T20 D18).
+      expect(optimal.isOptimalIn(116, 3, r('T20 S20 D18')), isTrue);
+      expect(optimal.isOptimalIn(116, 3, r('S20 T20 D18')), isTrue);
+      expect(optimal.isOptimalIn(116, 3, r('T20 S16 D20')), isTrue);
+      expect(optimal.isOptimalIn(116, 3, r('T19 S19 D20')), isTrue);
+      expect(optimal.optimalRoutesIn(116, 3).first.notation, 'T19 S19 D20');
+    });
+
     test('three darts on a two-dart number: only two-dart routes', () {
       // 61: the table's 25 D18, not Bull S3 D4.
       expect(notations(61, 3), {'25 D18'});

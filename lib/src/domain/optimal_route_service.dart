@@ -53,18 +53,25 @@ class OptimalRouteService {
       }
     }
 
-    CheckoutTable.routes(row, target).forEach(add);
-    // A target almost as good, or just as good, then the route the table gives
-    // for what it leaves with the darts after it.
-    for (final other in [...CheckoutTable.alternatives(row), ..._asGood(target, darts, row)]) {
-      final left = target - other.score;
-      if (left == 0) add(CheckoutRoute([other]));
+    final tableRoutes = CheckoutTable.routes(row, target)..forEach(add);
+    // The first dart of a table route, a target almost as good, or one just as
+    // good - then any optimal way to finish what it leaves with the darts after
+    // it, the remainder's own alternatives too. 116 with three darts: T20 (the
+    // table's alternative) leaves 56, which is S16 D20 or S20 D18 - so T20 S20
+    // D18 is optimal: aim at T20, and S20 still leaves 96, T20 D18.
+    final firsts = <DartThrow>{
+      for (final route in tableRoutes) route.darts.first,
+      ...CheckoutTable.alternatives(row),
+      ..._asGood(target, darts, row),
+    };
+    for (final first in firsts) {
+      final left = target - first.score;
+      if (left == 0) add(CheckoutRoute([first]));
       // What it leaves, with the darts still allowed (51 with three darts: S1
       // leaves 50, then the Bull - not S18 D16).
-      final rest = most > 1 ? CheckoutTable.row(left, most - 1) : null;
-      if (rest == null) continue;
-      for (final route in CheckoutTable.routes(rest, left)) {
-        add(CheckoutRoute([other, ...route.darts]));
+      if (most < 2 || left < 2) continue;
+      for (final route in optimalRoutesIn(left, most - 1)) {
+        add(CheckoutRoute([first, ...route.darts]));
       }
     }
     return routes;
