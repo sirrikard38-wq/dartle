@@ -750,7 +750,7 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
   flex: none;
   height: calc(100vh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   height: calc(100dvh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-  min-height: 460px;
+  min-height: 400px;
 }
 .screen.tutorial .play-area { min-height: 0; padding-bottom: 0; }
 .swipe-area { touch-action: pan-y; }
@@ -920,3 +920,32 @@ summary { cursor: pointer; color: var(--muted); }
 /* Tutorial Favorites: the number, then 2 Darts and 3 Darts side by side. */
 .screen.tutorial .fav-tabs { width: 100%; }
 .screen.tutorial .fav-pages { width: 100%; }
+
+/* ---------- Tutorial Practice: always all on the screen ---------- */
+/* While a number is played: "Finish on a double or Bull.", the number, the
+   boxes, what is left, the board with S/D/T, Undo and No checkout all fit
+   between the tabs and the links at the foot, on any phone. The board takes
+   what height is left (its width follows), the rest is a little smaller. */
+.tutorial-page:has(> .board-view) {
+  --tile: 50px;
+  --board-w: min(calc(100vw - 2 * (var(--side-w) + var(--side-gap)) - 12px), 360px,
+    calc(100vh - 438px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  --board-w: min(calc(100vw - 2 * (var(--side-w) + var(--side-gap)) - 12px), 360px,
+    calc(100dvh - 438px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  justify-content: flex-start;
+}
+.tutorial-page:has(> .board-view) > .meta { margin: 0 0 2px; }
+.tutorial-page:has(> .board-view) > .target { font-size: 3.2rem; margin: 0 0 4px; }
+.tutorial-page:has(> .board-view) > .tile-row { margin: 2px 0; }
+.tutorial-page:has(> .board-view) > .remaining { margin: 2px 0 0; }
+.tutorial-page:has(> .board-view) > .remaining strong { font-size: 2.6rem; }
+.tutorial-page:has(> .board-view) .board-wrap { margin: 2px 0 4px; }
+.tutorial-page:has(> .board-view) .board-wrap.sided .dartboard { min-width: 120px; }
+.tutorial-page:has(> .board-view) .action-row { margin-bottom: 0; }
+.screen.tutorial .tutorial-tabs { margin-bottom: 6px; }
+/* Tutorial Favorites: 2 Darts and 3 Darts change only with a press on their
+   names (no sliding), and the boards stand two by two as in the popups. */
+.fav-pages.fixed { overflow-x: hidden; touch-action: pan-y; }
+.screen.tutorial .possibilities .board-figure { flex: 0 1 calc((100% - 24px) / 3); min-width: 140px; max-width: 200px; }
+.tutorial-page:has(> .board-view) .mode-col { gap: 6px; }
+.fav-pages.fixed > .fav-page.off { display: none; }

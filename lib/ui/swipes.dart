@@ -83,7 +83,7 @@ void followSwipes(
     startY = touch.clientY.toDouble();
     sideways = false;
     final target = event.target;
-    ownPages = target != null && target.isA<web.Element>() ? (target as web.Element).closest('.fav-pages') : null;
+    ownPages = target != null && target.isA<web.Element>() ? (target as web.Element).closest('.fav-pages:not(.fixed)') : null;
   });
   page.onTouchMove.listen((event) {
     final from = startX;

@@ -186,17 +186,21 @@ void showFavoritesPopup(ViewContext ctx, int target) {
 
 /// The names of the pages ([counts]: the numbers of darts) and the pages of
 /// [target]'s favorites, side by side: swipe left and right, or press a name.
-/// A page with no favorites says so.
-(web.HTMLElement, web.HTMLElement) favoritePages(ViewContext ctx, int target, List<int> counts) {
+/// A page with no favorites says so. With [swipe] false the pages do not
+/// slide under the finger: only a press on a name turns them (the tutorial).
+(web.HTMLElement, web.HTMLElement) favoritePages(ViewContext ctx, int target, List<int> counts,
+    {bool swipe = true}) {
   final favorites = ctx.game.favorites;
   String name(int darts) => trn(darts, '{n} Dart', '{n} Darts');
 
   final tabs = <web.HTMLElement>[];
-  final pages = el('div', cls: 'fav-pages${counts.length > 1 ? ' swipe' : ''}');
+  final pages = el('div', cls: 'fav-pages${!swipe ? ' fixed' : counts.length > 1 ? ' swipe' : ''}');
   void select(int index) {
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].classList.toggle('active', i == index);
       tabs[i].setAttribute('aria-selected', '${i == index}');
+      // Pages that do not slide: only the chosen one is there.
+      if (!swipe) pages.children.item(i)?.classList.toggle('off', i != index);
     }
   }
 
@@ -216,7 +220,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
         cls: 'fav-tab',
         attrs: {'role': 'tab'},
         onPressed: (_) {
-          pages.scrollTo(web.ScrollToOptions(left: page.offsetLeft.toDouble(), behavior: 'smooth'));
+          if (swipe) pages.scrollTo(web.ScrollToOptions(left: page.offsetLeft.toDouble(), behavior: 'smooth'));
           select(i);
         }));
   }

@@ -223,7 +223,7 @@ List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
       if (session.tutor.optimalRoutes(target, darts).isNotEmpty) darts,
   }.toList()
     ..sort();
-  final (names, pages) = favoritePages(ctx, target, counts);
+  final (names, pages) = favoritePages(ctx, target, counts, swipe: false);
   return [number, names, pages];
 }
 
