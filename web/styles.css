@@ -665,8 +665,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 }
 .fav-btn:hover { color: var(--fg); }
 .fav-btn:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
-.fav-icon { width: 9px; height: 20px; display: block; }
-.fav-shape { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.fav-icon { width: 13px; height: 24px; display: block; }
+.fav-shape { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .fav-btn.on { color: var(--white); }
 .fav-btn.on .fav-shape { fill: var(--white); }
 /* The Favorites screen: every number from 170 down to 2. */
@@ -853,7 +853,7 @@ summary { cursor: pointer; color: var(--muted); }
   position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   background: var(--white); color: var(--ink);
   padding: 12px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
-  opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 10; max-width: 90vw; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 40; max-width: 90vw; text-align: center;
 }
 .toast.show { opacity: 1; }
 
@@ -914,3 +914,9 @@ summary { cursor: pointer; color: var(--muted); }
 .learn-top .number-display { font-size: 2.5rem; }
 .learn-top .card-why, .learn-top .card-line { font-size: 0.85rem; line-height: 1.25; }
 .learn-top .board-figure .hint { font-size: 0.8rem; margin: 2px 0 0; }
+/* Learn: "Also optimal" bigger and white, between the boards and the keypad. */
+.text-link.extra-title.tutor-all { color: var(--fg); font-size: 0.95rem; letter-spacing: 0.08em; font-weight: 700; }
+.learn-top .text-link.extra-title.tutor-all { padding: 4px 10px; margin: 4px 0; }
+/* Tutorial Favorites: the number, then 2 Darts and 3 Darts side by side. */
+.screen.tutorial .fav-tabs { width: 100%; }
+.screen.tutorial .fav-pages { width: 100%; }

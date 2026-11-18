@@ -61,6 +61,8 @@ web.HTMLElement routeGrid(ViewContext ctx, int target, List<CheckoutRoute> route
 /// filled white.
 web.Element favoriteDartIcon() => svg('svg', cls: 'fav-icon', attrs: {
       'viewBox': '0 0 14 32',
+      // Stretched a little sideways: a fatter dart, easier to see and press.
+      'preserveAspectRatio': 'none',
       'aria-hidden': 'true',
       'focusable': 'false',
     }, children: [
@@ -97,7 +99,9 @@ web.HTMLButtonElement favoriteButton(ViewContext ctx, int target, CheckoutRoute 
 
   late final web.HTMLButtonElement b;
   b = button('', cls: 'fav-btn', attrs: {'data-fav': id}, onPressed: (_) async {
-    showEverywhere(!b.classList.contains('on')); // at once; the save follows
+    final on = !b.classList.contains('on');
+    showEverywhere(on); // at once; the save follows
+    ctx.toast(on ? tr('Added to favorites!') : tr('Removed from favorites!'));
     showEverywhere(await game.toggleFavorite(target, route));
   });
   b.appendChild(favoriteDartIcon());
@@ -170,9 +174,21 @@ web.HTMLElement buildFavoritesScreen(ViewContext ctx) {
 /// "3 Darts"). With more than one page, swipe left and right (or press the
 /// names at the top) to go between them.
 void showFavoritesPopup(ViewContext ctx, int target) {
-  final favorites = ctx.game.favorites;
-  final counts = favorites.dartCountsFor(target);
+  final counts = ctx.game.favorites.dartCountsFor(target);
   if (counts.isEmpty) return;
+  final (tabs, pages) = favoritePages(ctx, target, counts);
+  showModal(title: tr('Favorites for {n}', {'n': target}), showTitle: false, body: [
+    tabs,
+    el('p', cls: 'modal-number', text: '$target'),
+    pages,
+  ]);
+}
+
+/// The names of the pages ([counts]: the numbers of darts) and the pages of
+/// [target]'s favorites, side by side: swipe left and right, or press a name.
+/// A page with no favorites says so.
+(web.HTMLElement, web.HTMLElement) favoritePages(ViewContext ctx, int target, List<int> counts) {
+  final favorites = ctx.game.favorites;
   String name(int darts) => trn(darts, '{n} Dart', '{n} Darts');
 
   final tabs = <web.HTMLElement>[];
@@ -186,11 +202,14 @@ void showFavoritesPopup(ViewContext ctx, int target) {
 
   for (var i = 0; i < counts.length; i++) {
     final darts = counts[i];
+    final routes = favorites.routesFor(target, darts: darts);
     final page = el('section', cls: 'fav-page', attrs: {'aria-label': name(darts)}, children: [
-      el('div', cls: 'possibilities', children: [
-        for (final route in favorites.routesFor(target, darts: darts))
-          routeFigure(ctx, target, route),
-      ]),
+      if (routes.isEmpty)
+        el('p', cls: 'hint', text: trn(darts, 'No favorites with {n} dart yet.', 'No favorites with {n} darts yet.'))
+      else
+        el('div', cls: 'possibilities', children: [
+          for (final route in routes) routeFigure(ctx, target, route),
+        ]),
     ]);
     pages.appendChild(page);
     tabs.add(button(name(darts),
@@ -207,12 +226,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
     if (width > 0) select((pages.scrollLeft / width).round().clamp(0, counts.length - 1));
   });
   select(0);
-
-  showModal(title: tr('Favorites for {n}', {'n': target}), showTitle: false, body: [
-    el('div', cls: 'fav-tabs', attrs: {'role': 'tablist'}, children: tabs),
-    el('p', cls: 'modal-number', text: '$target'),
-    pages,
-  ]);
+  return (el('div', cls: 'fav-tabs', attrs: {'role': 'tablist'}, children: tabs), pages);
 }
 
 /// The popup with every optimal way to check out [target] ([routes]), each on

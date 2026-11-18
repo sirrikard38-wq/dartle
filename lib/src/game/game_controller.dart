@@ -139,7 +139,8 @@ class GameController {
       HistoryRepository(_storage, key: leaderboardRecordKey);
 
   /// Checkout tutorial: the cards and the state of Learn and Practice.
-  late final TutorialSession tutorial = TutorialSession(CheckoutTutor(_optimal), random: _random);
+  late final TutorialSession tutorial =
+      TutorialSession(CheckoutTutor(_optimal), generator: _generator, validator: _validator, random: _random);
 
   /// The routes the player marked with the dart icon, saved on this device. A
   /// number with only one optimal route has it as a favorite from the start.

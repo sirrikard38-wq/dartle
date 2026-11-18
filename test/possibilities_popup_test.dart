@@ -87,10 +87,10 @@ void main() {
       // after the row of boards and before the time and buttons.
       final boards = screen.indexOf("cls: 'result-boards'");
       final more = screen.indexOf("cls: 'result-more'");
-      final footer = screen.indexOf('..._footer(ctx, result)');
+      // The buttons come after all of it (resultView, then the footer).
+      expect(screen.indexOf('..._footer(ctx, result)'), greaterThan(screen.indexOf('...resultView(ctx, result')));
       expect(boards, greaterThan(0));
       expect(more, greaterThan(boards));
-      expect(footer, greaterThan(more));
       final figures = screen.substring(boards, more);
       expect(figures, isNot(contains('extraBoxes')));
       expect(figures, isNot(contains('onlyPossibility')));

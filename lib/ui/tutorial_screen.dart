@@ -10,6 +10,7 @@ import 'dom.dart';
 import 'favorites_ui.dart';
 import 'game_screen.dart';
 import 'keyboard.dart';
+import 'result_screen.dart';
 import 'swipes.dart';
 import 'tiles.dart';
 import 'view_context.dart';
@@ -20,19 +21,24 @@ import 'view_context.dart';
 /// to the side goes from one to the other.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
-  // In the order of [TutorialTab]: Practice first, then Learn.
+  // In the order of [TutorialTab]: Practice, Learn, Favorites.
   final area = swipeTabs(
     ctx,
     name: 'tutorial',
     labels: [
       for (final which in TutorialTab.values)
-        switch (which) { TutorialTab.practice => tr('Practice'), TutorialTab.learn => tr('Learn') },
+        switch (which) {
+          TutorialTab.practice => tr('Practice'),
+          TutorialTab.learn => tr('Learn'),
+          TutorialTab.favorites => tr('Favorites'),
+        },
     ],
     index: session.tab.index,
     choose: (i) => session.tab = TutorialTab.values[i],
     pageOf: (i) => el('div', cls: 'tutorial-page', children: switch (TutorialTab.values[i]) {
       TutorialTab.learn => _learn(ctx, session),
       TutorialTab.practice => _practice(ctx, session),
+      TutorialTab.favorites => _favorites(ctx, session),
     }),
   )..classList.add('play-area');
   return el('main', cls: 'screen tutorial', children: [area]);
@@ -198,71 +204,94 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
   ];
 }
 
-/// Practice: the number is played out as in Checkout calculator - the boxes,
-/// what is left, the board with S, D and T, and Undo. Once every dart is
-/// thrown (or it is checked out, or bust) the verdict and the boards show.
+/// Favorites: the favorite routes of the number in Learn (the Practice
+/// question, unless another number was typed), as the Favorites popup shows
+/// them: a page for 2 darts and one for 3 (and 1 when there is one), swiped
+/// left and right or chosen at the top.
+List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
+  final target = session.shownTarget;
+  if (target == null) {
+    return [el('p', cls: 'hint', text: tr('Type a number in Learn to see its favorites.'))];
+  }
+  final number = el('p', cls: 'target', text: '$target');
+  if (ctx.game.hasNoCheckout(target)) {
+    return [number, el('p', cls: 'hint', text: tr('This number is impossible to checkout.'))];
+  }
+  final counts = {
+    ...ctx.game.favorites.dartCountsFor(target),
+    for (final darts in [2, 3])
+      if (session.tutor.optimalRoutes(target, darts).isNotEmpty) darts,
+  }.toList()
+    ..sort();
+  final (names, pages) = favoritePages(ctx, target, counts);
+  return [number, names, pages];
+}
+
+/// Practice: Checkout calculator without the clock. A number is dealt as the
+/// calculator deals it - now and then one with no checkout, for the "No
+/// checkout" button - and played the same way: the boxes, what is left, the
+/// board with S, D and T, Undo. The last dart is judged at once and the answer
+/// shows as on the calculator's result screen, with Next checkout and Replay
+/// checkout. No points and nothing saved.
 List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
-  final darts = session.practiceDarts;
-  final layout = BoxLayout.defaultFor(darts);
-  final done = session.practiceDone;
+  final challenge = session.practice;
 
-  final boxes = tileRow(session.thrown,
-      slots: Visit.darts, used: layout.used, activeIndex: session.thrown.length, showDarts: true);
+  void again(void Function() change) {
+    change();
+    ctx.keepFocus(null);
+    ctx.rerender();
+  }
 
-  if (!done) {
-    final finalBox = session.thrown.length == darts - 1;
+  final judged = session.result;
+  if (judged != null) {
     return [
-      el('p', cls: 'meta', text: tr('Finish on a double or Bull.')),
-      el('p', cls: 'target', text: '${session.practiceTarget}'),
-      boxes,
-      remainingLine(session.practiceTarget, session.thrown),
-      buildInputPanel(
-        multiplier: finalBox ? Multiplier.double : (ctx.pickedMultiplier ?? Multiplier.single),
-        finalBox: finalBox,
-        canUndo: session.thrown.isNotEmpty,
-        marks: markPoints(session.thrown, session.marks),
-        ringButtons: true,
-        onPickMultiplier: (m, kb, focusKey) {
-          ctx.pickedMultiplier = m;
-          ctx.keepFocus(kb ? focusKey : null);
-          ctx.rerender();
-        },
-        onDart: (dart, point, kb) {
-          session.throwPractice(dart, point);
-          ctx.rerender();
-        },
-        onUndo: (kb) {
-          ctx.keepFocus(kb ? 'undo' : null);
-          session.undoPractice();
-          ctx.rerender();
-        },
-      ),
+      ...resultView(ctx, judged, session.marks),
+      button(tr('Next checkout'), cls: 'cta', focusKey: 'next', onPressed: (_) => again(session.newQuestion)),
+      button(tr('Replay checkout'), cls: 'cta secondary', focusKey: 'replay', onPressed: (_) => again(session.replay)),
     ];
   }
 
-  final right = session.practiceRight!;
-  final left = session.practiceLeft;
-  final headline = right
-      ? tr('Optimal!')
-      : session.practiceCheckedOut
-          ? tr('Checkout!')
-          : left < 0 || left == 1 || left == 0
-              ? tr('Bust')
-              : tr('Out of darts');
+  final finalBox = session.thrown.length == challenge.dartsLeft - 1;
   return [
-    el('p', cls: 'headline ${session.practiceCheckedOut ? 'good' : 'bad'}',
-        text: '${session.practiceCheckedOut ? '✓' : '✗'} $headline', attrs: {'role': 'status'}),
-    el('p', cls: 'target small', text: '${session.practiceTarget}'),
-    boxes,
-    tutorBoards(ctx, session.practiceCard),
-    button(tr('Next question'),
-        cls: 'cta',
-        focusKey: 'next-question',
-        onPressed: (_) {
-          session.newQuestion();
-          ctx.keepFocus(null);
-          ctx.rerender();
-        }),
+    el('p', cls: 'meta', text: tr('Finish on a double or Bull.')),
+    el('p', cls: 'target', text: '${challenge.target}', attrs: {
+      'aria-label': trn(challenge.dartsLeft, 'Checkout {target}, {n} dart left', 'Checkout {target}, {n} darts left',
+          {'target': challenge.target}),
+    }),
+    tileRow(session.thrown,
+        slots: Visit.darts, used: challenge.layout.used, activeIndex: session.thrown.length, showDarts: true),
+    remainingLine(challenge.target, session.thrown),
+    buildInputPanel(
+      multiplier: finalBox ? Multiplier.double : (ctx.pickedMultiplier ?? Multiplier.single),
+      finalBox: finalBox,
+      canUndo: session.thrown.isNotEmpty,
+      marks: markPoints(session.thrown, session.marks),
+      ringButtons: true,
+      showNoCheckout: true,
+      onPickMultiplier: (m, kb, focusKey) {
+        ctx.pickedMultiplier = m;
+        ctx.keepFocus(kb ? focusKey : null);
+        ctx.rerender();
+      },
+      onDart: (dart, point, kb) {
+        // A repeat of the same dart sits beside the earlier one, as in the
+        // calculator.
+        final placed = markPoints(session.thrown, session.marks);
+        final earlier = [
+          for (var i = 0; i < session.thrown.length; i++)
+            if (session.thrown[i] == dart) placed[i],
+        ];
+        final at = spreadMark(dart, point ?? segmentCenter(dart), earlier, ctx.random);
+        session.throwPractice(dart, at);
+        ctx.rerender();
+      },
+      onUndo: (kb) {
+        ctx.keepFocus(kb ? 'undo' : null);
+        session.undoPractice();
+        ctx.rerender();
+      },
+      onNoCheckout: (kb) => again(session.pressNoCheckout),
+    ),
   ];
 }
 
@@ -313,7 +342,7 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
     if (route != null)
       if (ctx.game.tutorial.tutor.optimalRoutes(target, card.darts) case final all when all.length > 1)
         button(tr('Also optimal'),
-            cls: 'text-link extra-title',
+            cls: 'text-link extra-title tutor-all',
             focusKey: 'tutor-all',
             ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': target}),
             onPressed: (_) => showAllOptimal(ctx, target, all))

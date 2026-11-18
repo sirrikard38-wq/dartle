@@ -45,6 +45,10 @@ void followSwipes(
   var sideways = false;
   web.HTMLElement? beside;
   var besideStep = 0;
+  // Pages of their own that scroll sideways (the 2 Darts and 3 Darts
+  // favorites): a swipe on them turns their page while they have one to turn
+  // to that way, and only past their last page does it move this page.
+  web.Element? ownPages;
 
   void showBeside(int step) {
     if (besideStep == step) return;
@@ -78,6 +82,8 @@ void followSwipes(
     startX = event.touches.length == 1 && touch.clientX >= backGestureEdge ? touch.clientX.toDouble() : null;
     startY = touch.clientY.toDouble();
     sideways = false;
+    final target = event.target;
+    ownPages = target != null && target.isA<web.Element>() ? (target as web.Element).closest('.fav-pages') : null;
   });
   page.onTouchMove.listen((event) {
     final from = startX;
@@ -90,6 +96,15 @@ void followSwipes(
       if (across.abs() < down.abs() * 2) {
         startX = null;
         return;
+      }
+      if (ownPages case final pages?) {
+        final more = across < 0
+            ? pages.scrollLeft < pages.scrollWidth - pages.clientWidth - 1
+            : pages.scrollLeft > 1;
+        if (more) {
+          startX = null;
+          return;
+        }
       }
       sideways = true;
       sliding.style.transition = 'none';

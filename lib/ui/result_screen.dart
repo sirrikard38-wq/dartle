@@ -12,8 +12,21 @@ import 'tiles.dart';
 import 'view_context.dart';
 
 web.HTMLElement buildResultScreen(ViewContext ctx) {
-  final game = ctx.game;
-  final result = game.lastResult!;
+  final result = ctx.game.lastResult!;
+  return el('main', cls: 'screen result', children: [
+    el('div', cls: 'play-area', children: [
+      ...resultView(ctx, result, ctx.marks),
+      ..._footer(ctx, result),
+    ]),
+  ]);
+}
+
+/// What the result screen shows of an answer, above its buttons: the verdict,
+/// the number, your darts and the optimal route on boards, and "Also optimal".
+/// [marks] are where the darts were pressed. Checkout tutorial's Practice shows
+/// its answers the same way.
+List<web.HTMLElement> resultView(
+    ViewContext ctx, AttemptResult result, List<BoardPoint?> marks) {
   final challenge = result.challenge;
   final round = result.round;
   final entered = result.playerRoute.darts;
@@ -21,7 +34,8 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
 
   // An optimal route of fewer darts than were given: a right answer, but not in
   // the given number of darts.
-  final goodButFewer = result.validation.outcome == AttemptOutcome.goodButFewerDarts;
+  final goodButFewer =
+      result.validation.outcome == AttemptOutcome.goodButFewerDarts;
 
   final String headline;
   if (goodButFewer) {
@@ -55,7 +69,8 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   // of them, the same as Checkout input lights up. It opens from "Also optimal"
   // (there is no separate link and the popup has no title of its own). Each
   // board has the favorite dart in its corner.
-  void openPossibilities() => showAllOptimal(ctx, challenge.target, result.optimalRoutes);
+  void openPossibilities() =>
+      showAllOptimal(ctx, challenge.target, result.optimalRoutes);
 
   // One more route with a better double, then up to 2 more, shown as boxes under
   // "Also optimal". Never the route you entered or the optimal route already on
@@ -74,7 +89,9 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
           button(tr('Also optimal'),
               cls: 'text-link extra-title',
               focusKey: 'all',
-              ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': challenge.target}),
+              ariaLabel: tr(
+                  'Also optimal: show every optimal way to check out {n}',
+                  {'n': challenge.target}),
               onPressed: (_) => openPossibilities()),
           for (final route in extras)
             tileRow(route.darts,
@@ -93,82 +110,85 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
   // the boards - after a miss under both of them, otherwise under the one board.
   final more = extraBoxes() ?? onlyPossibility;
 
-  return el('main', cls: 'screen result', children: [
-    el('div', cls: 'play-area', children: [
-      el('p', cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
-          text: '${result.isCorrect ? '✓ ' : '✗ '}$headline',
-          attrs: {'role': 'status'}),
-      el('p', cls: 'target small', text: '${challenge.target}'),
+  return [
+    el('p',
+        cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
+        text: '${result.isCorrect ? '✓ ' : '✗ '}$headline',
+        attrs: {'role': 'status'}),
+    el('p', cls: 'target small', text: '${challenge.target}'),
 
-      // A miscount: show what the darts you entered really add up to, e.g.
-      // "60 + 60 + 32 = 152" on 142. Only when the total was wrong.
-      if (result.validation.outcome == AttemptOutcome.wrongTotal)
-        el('p', cls: 'equation', text: result.playerRoute.arithmetic, attrs: {
-          'aria-label': tr('You entered {sum}, not {target}', {
-            'sum': result.playerRoute.arithmetic.replaceAll('=', tr('which is')),
-            'target': challenge.target,
-          }),
+    // A miscount: show what the darts you entered really add up to, e.g.
+    // "60 + 60 + 32 = 152" on 142. Only when the total was wrong.
+    if (result.validation.outcome == AttemptOutcome.wrongTotal)
+      el('p', cls: 'equation', text: result.playerRoute.arithmetic, attrs: {
+        'aria-label': tr('You entered {sum}, not {target}', {
+          'sum': result.playerRoute.arithmetic.replaceAll('=', tr('which is')),
+          'target': challenge.target,
         }),
+      }),
 
-      // A right "No checkout": good job, and one silly line of encouragement.
-      if (noCheckoutRight) ...[
-        el('p', cls: 'good-job', text: tr('Good job, no checkout here!')),
-        el('p', cls: 'encourage', text: result.encouragement ?? ''),
-      ],
+    // A right "No checkout": good job, and one silly line of encouragement.
+    if (noCheckoutRight) ...[
+      el('p', cls: 'good-job', text: tr('Good job, no checkout here!')),
+      el('p', cls: 'encourage', text: result.encouragement ?? ''),
+    ],
 
-      // The boards, small and side by side. Each has its route boxes directly
-      // underneath it (taps keep their exact position on the board).
-      el('div', cls: 'result-boards', children: [
-        if (noCheckoutRight)
-          el('figure', cls: 'board-figure', children: [
-            buildDartboard(linesOnly: true, label: tr('Empty board: no darts used')),
-            el('figcaption', text: tr('No darts used')),
-          ]),
-        if (showYours)
-          el('figure', cls: 'board-figure', children: [
-            buildDartboard(
-              linesOnly: true,
-              // Marks stored when each dart was entered; any missing ones are
-              // placed beside earlier marks of the same dart.
-              marks: spreadMarks(entered, ctx.marks,
-                  math.Random(routeSeed(result.playerRoute.notation))),
-              label: tr('Your darts: {route}', {'route': result.playerRoute.notation}),
-            ),
-            el('figcaption', text: tr('Your darts')),
-            tileRow(entered,
-                slots: Visit.darts,
-                used: challenge.layout.used,
-                small: true,
-                states: states,
-                label: tr('Your darts')),
-            // Your own checkout can be a favorite when it ends on a double and
-            // adds up to the number, optimal or not.
-            if (favoriteForYourRoute(ctx, challenge.target, result.playerRoute) case final fav?) fav,
-          ]),
-        // Not optimal (or missed): the best route, marked and boxed the same way.
-        if (showBest)
-          el('figure', cls: 'board-figure', children: [
-            buildDartboard(
-              linesOnly: true,
-              // A repeated dart (T20 T20) sits side by side in its area. The
-              // seed comes from the route, so it looks the same on every redraw.
-              marks: spreadMarks(best.darts, const [], math.Random(routeSeed(best.notation))),
-              label: tr('Optimal route: {route}', {'route': best.notation}),
-            ),
-            el('figcaption', text: tr('Optimal route')),
-            tileRow(best.darts,
-                slots: best.length,
-                small: true,
-                states: List.filled(best.length, TileState.correct),
-                label: tr('Optimal route')),
-          ]),
-      ]),
-      // In the middle, under the board or boards; "Also optimal" opens the popup
-      // with every optimal route.
-      if (more != null) el('div', cls: 'result-more', children: [more]),
-      ..._footer(ctx, result),
+    // The boards, small and side by side. Each has its route boxes directly
+    // underneath it (taps keep their exact position on the board).
+    el('div', cls: 'result-boards', children: [
+      if (noCheckoutRight)
+        el('figure', cls: 'board-figure', children: [
+          buildDartboard(
+              linesOnly: true, label: tr('Empty board: no darts used')),
+          el('figcaption', text: tr('No darts used')),
+        ]),
+      if (showYours)
+        el('figure', cls: 'board-figure', children: [
+          buildDartboard(
+            linesOnly: true,
+            // Marks stored when each dart was entered; any missing ones are
+            // placed beside earlier marks of the same dart.
+            marks: spreadMarks(entered, marks,
+                math.Random(routeSeed(result.playerRoute.notation))),
+            label: tr(
+                'Your darts: {route}', {'route': result.playerRoute.notation}),
+          ),
+          el('figcaption', text: tr('Your darts')),
+          tileRow(entered,
+              slots: Visit.darts,
+              used: challenge.layout.used,
+              small: true,
+              states: states,
+              label: tr('Your darts')),
+          // Your own checkout can be a favorite when it ends on a double and
+          // adds up to the number, optimal or not.
+          if (favoriteForYourRoute(ctx, challenge.target, result.playerRoute)
+              case final fav?)
+            fav,
+        ]),
+      // Not optimal (or missed): the best route, marked and boxed the same way.
+      if (showBest)
+        el('figure', cls: 'board-figure', children: [
+          buildDartboard(
+            linesOnly: true,
+            // A repeated dart (T20 T20) sits side by side in its area. The
+            // seed comes from the route, so it looks the same on every redraw.
+            marks: spreadMarks(
+                best.darts, const [], math.Random(routeSeed(best.notation))),
+            label: tr('Optimal route: {route}', {'route': best.notation}),
+          ),
+          el('figcaption', text: tr('Optimal route')),
+          tileRow(best.darts,
+              slots: best.length,
+              small: true,
+              states: List.filled(best.length, TileState.correct),
+              label: tr('Optimal route')),
+        ]),
     ]),
-  ]);
+    // In the middle, under the board or boards; "Also optimal" opens the popup
+    // with every optimal route.
+    if (more != null) el('div', cls: 'result-more', children: [more]),
+  ];
 }
 
 /// Time, score and the buttons.
@@ -189,9 +209,13 @@ List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
   // and Replay session, which starts a new session (and a new score).
   if (game.isSessionOver) {
     return [
-      el('p', cls: 'session-score',
-          text: tr('Score: {points}', {'points': formatScore(game.sessionPoints)})),
-      el('p', cls: 'hint session-over', text: tr('No undos left, so the session is over.')),
+      el('p',
+          cls: 'session-score',
+          text: tr(
+              'Score: {points}', {'points': formatScore(game.sessionPoints)})),
+      el('p',
+          cls: 'hint session-over',
+          text: tr('No undos left, so the session is over.')),
       button(tr('Replay session'),
           cls: 'cta',
           focusKey: 'replay-session',
@@ -203,17 +227,21 @@ List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
     if (scored)
       el('div', cls: 'big-stats', children: [
         // Where the countdown stopped (negative if you ran over) ...
-        big(formatCountdown(timeLeft), tr('TIME LEFT'), negative: timeLeft.isNegative),
+        big(formatCountdown(timeLeft), tr('TIME LEFT'),
+            negative: timeLeft.isNegative),
         // ... and the real time taken: 30s down to -8.33s is 38.33s used.
         big(formatSeconds(result.elapsed), tr('TIME USED')),
         // The current score, centred, with what this attempt gave small beside
         // it. Press it to see how it was worked out.
-        button('', cls: 'big-stat score-stat', focusKey: 'score', ariaLabel:
-              tr('Score {total}, {points} this time. Press to see how it was worked out.', {
-                'total': game.sessionPoints,
-                'points': formatPoints(score.total),
-              }),
-            onPressed: (_) {
+        button('',
+            cls: 'big-stat score-stat',
+            focusKey: 'score',
+            ariaLabel: tr(
+                'Score {total}, {points} this time. Press to see how it was worked out.',
+                {
+                  'total': game.sessionPoints,
+                  'points': formatPoints(score.total),
+                }), onPressed: (_) {
           showModal(title: tr('How the score was worked out'), body: [
             for (final line in score.explain()) modalLine(line),
             modalLine(tr('Score now: {total}.', {'total': game.sessionPoints})),
@@ -228,9 +256,7 @@ List<web.HTMLElement> _footer(ViewContext ctx, AttemptResult result) {
     else if (result.isReplay)
       el('p', cls: 'hint', text: tr('Replay - no clock, no points.')),
     button(tr('Next checkout'),
-        cls: 'cta',
-        focusKey: 'next',
-        onPressed: (_) => game.nextCheckout()),
+        cls: 'cta', focusKey: 'next', onPressed: (_) => game.nextCheckout()),
     // Play the same number again: no clock, no points, nothing saved.
     button(tr('Replay checkout'),
         cls: 'cta secondary',

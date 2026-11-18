@@ -108,13 +108,25 @@ void main() {
   });
 
   group('the tutorial session', () {
+    final engine = CheckoutEngine();
+    final optimal = OptimalRouteService(engine);
+    final catalog = CheckoutCatalog(engine, optimal);
+    TutorialSession newSession(int seed) => TutorialSession(tutor,
+        generator: ChallengeGenerator(catalog, random: Random(seed)),
+        validator: CheckoutValidator(engine, optimal),
+        random: Random(seed));
+    // [target] played with [darts] darts, as the calculator deals it.
+    Challenge challenge(int target, int darts) {
+      final dealt = catalog.forTarget(target)!;
+      return dealt.darts == darts ? dealt : dealt.withDarts(darts, optimal.optimalRoutesIn(target, darts).first);
+    }
+
     test('Learn: digits make the number, from 2 to 170', () {
-      final session = TutorialSession(tutor, random: Random(1));
+      final session = newSession(1);
       // Learn starts on the Practice question, with its darts.
       final question = session.practiceTarget;
       expect(session.learnTarget, question);
-      expect(session.learnCard!.target, question);
-      expect(session.learnCard!.darts, session.practiceDarts);
+      expect(session.learnDarts, session.practiceDarts);
       // The first digit typed starts a new number.
       session.typeDigit(0); // no leading zero
       expect(session.learnDigits, '');
@@ -125,7 +137,7 @@ void main() {
         ..typeDigit(4); // three digits at the most
       expect(session.learnTarget, 127);
       // The card waits until the typing stops.
-      expect(session.learnCard!.target, question);
+      expect(session.shownTarget, question);
       session
         ..learnDarts = 3
         ..showTypedNumber();
@@ -144,20 +156,21 @@ void main() {
       expect(session.learnDarts, session.practiceDarts);
     });
 
-    test('Practice: every question can be checked out; it is played out with every dart', () {
-      final session = TutorialSession(tutor, random: Random(7));
-      for (var i = 0; i < 200; i++) {
+    test('Practice deals as Checkout calculator: now and then a number with no checkout', () {
+      final session = newSession(7);
+      var none = 0;
+      for (var i = 0; i < 400; i++) {
         session.newQuestion();
-        expect(session.practiceCard.route, isNotNull, reason: '${session.practiceTarget}');
         expect(session.thrown, isEmpty);
         expect(session.practiceRight, isNull);
+        if (!session.practice.hasCheckout) none++;
       }
+      expect(none, greaterThan(0));
     });
 
-    test('Practice: the table route is right, shown once it is played out; undo takes a dart back', () {
-      final session = TutorialSession(tutor, random: Random(3))
-        ..practiceTarget = 127
-        ..practiceDarts = 3
+    test('Practice: the table route is optimal, judged with the last dart; undo takes a dart back', () {
+      final session = newSession(3)
+        ..play(challenge(127, 3))
         ..throwPractice(d('T20'))
         ..throwPractice(d('T19'));
       expect(session.practiceDone, isFalse);
@@ -168,32 +181,45 @@ void main() {
         ..throwPractice(d('D8'));
       expect(session.practiceDone, isTrue);
       expect(session.practiceRight, isTrue);
-      session.undoPractice(); // played out: it stays
+      expect(session.result!.optimalRoutes, isNotEmpty);
+      session.undoPractice(); // judged: it stays
       expect(session.thrown, hasLength(3));
+      // Replay: the same number from the first dart.
+      session.replay();
+      expect(session.thrown, isEmpty);
+      expect(session.practiceTarget, 127);
       session.newQuestion();
       expect(session.thrown, isEmpty);
     });
 
-    test('Practice: a route that finishes early is right when the table says so; a bust is not', () {
-      final early = TutorialSession(tutor, random: Random(3))
-        ..practiceTarget = 64
-        ..practiceDarts = 3
+    test('Practice: as in the calculator, darts that add up end it early; a bust uses every box', () {
+      final early = newSession(3)
+        ..play(challenge(64, 3))
         ..throwPractice(d('T16'))
         ..throwPractice(d('D8'));
       expect(early.practiceDone, isTrue);
-      expect(early.practiceRight, isTrue);
-      final bust = TutorialSession(tutor, random: Random(3))
-        ..practiceTarget = 40
-        ..practiceDarts = 2
-        ..throwPractice(d('T20'));
+      expect(early.result!.isCorrect, isTrue);
+      final bust = newSession(3)
+        ..play(challenge(40, 1))
+        ..throwPractice(d('S20'));
       expect(bust.practiceDone, isTrue);
       expect(bust.practiceRight, isFalse);
     });
 
+    test('Practice: "No checkout" is right on a number with none', () {
+      final session = newSession(3)..play(Challenge.noCheckout(169));
+      session.pressNoCheckout();
+      expect(session.result!.isNoCheckoutAnswer, isTrue);
+      expect(session.result!.encouragement, isNotNull);
+      final wrong = newSession(3)
+        ..play(challenge(100, 2))
+        ..pressNoCheckout();
+      expect(wrong.result!.isCorrect, isFalse);
+    });
+
     test('a target almost as good is right too', () {
-      final session = TutorialSession(tutor, random: Random(3))
-        ..practiceTarget = 62
-        ..practiceDarts = 3
+      final session = newSession(3)
+        ..play(challenge(62, 3))
         ..throwPractice(d('T18'))
         ..throwPractice(d('D4'));
       expect(session.practiceRight, isTrue);
