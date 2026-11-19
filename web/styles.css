@@ -994,25 +994,24 @@ summary { cursor: pointer; color: var(--muted); }
   .practice-actions { padding: 4px 0 6px; }
   .practice-actions .cta, .practice-actions .cta.secondary { height: 38px; font-size: 0.9rem; }
 }
-/* Tutorial Practice's answer: the "Also optimal" routes side by side, not one
-   under the other, so the answer fits above Next checkout and Replay
-   checkout. */
+/* Tutorial Practice's answer: "Also optimal" alone (no route boxes under it),
+   and the boards take all the room between the number and it. The boards' row
+   is a size container: one board is as wide as the row (or as tall as its room
+   less its caption and boxes, 88px), two share the row. */
 .practice-result > .headline { margin-top: 4px; }
-.practice-result .extra-routes { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px 12px; margin-top: 4px; }
-.practice-result .extra-routes .extra-title { flex-basis: 100%; min-height: 30px; }
-@media (max-height: 780px) {
-  .practice-result .result-boards .board-figure { max-width: min(200px, 26vh); max-width: min(200px, 26dvh); }
-  .practice-result .board-figure .tile-row.small .tile { width: 44px; height: 36px; font-size: 0.85rem; }
-  .practice-result .board-figure figcaption { margin: 4px 0 2px; }
+.practice-result .result-boards {
+  flex: 1 1 0; min-height: 0; container-type: size; align-items: center; margin: 2px 0 4px;
 }
+.practice-result .result-boards .board-figure {
+  flex: none; max-width: none;
+  width: max(100px, min(100cqw - 8px, 100cqh - 88px, 360px));
+}
+.practice-result .result-boards .board-figure:not(:only-child) {
+  width: max(100px, min((100cqw - 12px) / 2, 100cqh - 88px, 360px));
+}
+.practice-result .result-more { flex: none; margin: 0 0 2px; }
 @media (max-height: 780px) {
-  .practice-result .result-boards .board-figure { max-width: min(200px, 21vh); max-width: min(200px, 21dvh); }
   .practice-result > .target.small { font-size: 2rem; }
   .practice-result > .headline { font-size: 1.3rem; }
-}
-@media (max-height: 780px) {
   .practice-result .result-boards { margin: 0 0 2px; }
-  .practice-result .result-more { margin-top: 0; }
-  .practice-result .extra-routes { margin-top: 0; gap: 4px 10px; }
-  .practice-result .extra-routes .extra-title { min-height: 26px; }
 }

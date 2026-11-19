@@ -252,7 +252,7 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
   final judged = session.result;
   if (judged != null) {
     return [
-      el('div', cls: 'practice-result', children: resultView(ctx, judged, session.marks)),
+      el('div', cls: 'practice-result', children: resultView(ctx, judged, session.marks, listExtras: false)),
       actions,
     ];
   }
