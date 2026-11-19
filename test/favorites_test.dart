@@ -111,6 +111,26 @@ void main() {
     expect(game.favorites.hasAny(48), isFalse); // S16 D16 and S8 D20
   });
 
+  test('every number lists each favorite once (100 was T20 D20 twice)', () async {
+    final game = createGameController(InMemoryStorageService());
+    await game.init();
+    expect(game.favorites.routesFor(100).map((x) => x.notation), ['T20 D20']);
+    for (var n = 2; n <= 170; n++) {
+      final keys = game.favorites.routesFor(n).map(Favorites.keyOf).toList();
+      expect(keys.toSet(), hasLength(keys.length), reason: '$n: $keys');
+    }
+  });
+
+  test('an older save with one route in two orders lists it once', () async {
+    final storage = InMemoryStorageService();
+    await storage.write(Favorites.storageKey, '{"64": ["S8 S16 D20", "S16 S8 D20", "T16 D8"]}');
+    final favorites = Favorites(storage);
+    await favorites.load();
+    expect(favorites.routesFor(64).map((x) => x.notation), ['S16 S8 D20', 'T16 D8']);
+    expect(await favorites.toggle(64, r('S8 S16 D20')), isFalse); // one press takes it away
+    expect(favorites.routesFor(64).map((x) => x.notation), ['T16 D8']);
+  });
+
   test('the game loads them and keeps them across starts', () async {
     final storage = InMemoryStorageService();
     final game = createGameController(storage);

@@ -15,7 +15,9 @@ class Favorites {
   Favorites(this._storage, {Map<int, List<CheckoutRoute>> defaults = const {}})
       : _defaults = {
           for (final entry in defaults.entries)
-            entry.key: [for (final route in entry.value) keyOf(route)],
+            // Once each: a number with a two-dart checkout plays with two
+            // darts even with three in hand, so its only route can come twice.
+            entry.key: {for (final route in entry.value) keyOf(route)}.toList(),
         };
 
   static const String storageKey = 'dartle.favorites.v1';
@@ -51,10 +53,13 @@ class Favorites {
       data.forEach((number, routes) {
         final target = int.tryParse(number);
         if (target == null || routes is! List) return;
-        final valid = [
+        // In the one spelling [keyOf] gives, each once (an older save may
+        // have S8 S16 D20 and S16 S8 D20).
+        final valid = {
           for (final text in routes)
-            if (text is String && _parse(text) != null) text,
-        ];
+            if (text is String)
+              if (_parse(text) case final route?) keyOf(route),
+        }.toList();
         if (valid.isNotEmpty) into[target] = valid;
       });
     } on FormatException {
@@ -106,16 +111,22 @@ class Favorites {
 
   /// The favorites of [target] - the one it has from the start first, then
   /// the marked ones, oldest first; only those with [darts] darts when it is
-  /// given.
-  List<CheckoutRoute> routesFor(int target, {int? darts}) => [
-        for (final text in [
-          for (final key in _defaults[target] ?? const <String>[])
-            if (!_isRemoved(target, key)) key,
-          for (final key in _byNumber[target] ?? const <String>[])
-            if (!_isDefault(target, key)) key,
-        ])
-          if (_parse(text) case final route? when darts == null || route.length == darts) route,
-      ];
+  /// given. Each route once, however it was saved (S8 S16 D20 and S16 S8 D20
+  /// are one route).
+  List<CheckoutRoute> routesFor(int target, {int? darts}) {
+    final seen = <String>{};
+    return [
+      for (final text in [
+        for (final key in _defaults[target] ?? const <String>[])
+          if (!_isRemoved(target, key)) key,
+        for (final key in _byNumber[target] ?? const <String>[])
+          if (!_isDefault(target, key)) key,
+      ])
+        if (_parse(text) case final route?
+            when (darts == null || route.length == darts) && seen.add(keyOf(route)))
+          route,
+    ];
+  }
 
   /// The numbers of darts [target] has favorites with, fewest first.
   List<int> dartCountsFor(int target) =>

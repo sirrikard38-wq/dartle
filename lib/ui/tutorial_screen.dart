@@ -220,7 +220,9 @@ List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
   final counts = {
     ...ctx.game.favorites.dartCountsFor(target),
     for (final darts in [2, 3])
-      if (session.tutor.optimalRoutes(target, darts).isNotEmpty) darts,
+      // Only real routes of that many darts: with three in hand, a number
+      // with a two-dart checkout still plays two (no empty 3 Darts page).
+      if (session.tutor.optimalRoutes(target, darts).any((r) => r.length == darts)) darts,
   }.toList()
     ..sort();
   final (names, pages) = favoritePages(ctx, target, counts, swipe: false);
