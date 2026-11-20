@@ -10,6 +10,7 @@ const Map<String, String> croatian = {
   // ---------------------------------------------------------------- menus
   'Start': 'Kreni',
   'Favorites': 'Favoriti',
+  'Favorite': 'Favorit',
   'Leaderboard': 'Ljestvica',
   'Hi, {name}': 'Bok, {name}',
   'Welcome': 'Dobrodošli',

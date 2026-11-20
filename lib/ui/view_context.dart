@@ -23,8 +23,9 @@ class ViewContext {
   /// render (keyboard users only).
   final void Function(String? key) keepFocus;
 
-  /// Short message at the top of the screen ([low]: near its foot).
-  final void Function(String message, {bool low}) toast;
+  /// Short message at the top of the screen ([low]: near its foot; [at]: with
+  /// its middle on that point of the screen).
+  final void Function(String message, {bool low, ({double x, double y})? at}) toast;
 
   /// Multiplier the player explicitly picked for non-final darts; null means
   /// "single". It stays selected across darts until changed.

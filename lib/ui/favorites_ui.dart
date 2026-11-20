@@ -110,10 +110,15 @@ web.HTMLButtonElement favoriteButton(ViewContext ctx, int target, CheckoutRoute 
   b = button('', cls: 'fav-btn', attrs: {'data-fav': id}, onPressed: (_) async {
     final on = !b.classList.contains('on');
     showEverywhere(on); // at once; the save follows
-    ctx.toast(on ? tr('Added to favorites!') : tr('Removed from favorites!'), low: true);
+    // The message in the middle of the board whose dart was pressed.
+    final board = b.closest('.board-figure')?.querySelector('.dartboard')?.getBoundingClientRect();
+    ctx.toast(on ? tr('Added to favorites!') : tr('Removed from favorites!'),
+        low: true, at: board == null ? null : (x: board.left + board.width / 2, y: board.top + board.height / 2));
     showEverywhere(await game.toggleFavorite(target, route));
   });
   b.appendChild(favoriteDartIcon());
+  // The word under the dart; only Practice's result shows it (styles.css).
+  b.appendChild(el('span', cls: 'fav-word', text: tr('Favorite'), attrs: {'aria-hidden': 'true'}));
   show(b, game.favorites.isFavorite(target, route));
   return b;
 }

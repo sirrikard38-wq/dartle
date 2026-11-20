@@ -672,6 +672,16 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* On a result screen (the board of your darts) the dart is twice as long. */
 .result-boards .fav-btn { width: 36px; height: 60px; }
 .result-boards .fav-icon { width: 17px; height: 48px; }
+/* The word "Favorite" under the dart: only on Practice's result, grey, white
+   once it is a favorite. */
+.fav-word { display: none; }
+.practice-result .result-boards .fav-btn {
+  height: auto; width: auto; display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.practice-result .fav-word {
+  display: block; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em; color: var(--muted);
+}
+.practice-result .fav-btn.on .fav-word { color: var(--white); }
 /* The Favorites screen: every number from 170 down to 2. */
 .fav-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
@@ -865,6 +875,8 @@ summary { cursor: pointer; color: var(--muted); }
 .toast.low { top: auto; bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 /* Dark with a white edge, so it shows over the black page and over a white
    button alike. */
+/* On a board: its middle on the board's middle. */
+.toast.at-point { bottom: auto; transform: translate(-50%, -50%); }
 .toast.low {
   background: var(--ink); color: var(--white); border: 2px solid var(--white);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
