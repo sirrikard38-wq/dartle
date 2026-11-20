@@ -108,7 +108,7 @@ void main() {
       expect(tutor.firstMiss(48, 2, CheckoutRoute([d('S16'), d('D16')])), isNull);
     });
 
-    test('the neighbours of a single as the board hangs: the one further left first', () {
+    test('the neighbours of a number as the board hangs: the one further left first', () {
       String sides(String dart) {
         final (left, right) = CheckoutTutor.sideNeighbours(d(dart))!;
         return '${left.notation} ${right.notation}';
@@ -119,8 +119,20 @@ void main() {
       expect(sides('S3'), 'S19 S17');
       expect(sides('S6'), 'S13 S10'); // as far left: the higher one first
       expect(sides('S11'), 'S14 S8');
-      expect(CheckoutTutor.sideNeighbours(d('T20')), isNull);
+      expect(sides('T20'), 'S5 S1'); // a treble or a double too
+      expect(sides('D16'), 'S8 S7');
       expect(CheckoutTutor.sideNeighbours(DartThrow.outerBull), isNull);
+      expect(CheckoutTutor.sideNeighbours(DartThrow.bull), isNull);
+    });
+
+    test('the other bed of the number: T18 and S18 swap, the double into its single, Bull and 25 swap', () {
+      expect(CheckoutTutor.singleOrTriple(d('T18')), d('S18'));
+      expect(CheckoutTutor.singleOrTriple(d('S18')), d('T18'));
+      expect(CheckoutTutor.singleOrTriple(d('D16')), d('S16'));
+      expect(CheckoutTutor.singleOrTriple(DartThrow.bull), DartThrow.outerBull);
+      expect(CheckoutTutor.singleOrTriple(DartThrow.outerBull), DartThrow.bull);
+      // 48 with two darts, S16 D16: T16 instead leaves no checkout (bust).
+      expect(tutor.outcome(48, 2, d('T16')).bust, isTrue);
     });
 
     test('the review of a Practice checkout: optimal, good (and why) or wrong', () {

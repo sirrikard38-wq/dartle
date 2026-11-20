@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
@@ -281,45 +282,45 @@ String _ifMissed(DartOutcome miss, int darts) {
       'If you miss into single ({dart}), {left} is left: no checkout with {n} darts.', {'dart': dart, 'left': miss.left});
 }
 
-/// The optimal routes Learn shows on boards: the table's route, the other hit
-/// of a pair (48: S16 or S8), then up to two more (one with a better double
-/// first, as the result screen picks them).
+/// Every optimal route Learn shows, in order: the table's route, the other
+/// hit of a pair (48: S16 or S8), then all the others (those with a better
+/// double first, as the result screen picks them).
 List<CheckoutRoute> _learnRouteList(TutorCard card, List<CheckoutRoute> all) {
   final shown = <CheckoutRoute>[card.route!];
   if (card.aims.length == 2 && card.hits.length == 2) {
     final other = card.routeOf(card.hits[1]);
     if (other != null && !shown.any(other.isEquivalentTo)) shown.add(other);
   }
-  shown.addAll(BetterDoubles.extras(all, exclude: shown).take(2));
+  shown.addAll(BetterDoubles.extras(all, exclude: shown));
+  for (final route in all) {
+    if (!shown.any(route.isEquivalentTo)) shown.add(route);
+  }
   return shown;
 }
 
-/// Learn's routes: a column "Route" and a column "Miss into single" - each
-/// optimal route beside what its first dart leaves when it misses into single
-/// (a single first has none). "Also optimal" only when some optimal routes are
-/// not on the boards; then why not the tempting other target.
+/// Learn's routes: every optimal route in the column "Route", and beside each
+/// what its first dart leaves when it lands in the other bed of its number -
+/// the single of a treble or double (T18: S18), the treble of a single (S18:
+/// T18), 25 for the Bull. Then why not the tempting other target.
 web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   final target = card.target;
-  final all = ctx.game.tutorial.tutor.optimalRoutes(target, card.darts);
-  final shown = _learnRouteList(card, all);
-  final everyOne = all.every((r) => shown.any(r.isEquivalentTo));
+  final tutor = ctx.game.tutorial.tutor;
+  final all = tutor.optimalRoutes(target, card.darts);
+  final grid = el('div', cls: 'route-grid two', children: [
+    el('p', cls: 'label grid-head', text: tr('Route')),
+    el('p', cls: 'label grid-head', text: tr('Miss: single or triple')),
+  ]);
+  _fillRows(grid, [
+    for (final route in _learnRouteList(card, all))
+      () => [
+            routeFigure(ctx, target, route),
+            _outcomeCell(ctx, card,
+                tutor.outcome(target, card.darts, CheckoutTutor.singleOrTriple(route.darts.first))),
+          ],
+  ]);
   return el('div', cls: 'tutor-card', children: [
-    el('div', cls: 'route-grid two', children: [
-      el('p', cls: 'label grid-head', text: tr('Route')),
-      el('p', cls: 'label grid-head', text: tr('Miss into single')),
-      for (final route in shown) ...[
-        routeFigure(ctx, target, route),
-        _outcomeCell(ctx, card, ctx.game.tutorial.tutor.firstMiss(target, card.darts, route)),
-      ],
-    ]),
-    if (all.length == 1)
-      el('p', cls: 'hint only-one', text: tr('Only possibility'))
-    else if (!everyOne)
-      button(tr('Also optimal'),
-          cls: 'text-link extra-title tutor-all',
-          focusKey: 'tutor-all',
-          ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': target}),
-          onPressed: (_) => showAllOptimal(ctx, target, all)),
+    grid,
+    if (all.length == 1) el('p', cls: 'hint only-one', text: tr('Only possibility')),
     if (card.whyNot case final other?) ...[
       el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),
       for (final miss in card.whyNotMisses)
@@ -328,19 +329,39 @@ web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   ]);
 }
 
+/// Adds [rows] (each draws its cells) to [grid]: the first few at once, the
+/// rest a few at a time while it is on the screen, so a number with many
+/// routes (102 with three darts has 32) does not hold the page up.
+void _fillRows(web.HTMLElement grid, List<List<web.HTMLElement> Function()> rows) {
+  const firstBatch = 6;
+  const nextBatch = 4;
+  void fill(int from) {
+    if (from > 0 && !grid.isConnected) return;
+    final to = math.min(from + (from == 0 ? firstBatch : nextBatch), rows.length);
+    for (var i = from; i < to; i++) {
+      for (final cell in rows[i]()) {
+        grid.append(cell);
+      }
+    }
+    if (to < rows.length) Timer(const Duration(milliseconds: 16), () => fill(to));
+  }
+
+  fill(0);
+}
+
 /// A board for what a missed dart leaves: the dart and the route after it
-/// (any checkout there is, optimal or not), and the line under it. Where
-/// there is no such miss (a single first), where its misses are.
-web.HTMLElement _outcomeCell(ViewContext ctx, TutorCard card, DartOutcome? miss) {
-  if (miss == null) return el('p', cls: 'grid-none', text: tr('A single: see Missing'));
+/// (any checkout there is, optimal or not), and the line under it.
+web.HTMLElement _outcomeCell(ViewContext ctx, TutorCard card, DartOutcome miss) {
   final route = card.routeOf(miss);
   if (route == null) return _deadEnd(card, miss);
   return routeFigure(ctx, card.target, route)..append(el('p', cls: 'hint', text: _outcome(card, miss.dart.notation, miss)));
 }
 
-/// Missing: every optimal route that starts with a single, in the middle,
-/// and the neighbours of that single to its left and right - what a miss into
-/// each leaves, with any checkout there is. The darts in hand as in Learn.
+/// Missing: for every first dart of the optimal routes (any bed of 1 to 20:
+/// single, double or treble; not 25 or the Bull), a route with it in the
+/// middle, the singles beside its number to the left and right, and under it
+/// the single of the same number (for a treble or a double) - each with what
+/// it leaves and any checkout there is. The darts in hand as in Learn.
 List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
   final target = session.shownTarget;
   final card = session.learnCard;
@@ -351,23 +372,40 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
   } else if (card == null || card.route == null) {
     body = el('p', cls: 'hint', text: trn(session.learnDarts, 'No checkout with {n} dart.', 'No checkout with {n} darts.'));
   } else {
-    final singles = [
-      for (final route in tutor.optimalRoutes(target, card.darts))
-        if (CheckoutTutor.sideNeighbours(route.darts.first) != null && route.length > 1) route,
-    ];
-    body = singles.isEmpty
-        ? el('p', cls: 'hint', text: tr('No optimal route starts with a single, so there is no neighbour to miss into.'))
-        : el('div', cls: 'route-grid three', children: [
-            el('p', cls: 'label grid-head', text: tr('Left neighbour')),
-            el('p', cls: 'label grid-head', text: tr('Route')),
-            el('p', cls: 'label grid-head', text: tr('Right neighbour')),
-            for (final route in singles)
-              if (CheckoutTutor.sideNeighbours(route.darts.first) case (final left, final right)) ...[
-                _outcomeCell(ctx, card, tutor.outcome(target, card.darts, left)),
-                routeFigure(ctx, target, route),
-                _outcomeCell(ctx, card, tutor.outcome(target, card.darts, right)),
-              ],
-          ]);
+    // One row for each first dart: its misses are the same whatever follows.
+    final byFirst = <DartThrow, CheckoutRoute>{};
+    for (final route in _learnRouteList(card, tutor.optimalRoutes(target, card.darts))) {
+      if (CheckoutTutor.sideNeighbours(route.darts.first) != null) byFirst.putIfAbsent(route.darts.first, () => route);
+    }
+    if (byFirst.isEmpty) {
+      body = el('p', cls: 'hint', text: tr('Every optimal route starts at the bull, so there is no neighbour to miss into.'));
+    } else {
+      final grid = el('div', cls: 'route-grid three', children: [
+        el('p', cls: 'label grid-head', text: tr('Left neighbour')),
+        el('p', cls: 'label grid-head', text: tr('Route')),
+        el('p', cls: 'label grid-head', text: tr('Right neighbour')),
+      ]);
+      web.HTMLElement outcome(DartThrow dart) => _outcomeCell(ctx, card, tutor.outcome(target, card.darts, dart));
+      _fillRows(grid, [
+        for (final MapEntry(key: first, value: route) in byFirst.entries)
+          if (CheckoutTutor.sideNeighbours(first) case (final left, final right))
+            () => [
+                  outcome(left),
+                  routeFigure(ctx, target, route),
+                  outcome(right),
+                  // A treble or a double can also land in its own single.
+                  if (first.multiplier != Multiplier.single) ...[
+                    el('span', cls: 'grid-gap'),
+                    el('div', cls: 'same-number', children: [
+                      el('p', cls: 'label grid-head', text: tr('Same number')),
+                      outcome(DartThrow(Multiplier.single, first.number)),
+                    ]),
+                    el('span', cls: 'grid-gap'),
+                  ],
+                ],
+      ]);
+      body = grid;
+    }
   }
   return [
     el('div', cls: 'learn-top missing-top', children: [

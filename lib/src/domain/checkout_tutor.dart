@@ -195,6 +195,16 @@ class CheckoutTutor {
     return DartThrow(Multiplier.single, dart.number);
   }
 
+  /// The other bed of the same number a throw can end in: the single for a
+  /// treble or a double, the treble for a single (aim at S18, hit T18), 25
+  /// for the Bull and the Bull for 25.
+  static DartThrow singleOrTriple(DartThrow dart) {
+    if (dart.isBull) return DartThrow.outerBull;
+    if (dart.isOuterBull) return DartThrow.bull;
+    if (dart.multiplier == Multiplier.single) return DartThrow(Multiplier.treble, dart.number);
+    return DartThrow(Multiplier.single, dart.number);
+  }
+
   /// What [route]'s first dart leaves on [target] with [darts] darts in hand
   /// when it misses into single; null when it is a single (or 25).
   DartOutcome? firstMiss(int target, int darts, CheckoutRoute route) {
@@ -203,12 +213,12 @@ class CheckoutTutor {
     return miss == null ? null : outcome(target, darts, miss);
   }
 
-  /// The two singles beside the single [dart] as the board hangs: the one
-  /// further left first (16: S8 and S7; 20: S5 and S1). Where both are as far
-  /// left (6 and 11), the higher one is first. Null for anything but a single
-  /// from 1 to 20.
+  /// The two singles beside the number of [dart] (its single, double or
+  /// treble) as the board hangs: the one further left first (16: S8 and S7;
+  /// T20: S5 and S1). Where both are as far left (6 and 11), the higher one is
+  /// first. Null for 25 and the Bull.
   static (DartThrow, DartThrow)? sideNeighbours(DartThrow dart) {
-    if (dart.multiplier != Multiplier.single || dart.isOuterBull) return null;
+    if (dart.number == DartThrow.bullNumber) return null;
     final i = boardOrder.indexOf(dart.number);
     if (i < 0) return null;
     final n = boardOrder.length;

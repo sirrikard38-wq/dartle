@@ -38,12 +38,12 @@ const Map<String, String> croatian = {
   'Or': 'Ili',
   'Missing': 'Promašaji',
   'Type a number to check out and learn.': 'Upiši broj koji želiš zatvoriti i naučiti.',
-  'Miss into single': 'Promašaj u single',
-  'A single: see Missing': 'Single: vidi Promašaje',
+  'Miss: single or triple': 'Promašaj: single ili triple',
+  'Same number': 'Isti broj',
   'Left neighbour': 'Lijevi susjed',
   'Right neighbour': 'Desni susjed',
-  'No optimal route starts with a single, so there is no neighbour to miss into.':
-      'Nijedna optimalna ruta ne počinje singleom, pa nema susjeda u kojeg bi promašio.',
+  'Every optimal route starts at the bull, so there is no neighbour to miss into.':
+      'Svaka optimalna ruta počinje na bullu, pa nema susjeda u kojeg bi promašio.',
   'Your darts in Practice': 'Tvoje strelice u Vježbi',
   'Good, but not optimal.': 'Dobro, ali nije optimalno.',
   'Wrong.': 'Krivo.',

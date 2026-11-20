@@ -1071,7 +1071,9 @@ summary { cursor: pointer; color: var(--muted); }
   font-size: min(0.85rem, 100cqw / 9);
 }
 .route-grid .board-figure .hint { font-size: 0.75rem; margin: 2px 0 0; line-height: 1.25; }
-.route-grid .grid-none { color: var(--muted); align-self: center; margin: 0; font-size: 0.8rem; text-align: center; }
+/* Missing: under a treble or double route, its own single. */
+.same-number { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.route-grid .same-number .grid-head { font-size: 0.8rem; margin: 0 0 2px; }
 /* Three to a row: the boxes are narrow, so their little marks are smaller. */
 .route-grid.three .tile .mark { font-size: 0.5rem; right: 1px; }
 .route-grid.three .board-figure .hint { font-size: 0.7rem; }
