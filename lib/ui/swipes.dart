@@ -31,7 +31,10 @@ bool get _justSwiped => DateTime.now().difference(_landedAt) < const Duration(mi
 /// away ([peek]) coming along beside it as far as the finger has gone. Past the
 /// swipe length the page glides the rest of the way and [move] is called with
 /// +1 for the next page, -1 for the one before. Short of it, it slides back.
-/// The same swipe as the food categories of Virulja.
+/// The same swipe as the food categories of Virulja. [fixedHeight]: the pages
+/// are exactly as tall as the room (Checkout tutorial), so the page beside is
+/// too; otherwise each page is as tall as what is in it (Checkout practice),
+/// and the room grows to the taller one while the swipe goes on.
 void followSwipes(
   web.HTMLElement page,
   web.HTMLElement sliding,
@@ -39,6 +42,7 @@ void followSwipes(
   void Function(int step) move, {
   web.HTMLElement? Function(int step)? peek,
   void Function(int step, double fraction)? follow,
+  bool fixedHeight = true,
 }) {
   double? startX;
   double startY = 0;
@@ -57,20 +61,27 @@ void followSwipes(
     if (besideStep == step) return;
     beside?.remove();
     beside = null;
+    sliding.style.minHeight = '';
     besideStep = step;
     if (peek == null || !canMove(step)) return;
     final next = peek(step);
     if (next == null) return;
     // As tall as the page that is there, so what sits at its foot (a keypad)
-    // is where it will be once the page is in place.
+    // is where it will be once the page is in place - or, when the pages are
+    // as tall as what is in them, at its own height, the room taller for it.
     next.style
       ..position = 'absolute'
       ..top = '0'
       ..left = '${step * 100}%'
-      ..width = '100%'
-      ..height = '${sliding.offsetHeight}px';
+      ..width = '100%';
+    if (fixedHeight) {
+      next.style.height = '${sliding.offsetHeight}px';
+    } else {
+      next.style.minHeight = '${sliding.offsetHeight}px';
+    }
     sliding.style.position = 'relative';
     sliding.append(next);
+    if (!fixedHeight) sliding.style.minHeight = '${max(sliding.offsetHeight, next.offsetHeight)}px';
     beside = next;
   }
 
@@ -78,6 +89,7 @@ void followSwipes(
     beside?.remove();
     beside = null;
     besideStep = 0;
+    sliding.style.minHeight = '';
   }
 
   page.onTouchStart.listen((event) {

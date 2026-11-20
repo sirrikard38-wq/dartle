@@ -7,6 +7,7 @@ import '../dartle.dart';
 import 'dartboard.dart';
 import 'dom.dart';
 import 'favorites_ui.dart';
+import 'footer.dart';
 import 'game_screen.dart';
 import 'keyboard.dart';
 import 'result_screen.dart';
@@ -45,7 +46,7 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
       TutorialTab.missing => _missing(ctx, session),
     }),
   )..classList.add('play-area');
-  return el('main', cls: 'screen tutorial${session.tab == TutorialTab.input ? ' on-input' : ''}', children: [area]);
+  return el('main', cls: 'screen tutorial', children: [area]);
 }
 
 /// Chips over pages side by side ([labels], the page [index] showing): a press
@@ -61,6 +62,7 @@ web.HTMLElement swipeTabs(
   required int index,
   required void Function(int index) choose,
   required web.HTMLElement Function(int index) pageOf,
+  bool fixedHeight = true,
 }) {
   late final web.HTMLElement row;
   late final SwipeMark mark;
@@ -100,15 +102,22 @@ web.HTMLElement swipeTabs(
   },
       peek: (step) => pageOf(index + step),
       follow: (step, fraction) =>
-          mark.follow(exists(index + step) ? row.children.item(index + step) as web.HTMLElement? : null, fraction));
+          mark.follow(exists(index + step) ? row.children.item(index + step) as web.HTMLElement? : null, fraction),
+      fixedHeight: fixedHeight);
   return area;
 }
 
 /// Input: the number, what it says, and the keypad. A number from 2 to 170 is
 /// at once the one Practice, Learn and Favorites show. Three seconds after the
 /// last key (or after Next checkout) the next digit starts a new number.
-List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) =>
-    inputPage(ctx, session.typedDigits, onDigit: session.typeDigit, onDelete: session.deleteDigit);
+///
+/// The tutorial is as tall as the screen whichever part is open (a part that
+/// slides in is drawn at its own size); Input has the links of the foot
+/// (Install, Instagram, Email) at its own foot, where they show.
+List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) => [
+      ...inputPage(ctx, session.typedDigits, onDigit: session.typeDigit, onDelete: session.deleteDigit),
+      el('div', cls: 'input-foot', children: [buildFooter()]),
+    ];
 
 /// The Input page of Checkout tutorial and Checkout practice: the words, the
 /// [digits] typed with what they say, and the keypad ([onDigit], [onDelete]).

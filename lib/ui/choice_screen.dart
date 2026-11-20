@@ -103,6 +103,7 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
       name: 'choice',
       labels: [tr('Input'), tr('Play'), tr('Learn')],
       index: ctx.choiceTab,
+      fixedHeight: false, // each page as tall as what is in it
       choose: (i) => ctx.choiceTab = i,
       pageOf: (i) => switch (i) {
         0 => el('div',

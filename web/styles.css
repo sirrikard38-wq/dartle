@@ -1088,12 +1088,9 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .screen .tab-input .pad-undo { font-size: 0.85rem; gap: 6px; }
 .screen .tab-input .pad-undo svg { width: 18px; height: 18px; }
-/* Input open: the tutorial leaves room again for the links at the foot
-   (Install, Instagram, Email), which then show. */
-.screen.tutorial.on-input {
-  height: calc(100vh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-  height: calc(100dvh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-}
+/* Tutorial Input: the links of the foot at the foot of the page. */
+.input-foot { margin-top: auto; width: 100%; }
+.input-foot .app-footer { margin-top: 0; }
 /* Learn and Missing: the routes in columns, a heading over each column once
    ("Route" and "Miss into single"; "Left neighbour", "Route", "Right
    neighbour"). Each board is as wide as its column (170px at the most) and

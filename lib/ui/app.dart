@@ -140,7 +140,11 @@ class DartleApp {
     _root.textContent = '';
     if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
-    if (!fullScreen) _root.appendChild(buildFooter());
+    // Checkout tutorial's Input has the links at its own foot.
+    final footerInPage = _game.phase == GamePhase.menu &&
+        _page == MenuPage.tutorial &&
+        _game.tutorial.tab == TutorialTab.input;
+    if (!fullScreen && !footerInPage) _root.appendChild(buildFooter());
     _syncHistory();
 
     final key = _focusKey;
