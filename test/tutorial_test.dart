@@ -95,6 +95,53 @@ void main() {
       expect(tutor.outcome(20, 1, d('S20')).bust, isTrue); // zero without a double
     });
 
+    test('a miss into single: a treble or a double into its single, the Bull into 25; none for a single', () {
+      expect(CheckoutTutor.missIntoSingle(d('T20')), d('S20'));
+      expect(CheckoutTutor.missIntoSingle(d('D16')), d('S16'));
+      expect(CheckoutTutor.missIntoSingle(DartThrow.bull), DartThrow.outerBull);
+      expect(CheckoutTutor.missIntoSingle(d('S16')), isNull);
+      expect(CheckoutTutor.missIntoSingle(DartThrow.outerBull), isNull);
+      // 127 with three darts: T20 missed into S20 leaves 107, still T19 Bull.
+      final miss = tutor.firstMiss(127, 3, CheckoutRoute([d('T20'), d('T17'), d('D8')]))!;
+      expect(miss.left, 107);
+      expect(miss.route!.notation, 'T19 Bull');
+      expect(tutor.firstMiss(48, 2, CheckoutRoute([d('S16'), d('D16')])), isNull);
+    });
+
+    test('the neighbours of a single as the board hangs: the one further left first', () {
+      String sides(String dart) {
+        final (left, right) = CheckoutTutor.sideNeighbours(d(dart))!;
+        return '${left.notation} ${right.notation}';
+      }
+
+      expect(sides('S16'), 'S8 S7'); // 48: S8 leaves 40, S7 leaves 41
+      expect(sides('S20'), 'S5 S1');
+      expect(sides('S3'), 'S19 S17');
+      expect(sides('S6'), 'S13 S10'); // as far left: the higher one first
+      expect(sides('S11'), 'S14 S8');
+      expect(CheckoutTutor.sideNeighbours(d('T20')), isNull);
+      expect(CheckoutTutor.sideNeighbours(DartThrow.outerBull), isNull);
+    });
+
+    test('the review of a Practice checkout: optimal, good (and why) or wrong', () {
+      CheckoutRoute r(String text) => CheckoutRoute([for (final t in text.split(' ')) d(t)]);
+      final optimal = tutor.review(127, 3, r('T20 T17 D8'), correct: true, optimal: true);
+      expect(optimal.kind, ReviewKind.optimal);
+      expect(optimal.miss!.left, 107);
+      // T19 T10 D20 checks out, but S19 leaves 108; on T20 S20 leaves T19 Bull.
+      final good = tutor.review(127, 3, r('T19 T10 D20'), correct: true, optimal: false);
+      expect(good.kind, ReviewKind.good);
+      expect(good.reason, GoodReason.missKeepsCheckout);
+      expect(good.miss!.hasCheckout, isFalse);
+      expect(good.optimalMiss!.hasCheckout, isTrue);
+      // 100 with three darts the long way: the optimal routes need two.
+      final longer = tutor.review(100, 3, r('S20 T20 D10'), correct: true, optimal: false);
+      expect(longer.reason, GoodReason.fewerDarts);
+      expect(longer.fewestDarts, 2);
+      final wrong = tutor.review(100, 2, r('T20 D10'), correct: false, optimal: false);
+      expect(wrong.kind, ReviewKind.wrong);
+    });
+
     test('every number with a checkout has a card for every darts in hand it can be done with', () {
       final engine = CheckoutEngine();
       for (final target in engine.checkoutableTargets) {
@@ -267,6 +314,31 @@ void main() {
         ..throwPractice(d('T18'))
         ..throwPractice(d('D4'));
       expect(session.practiceRight, isTrue);
+    });
+
+    test('Learn says what the Practice checkout was: nothing before it is played or on a right "No checkout"', () {
+      final session = newSession(3)..play(challenge(127, 3));
+      expect(session.practiceReview, isNull);
+      session
+        ..throwPractice(d('T19'))
+        ..throwPractice(d('T10'))
+        ..throwPractice(d('D20'));
+      expect(session.practiceReview!.kind, ReviewKind.good);
+      session
+        ..replay()
+        ..throwPractice(d('T20'))
+        ..throwPractice(d('T17'))
+        ..throwPractice(d('D8'));
+      expect(session.practiceReview!.kind, ReviewKind.optimal);
+      final none = newSession(3)
+        ..play(Challenge.noCheckout(169))
+        ..pressNoCheckout();
+      expect(none.practiceReview, isNull);
+      final missed = newSession(3)
+        ..play(challenge(100, 2))
+        ..pressNoCheckout();
+      expect(missed.practiceReview!.kind, ReviewKind.wrong);
+      expect(missed.practiceReview!.route.darts, isEmpty);
     });
 
     test('65 with three darts is 25 D20: two darts, not Bull S7 D4', () {

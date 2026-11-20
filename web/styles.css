@@ -1045,21 +1045,36 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .screen.tutorial .tab-input .pad-undo { font-size: 0.85rem; gap: 6px; }
 .screen.tutorial .tab-input .pad-undo svg { width: 18px; height: 18px; }
-/* Learn: no keypad under it, so the boards are bigger - the route and a miss,
-   then two more optimal routes, two by two. */
-.tab-learn .learn-top .tutor-fig .board-figure {
-  max-width: min(var(--learn-board, 170px), 170px, 19vh); max-width: min(var(--learn-board, 170px), 170px, 19dvh);
+/* Learn and Missing: the routes in columns, a heading over each column once
+   ("Route" and "Miss into single"; "Left neighbour", "Route", "Right
+   neighbour"). Each board is as wide as its column (170px at the most) and
+   its boxes share that width. The page scrolls when there are many. */
+.tab-learn .learn-top .number-display, .tab-missing .learn-top .number-display { font-size: clamp(2.5rem, 7dvh, 3.4rem); }
+.route-grid { display: grid; gap: 6px 10px; width: 100%; align-items: start; justify-items: center; margin: 4px 0 2px; }
+.route-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.route-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.route-grid .grid-head { margin: 2px 0 0; text-align: center; font-size: 0.75rem; }
+.route-grid .board-figure, .learn-review .board-figure { flex: none; width: 100%; max-width: 170px; container-type: inline-size; }
+.route-grid .board-figure .tile-row.small .tile, .learn-review .board-figure .tile-row.small .tile {
+  width: min(44px, (100cqw - 8px) / 3); height: 36px; min-width: 0; overflow: hidden;
+  font-size: min(0.85rem, 100cqw / 9);
 }
-.tab-learn .learn-top .number-display { font-size: clamp(2.5rem, 7dvh, 3.4rem); }
-.tutor-more { margin-top: 2px; }
-/* In Learn a board's box is as tall as what is in it (the 200px start size of
-   a board on the result screen is its width there, not its height here), and
-   on a small board the route boxes share its width. */
-.tutor-fig .board-figure { flex: none; }
-.tab-learn .learn-top .board-figure .tile-row.small .tile {
-  width: min(44px, (var(--learn-board, 170px) - 8px) / 3);
+.route-grid .board-figure .hint { font-size: 0.75rem; margin: 2px 0 0; line-height: 1.25; }
+.route-grid .grid-none { color: var(--muted); align-self: center; margin: 0; font-size: 0.8rem; text-align: center; }
+/* Three to a row: the boxes are narrow, so their little marks are smaller. */
+.route-grid.three .tile .mark { font-size: 0.5rem; right: 1px; }
+.route-grid.three .board-figure .hint { font-size: 0.7rem; }
+/* Above Learn's routes: the Practice checkout on its board, and what it was. */
+.learn-review {
+  width: 100%; display: flex; flex-direction: column; align-items: center;
+  margin: 6px 0 4px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
 }
-.tab-learn .learn-top .board-figure .tile-row.small .tile {
-  min-width: 0; overflow: hidden;
-  font-size: min(0.85rem, (var(--learn-board, 170px) - 8px) / 8);
-}
+.learn-review > .label { margin: 0 0 4px; }
+.learn-review .board-figure { width: min(150px, 42vw); }
+.review-headline { margin: 4px 0 2px; font-weight: 700; font-size: 1.05rem; }
+.learn-review .card-line { max-width: 38ch; text-align: center; font-size: 0.9rem; line-height: 1.3; }
+.learn-review.wrong .review-headline { color: var(--burgundy-soft); }
+/* Five tabs on one line: Input, Practice, Learn, Favorites, Missing. */
+.screen.tutorial .tutorial-tabs,
+.screen.tutorial .tutorial-tabs > .chip-marker > .marker-words { flex-wrap: nowrap; gap: 4px; }
+.screen.tutorial .tutorial-tabs .chip { padding: 0 9px; font-size: 0.85rem; min-height: 36px; }

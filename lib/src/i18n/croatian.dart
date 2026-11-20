@@ -30,13 +30,38 @@ const Map<String, String> croatian = {
   'No favorites with {n} dart yet.|No favorites with {n} darts yet.':
       'Još nema favorita s {n} strelicom.|Još nema favorita s {n} strelice.|Još nema favorita s {n} strelica.',
   'Input': 'Unos',
-  'Optimal': 'Optimalno',
   'Practice': 'Vježba',
   'Darts in hand': 'Strelice u ruci',
   '{n} dart in hand|{n} darts in hand': '{n} strelica u ruci|{n} strelice u ruci|{n} strelica u ruci',
   'Type a number from 2 to 170.': 'Upiši broj od 2 do 170.',
   'Route': 'Ruta',
   'Or': 'Ili',
+  'Missing': 'Promašaji',
+  'Miss into single': 'Promašaj u single',
+  'A single: see Missing': 'Single: vidi Promašaje',
+  'Left neighbour': 'Lijevi susjed',
+  'Right neighbour': 'Desni susjed',
+  'No optimal route starts with a single, so there is no neighbour to miss into.':
+      'Nijedna optimalna ruta ne počinje singleom, pa nema susjeda u kojeg bi promašio.',
+  'Your darts in Practice': 'Tvoje strelice u Vježbi',
+  'Good, but not optimal.': 'Dobro, ali nije optimalno.',
+  'Wrong.': 'Krivo.',
+  'The optimal routes are below.': 'Optimalne rute su ispod.',
+  'These darts do not check out {n}.': 'Ove strelice ne zatvaraju {n}.',
+  '{target} can be checked out with {n} dart.|{target} can be checked out with {n} darts.':
+      '{target} se može zatvoriti s {n} strelicom.|{target} se može zatvoriti s {n} strelice.|{target} se može zatvoriti s {n} strelica.',
+  'The optimal routes need only {n} dart.|The optimal routes need only {n} darts.':
+      'Optimalnim rutama treba samo {n} strelica.|Optimalnim rutama trebaju samo {n} strelice.|Optimalnim rutama treba samo {n} strelica.',
+  'The optimal routes are better: if the first dart misses into single, you can still check out with {n} dart ({dart} leaves {left}: {route}).|The optimal routes are better: if the first dart misses into single, you can still check out with {n} darts ({dart} leaves {left}: {route}).':
+      'Optimalne rute su bolje: ako prva strelica promaši u single, još uvijek možeš zatvoriti s {n} strelicom ({dart} ostavlja {left}: {route}).|Optimalne rute su bolje: ako prva strelica promaši u single, još uvijek možeš zatvoriti s {n} strelice ({dart} ostavlja {left}: {route}).|Optimalne rute su bolje: ako prva strelica promaši u single, još uvijek možeš zatvoriti s {n} strelica ({dart} ostavlja {left}: {route}).',
+  'Your first dart is a single: Missing shows its neighbours.': 'Prva strelica ti je single: Promašaji pokazuju njegove susjede.',
+  'If you miss into single ({dart}), it is a bust.': 'Ako promašiš u single ({dart}), to je bust.',
+  'If you miss into single ({dart}), {left} is left and you can still check out: {route}.':
+      'Ako promašiš u single ({dart}), ostaje {left} i još uvijek možeš zatvoriti: {route}.',
+  'If you miss into single ({dart}), {left} is left for the next visit.':
+      'Ako promašiš u single ({dart}), {left} ostaje za sljedeći posjet.',
+  'If you miss into single ({dart}), {left} is left: no checkout with {n} dart.|If you miss into single ({dart}), {left} is left: no checkout with {n} darts.':
+      'Ako promašiš u single ({dart}), ostaje {left}: nema izlaza s {n} strelicom.|Ako promašiš u single ({dart}), ostaje {left}: nema izlaza s {n} strelice.|Ako promašiš u single ({dart}), ostaje {left}: nema izlaza s {n} strelica.',
   'Aim at {a} or {b}.': 'Ciljaj {a} ili {b}.',
   'Aim at the bull: {a} or {b}.': 'Ciljaj bull: {a} ili {b}.',
   'Aim at {dart}.': 'Ciljaj {dart}.',

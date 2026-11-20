@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
@@ -15,12 +14,13 @@ import 'tiles.dart';
 import 'view_context.dart';
 
 /// Checkout tutorial: Input (type a number), Practice (play it out as in
-/// Checkout calculator), Learn (the route and a miss on boards, and more
-/// optimal routes) and Favorites (its favorite routes), all for one number. A
+/// Checkout calculator), Learn (the optimal routes and their misses into
+/// single), Favorites (its favorite routes) and Missing (a single missed into
+/// its neighbours), all for one number. A
 /// swipe to the side goes from one to the next.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
-  // In the order of [TutorialTab]: Input, Practice, Learn, Favorites.
+  // In the order of [TutorialTab]: Input, Practice, Learn, Favorites, Missing.
   final area = swipeTabs(
     ctx,
     name: 'tutorial',
@@ -31,6 +31,7 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
           TutorialTab.practice => tr('Practice'),
           TutorialTab.learn => tr('Learn'),
           TutorialTab.favorites => tr('Favorites'),
+          TutorialTab.missing => tr('Missing'),
         },
     ],
     index: session.tab.index,
@@ -40,6 +41,7 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
       TutorialTab.learn => _learn(ctx, session),
       TutorialTab.practice => _practice(ctx, session),
       TutorialTab.favorites => _favorites(ctx, session),
+      TutorialTab.missing => _missing(ctx, session),
     }),
   )..classList.add('play-area');
   return el('main', cls: 'screen tutorial', children: [area]);
@@ -158,63 +160,222 @@ List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) {
   ];
 }
 
-/// Learn: the number (typed in Input, or the Practice question), the darts in
-/// hand, and the boards: the route and a miss, then two more optimal routes.
-List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
-  final target = session.shownTarget;
-  final card = session.learnCard;
-
+/// The darts in hand, 1, 2 or 3, for Learn and Missing (one choice for both).
+web.HTMLElement _dartsChips(ViewContext ctx, TutorialSession session, String name) {
   web.HTMLButtonElement darts(int n) => button('$n',
       cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
-      focusKey: 'learn-darts-$n',
+      focusKey: '$name-darts-$n',
       ariaLabel: trn(n, '{n} dart in hand', '{n} darts in hand'),
       attrs: {'aria-pressed': '${session.learnDarts == n}'},
       onPressed: (kb) {
-        ctx.keepFocus(kb ? 'learn-darts-$n' : null);
+        ctx.keepFocus(kb ? '$name-darts-$n' : null);
         session.learnDarts = n;
         ctx.rerender();
       });
-
-  // A number that cannot be checked out at all says so, with one of the
-  // insults, as Checkout input does.
-  final web.HTMLElement below = ctx.game.hasNoCheckout(target)
-      ? el('div', cls: 'tutor-card', children: [
-          el('p', cls: 'impossible-title', text: tr('This number is impossible to checkout.'), attrs: {'role': 'status'}),
-          el('p', cls: 'insult', text: Phrases.randomInsult(math.Random(target))),
-        ])
-      : card == null
-          ? el('span')
-          : tutorBoards(ctx, card, more: 2);
-
-  final top = el('div', cls: 'learn-top', children: [
-    el('p', cls: 'target number-display', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
-    el('p', cls: 'label', text: tr('Darts in hand')),
-    el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]),
-    below,
-  ]);
-  _fitBoards(top);
-  return [top];
+  return el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]);
 }
 
-/// Once Learn is on the screen: when its lines (a "Why not" or two) would make
-/// it longer than the screen, the boards get smaller by just that much, so all
-/// of it fits with no scrolling. Each row of boards gives back the same. A
-/// board stays 90px at the least: on a short screen what is still too long
-/// scrolls.
-void _fitBoards(web.HTMLElement top) {
-  void fit(int tries) => Timer.run(() {
-        if (!top.isConnected || tries == 0) return;
-        final over = top.scrollHeight - top.clientHeight;
-        final board = top.querySelector('.tutor-fig .board-figure') as web.HTMLElement?;
-        final rows = top.querySelectorAll('.tutor-boards').length;
-        if (over <= 0 || board == null || rows == 0) return;
-        final width = board.getBoundingClientRect().width;
-        final smaller = math.max(90, width - over / rows - 2);
-        if (smaller >= width) return;
-        top.style.setProperty('--learn-board', '${smaller.floor()}px');
-        fit(tries - 1); // once more, for what rounding left
-      });
-  fit(3);
+/// A number that cannot be checked out at all says so, with one of the
+/// insults, as Checkout input does.
+web.HTMLElement _impossible(int target) => el('div', cls: 'tutor-card', children: [
+      el('p', cls: 'impossible-title', text: tr('This number is impossible to checkout.'), attrs: {'role': 'status'}),
+      el('p', cls: 'insult', text: Phrases.randomInsult(math.Random(target))),
+    ]);
+
+/// Learn: the number (typed in Input, or the Practice question), the darts in
+/// hand, what the Practice checkout was worth, then the optimal routes, each
+/// beside what its first dart leaves when it misses into single.
+List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
+  final target = session.shownTarget;
+  final card = session.learnCard;
+  final review = session.learnDarts == session.practiceDarts ? session.practiceReview : null;
+
+  return [
+    el('div', cls: 'learn-top', children: [
+      el('p', cls: 'target number-display', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
+      el('p', cls: 'label', text: tr('Darts in hand')),
+      _dartsChips(ctx, session, 'learn'),
+      if (review != null) _reviewBox(ctx, session, review),
+      if (ctx.game.hasNoCheckout(target))
+        _impossible(target)
+      else if (card != null)
+        card.route == null ? tutorBoards(ctx, card) : _learnRoutes(ctx, card),
+    ]),
+  ];
+}
+
+/// Above the routes in Learn: the Practice checkout on its board, and why it
+/// is optimal, good or wrong.
+web.HTMLElement _reviewBox(ViewContext ctx, TutorialSession session, PracticeReview review) {
+  final target = session.practiceTarget;
+  final darts = review.route.darts;
+  final lines = <String>[];
+  String? headline;
+  switch (review.kind) {
+    case ReviewKind.optimal:
+      headline = tr('Optimal!');
+      if (review.miss case final miss?) {
+        lines.add(_ifMissed(miss, session.practiceDarts));
+      } else if (darts.length > 1) {
+        lines.add(tr('Your first dart is a single: Missing shows its neighbours.'));
+      }
+    case ReviewKind.good:
+      headline = tr('Good, but not optimal.');
+      switch (review.reason) {
+        case GoodReason.fewerDarts:
+          lines.add(trn(review.fewestDarts, 'The optimal routes need only {n} dart.', 'The optimal routes need only {n} darts.'));
+        case GoodReason.missKeepsCheckout:
+          final kept = review.optimalMiss!;
+          lines.add(trn(
+              session.practiceDarts - 1,
+              'The optimal routes are better: if the first dart misses into single, you can still check out with {n} dart ({dart} leaves {left}: {route}).',
+              'The optimal routes are better: if the first dart misses into single, you can still check out with {n} darts ({dart} leaves {left}: {route}).',
+              {'dart': kept.dart.notation, 'left': kept.left, 'route': kept.route?.notation ?? ''}));
+          if (review.miss case final miss?) lines.add(_ifMissed(miss, session.practiceDarts));
+        case GoodReason.other:
+          lines.add(tr('The optimal routes are below.'));
+      }
+    case ReviewKind.wrong:
+      headline = tr('Wrong.');
+      lines.add(darts.isEmpty
+          ? trn(session.practiceDarts, '{target} can be checked out with {n} dart.',
+              '{target} can be checked out with {n} darts.', {'target': target})
+          : tr('These darts do not check out {n}.', {'n': target}));
+  }
+
+  final state = switch (review.kind) {
+    ReviewKind.optimal => TileState.correct,
+    ReviewKind.good => TileState.present,
+    ReviewKind.wrong => TileState.absent,
+  };
+  return el('div', cls: 'learn-review ${review.kind.name}', children: [
+    el('p', cls: 'label', text: tr('Your darts in Practice')),
+    if (darts.isNotEmpty)
+      el('figure', cls: 'board-figure', children: [
+        buildDartboard(
+          linesOnly: true,
+          marks: spreadMarks(darts, session.marks, math.Random(routeSeed(review.route.notation))),
+          label: tr('Your darts: {route}', {'route': review.route.notation}),
+        ),
+        tileRow(darts, slots: darts.length, small: true, states: List.filled(darts.length, state), label: review.route.notation),
+      ]),
+    el('p', cls: 'review-headline', text: headline),
+    for (final line in lines) el('p', cls: 'card-line', text: line),
+  ]);
+}
+
+/// "If you miss into single (S20), 107 is left and you can still check out:
+/// T19 Bull." - what a first dart's miss into single leaves, [darts] in hand.
+String _ifMissed(DartOutcome miss, int darts) {
+  final dart = miss.dart.notation;
+  if (miss.bust) return tr('If you miss into single ({dart}), it is a bust.', {'dart': dart});
+  if (miss.route case final route?) {
+    return tr('If you miss into single ({dart}), {left} is left and you can still check out: {route}.',
+        {'dart': dart, 'left': miss.left, 'route': route.notation});
+  }
+  if (darts <= 1) {
+    return tr('If you miss into single ({dart}), {left} is left for the next visit.', {'dart': dart, 'left': miss.left});
+  }
+  return trn(darts - 1, 'If you miss into single ({dart}), {left} is left: no checkout with {n} dart.',
+      'If you miss into single ({dart}), {left} is left: no checkout with {n} darts.', {'dart': dart, 'left': miss.left});
+}
+
+/// The optimal routes Learn shows on boards: the table's route, the other hit
+/// of a pair (48: S16 or S8), then up to two more (one with a better double
+/// first, as the result screen picks them).
+List<CheckoutRoute> _learnRouteList(TutorCard card, List<CheckoutRoute> all) {
+  final shown = <CheckoutRoute>[card.route!];
+  if (card.aims.length == 2 && card.hits.length == 2) {
+    final other = card.routeOf(card.hits[1]);
+    if (other != null && !shown.any(other.isEquivalentTo)) shown.add(other);
+  }
+  shown.addAll(BetterDoubles.extras(all, exclude: shown).take(2));
+  return shown;
+}
+
+/// Learn's routes: a column "Route" and a column "Miss into single" - each
+/// optimal route beside what its first dart leaves when it misses into single
+/// (a single first has none). "Also optimal" only when some optimal routes are
+/// not on the boards; then why not the tempting other target.
+web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
+  final target = card.target;
+  final all = ctx.game.tutorial.tutor.optimalRoutes(target, card.darts);
+  final shown = _learnRouteList(card, all);
+  final everyOne = all.every((r) => shown.any(r.isEquivalentTo));
+  return el('div', cls: 'tutor-card', children: [
+    el('div', cls: 'route-grid two', children: [
+      el('p', cls: 'label grid-head', text: tr('Route')),
+      el('p', cls: 'label grid-head', text: tr('Miss into single')),
+      for (final route in shown) ...[
+        routeFigure(ctx, target, route),
+        _outcomeCell(ctx, card, ctx.game.tutorial.tutor.firstMiss(target, card.darts, route)),
+      ],
+    ]),
+    if (all.length == 1)
+      el('p', cls: 'hint only-one', text: tr('Only possibility'))
+    else if (!everyOne)
+      button(tr('Also optimal'),
+          cls: 'text-link extra-title tutor-all',
+          focusKey: 'tutor-all',
+          ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': target}),
+          onPressed: (_) => showAllOptimal(ctx, target, all)),
+    if (card.whyNot case final other?) ...[
+      el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),
+      for (final miss in card.whyNotMisses)
+        el('p', cls: 'card-line', text: _outcome(card, tr('Miss into {dart}', {'dart': miss.dart.notation}), miss)),
+    ],
+  ]);
+}
+
+/// A board for what a missed dart leaves: the dart and the route after it
+/// (any checkout there is, optimal or not), and the line under it. Where
+/// there is no such miss (a single first), where its misses are.
+web.HTMLElement _outcomeCell(ViewContext ctx, TutorCard card, DartOutcome? miss) {
+  if (miss == null) return el('p', cls: 'grid-none', text: tr('A single: see Missing'));
+  final route = card.routeOf(miss);
+  if (route == null) return _deadEnd(card, miss);
+  return routeFigure(ctx, card.target, route)..append(el('p', cls: 'hint', text: _outcome(card, miss.dart.notation, miss)));
+}
+
+/// Missing: every optimal route that starts with a single, in the middle,
+/// and the neighbours of that single to its left and right - what a miss into
+/// each leaves, with any checkout there is. The darts in hand as in Learn.
+List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
+  final target = session.shownTarget;
+  final card = session.learnCard;
+  final tutor = session.tutor;
+  web.HTMLElement body;
+  if (ctx.game.hasNoCheckout(target)) {
+    body = _impossible(target);
+  } else if (card == null || card.route == null) {
+    body = el('p', cls: 'hint', text: trn(session.learnDarts, 'No checkout with {n} dart.', 'No checkout with {n} darts.'));
+  } else {
+    final singles = [
+      for (final route in tutor.optimalRoutes(target, card.darts))
+        if (CheckoutTutor.sideNeighbours(route.darts.first) != null && route.length > 1) route,
+    ];
+    body = singles.isEmpty
+        ? el('p', cls: 'hint', text: tr('No optimal route starts with a single, so there is no neighbour to miss into.'))
+        : el('div', cls: 'route-grid three', children: [
+            el('p', cls: 'label grid-head', text: tr('Left neighbour')),
+            el('p', cls: 'label grid-head', text: tr('Route')),
+            el('p', cls: 'label grid-head', text: tr('Right neighbour')),
+            for (final route in singles)
+              if (CheckoutTutor.sideNeighbours(route.darts.first) case (final left, final right)) ...[
+                _outcomeCell(ctx, card, tutor.outcome(target, card.darts, left)),
+                routeFigure(ctx, target, route),
+                _outcomeCell(ctx, card, tutor.outcome(target, card.darts, right)),
+              ],
+          ]);
+  }
+  return [
+    el('div', cls: 'learn-top missing-top', children: [
+      el('p', cls: 'target number-display', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
+      el('p', cls: 'label', text: tr('Darts in hand')),
+      _dartsChips(ctx, session, 'missing'),
+      body,
+    ]),
+  ];
 }
 
 /// Favorites: the favorite routes of the number (typed in Input, or the
@@ -316,11 +477,9 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
 
 /// What to aim at, then two boards side by side: the route, and a miss into
 /// the next area with what it leaves (for a pair of hits, the other hit). Each
-/// board can be made a favorite. Then up to [more] other optimal routes on
-/// boards of their own (tutorial Learn shows two), "Also optimal" for all of
-/// them and, where a miss changes everything, why not the tempting other
-/// target.
-web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card, {int more = 0}) {
+/// board can be made a favorite. Then "Also optimal" for all of them and,
+/// where a miss changes everything, why not the tempting other target.
+web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
   final aims = card.aims;
   final route = card.route;
   final target = card.target;
@@ -339,15 +498,12 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card, {int more = 0}) {
 
   final all = route == null ? const <CheckoutRoute>[] : ctx.game.tutorial.tutor.optimalRoutes(target, card.darts);
   final boards = <web.HTMLElement>[];
-  final onBoards = <CheckoutRoute>[];
   if (route != null) {
     boards.add(titled(tr('Route'), routeFigure(ctx, target, route)));
-    onBoards.add(route);
     if (aims.length == 2 && card.hits.length == 2) {
       final other = card.routeOf(card.hits[1]);
       if (other != null) {
         boards.add(titled(tr('Or'), routeFigure(ctx, target, other)));
-        onBoards.add(other);
       }
     } else if (card.shownMiss case final miss?) {
       final title = tr('Miss into {dart}', {'dart': miss.dart.notation});
@@ -364,13 +520,6 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card, {int more = 0}) {
       el('p', cls: 'card-line', text: tr('Aim for a good number to leave.')),
     ],
     if (boards.isNotEmpty) el('div', cls: 'result-boards tutor-boards', children: boards),
-    // Two more optimal routes, when there are: one with a better double first,
-    // as the result screen picks them.
-    if (more > 0)
-      if (BetterDoubles.extras(all, exclude: onBoards).take(more).toList() case final extra when extra.isNotEmpty)
-        el('div', cls: 'result-boards tutor-boards tutor-more', children: [
-          for (final r in extra) titled(tr('Optimal'), routeFigure(ctx, target, r)),
-        ]),
     // As on the result screen: "Also optimal" opens every optimal route, or
     // the one route there is says so.
     if (route != null)

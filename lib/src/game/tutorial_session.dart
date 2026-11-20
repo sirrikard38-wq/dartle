@@ -12,13 +12,13 @@ import '../scoring/scoring_service.dart';
 import 'game_controller.dart';
 
 /// The parts of Checkout tutorial, in the order they stand on the screen.
-enum TutorialTab { input, practice, learn, favorites }
+enum TutorialTab { input, practice, learn, favorites, missing }
 
 /// Checkout tutorial, all about one number: Input (a keypad to type it),
 /// Practice (it played out exactly as in Checkout calculator, judged the same
 /// way, but with no clock, no score and nothing saved), Learn (it with the
 /// darts in hand: the route and a miss on boards) and Favorites (its favorite
-/// routes). Next checkout deals a new number, as the calculator does, and it
+/// routes), Missing (a single missed into its neighbours). Next checkout deals a new number, as the calculator does, and it
 /// is in Input too.
 class TutorialSession {
   TutorialSession(
@@ -193,6 +193,15 @@ class TutorialSession {
           ? Phrases.randomEncouragement(_random)
           : null,
     );
+  }
+
+  /// What Learn says about the Practice checkout: optimal, good or wrong, and
+  /// why. Null until it is played out, and for a right "No checkout".
+  PracticeReview? get practiceReview {
+    final judged = result;
+    if (judged == null || judged.isNoCheckoutAnswer) return null;
+    return tutor.review(practiceTarget, practiceDarts, judged.playerRoute,
+        correct: judged.isCorrect, optimal: judged.isOptimal);
   }
 
   /// Checked out on one of the optimal routes; null until it is played out.

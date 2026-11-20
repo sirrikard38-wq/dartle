@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import '../board/board_geometry.dart';
 import 'checkout_route.dart';
 import 'checkout_table.dart';
 import 'choice_advisor.dart';
@@ -24,6 +27,62 @@ final class DartOutcome {
 
   /// It checks out, or a checkout is still there with the darts after it.
   bool get hasCheckout => checkedOut || route != null;
+}
+
+/// How a Practice checkout went.
+enum ReviewKind {
+  /// One of the optimal routes.
+  optimal,
+
+  /// It checks out, but it is not optimal.
+  good,
+
+  /// It does not check out (or "No checkout" on a number that has one).
+  wrong,
+}
+
+/// Why the optimal routes beat a good one.
+enum GoodReason {
+  /// They need fewer darts.
+  fewerDarts,
+
+  /// The first dart's miss into single still leaves a checkout on an optimal
+  /// route, and on the player's it does not.
+  missKeepsCheckout,
+
+  /// Nothing as simple to say.
+  other,
+}
+
+/// What Learn says about the player's checkout in Practice.
+final class PracticeReview {
+  const PracticeReview({
+    required this.kind,
+    required this.route,
+    this.miss,
+    this.reason = GoodReason.other,
+    this.fewestDarts = 0,
+    this.optimalMiss,
+  });
+
+  final ReviewKind kind;
+
+  /// The player's darts (empty for "No checkout").
+  final CheckoutRoute route;
+
+  /// What the player's first dart leaves when it misses into single; null when
+  /// it is a single (or 25), or nothing was thrown.
+  final DartOutcome? miss;
+
+  /// For a good one: why the optimal routes are better.
+  final GoodReason reason;
+
+  /// For [GoodReason.fewerDarts]: how many darts the shortest optimal route has.
+  final int fewestDarts;
+
+  /// For [GoodReason.missKeepsCheckout]: an optimal route's first-dart miss
+  /// into single, which still leaves a checkout.
+  final DartOutcome? optimalMiss;
 }
 
 /// The tutorial card for a number with some darts in hand: what to aim at, what
@@ -126,6 +185,77 @@ class CheckoutTutor {
     if (left == 0 || darts <= 1) return DartOutcome(dart, left, null);
     final routes = _optimal.optimalRoutesIn(left, darts - 1);
     return DartOutcome(dart, left, routes.isEmpty ? null : routes.first);
+  }
+
+  /// Where a throw at [dart] lands when it misses into single: the single of a
+  /// treble or a double, 25 for the Bull. Null for a single or 25.
+  static DartThrow? missIntoSingle(DartThrow dart) {
+    if (dart.isBull) return DartThrow.outerBull;
+    if (dart.isOuterBull || dart.multiplier == Multiplier.single) return null;
+    return DartThrow(Multiplier.single, dart.number);
+  }
+
+  /// What [route]'s first dart leaves on [target] with [darts] darts in hand
+  /// when it misses into single; null when it is a single (or 25).
+  DartOutcome? firstMiss(int target, int darts, CheckoutRoute route) {
+    if (route.darts.isEmpty) return null;
+    final miss = missIntoSingle(route.darts.first);
+    return miss == null ? null : outcome(target, darts, miss);
+  }
+
+  /// The two singles beside the single [dart] as the board hangs: the one
+  /// further left first (16: S8 and S7; 20: S5 and S1). Where both are as far
+  /// left (6 and 11), the higher one is first. Null for anything but a single
+  /// from 1 to 20.
+  static (DartThrow, DartThrow)? sideNeighbours(DartThrow dart) {
+    if (dart.multiplier != Multiplier.single || dart.isOuterBull) return null;
+    final i = boardOrder.indexOf(dart.number);
+    if (i < 0) return null;
+    final n = boardOrder.length;
+    // Clockwise from the top: x grows to the right, y grows upwards.
+    (double, double) at(int slot) {
+      final angle = slot * 2 * math.pi / n;
+      return (math.sin(angle), math.cos(angle));
+    }
+
+    final before = (i + n - 1) % n, after = (i + 1) % n;
+    final (bx, by) = at(before);
+    final (ax, ay) = at(after);
+    final beforeFirst = (bx - ax).abs() < 1e-9 ? by > ay : bx < ax;
+    final a = DartThrow(Multiplier.single, boardOrder[before]);
+    final b = DartThrow(Multiplier.single, boardOrder[after]);
+    return beforeFirst ? (a, b) : (b, a);
+  }
+
+  /// What Learn says about [player], the darts thrown in Practice on [target]
+  /// with [darts] darts in hand, judged [correct] and [optimal].
+  PracticeReview review(int target, int darts, CheckoutRoute player,
+      {required bool correct, required bool optimal}) {
+    final miss = firstMiss(target, darts, player);
+    if (!correct) return PracticeReview(kind: ReviewKind.wrong, route: player, miss: miss);
+    if (optimal) return PracticeReview(kind: ReviewKind.optimal, route: player, miss: miss);
+    final routes = optimalRoutes(target, darts);
+    if (routes.isNotEmpty) {
+      final fewest = routes.map((r) => r.length).reduce(math.min);
+      if (fewest < player.length) {
+        return PracticeReview(
+            kind: ReviewKind.good, route: player, miss: miss, reason: GoodReason.fewerDarts, fewestDarts: fewest);
+      }
+      if (miss != null && !miss.hasCheckout) {
+        for (final route in routes) {
+          final kept = firstMiss(target, darts, route);
+          if (kept != null && kept.hasCheckout) {
+            return PracticeReview(
+                kind: ReviewKind.good,
+                route: player,
+                miss: miss,
+                reason: GoodReason.missKeepsCheckout,
+                optimalMiss: kept);
+          }
+        }
+      }
+    }
+    return PracticeReview(kind: ReviewKind.good, route: player, miss: miss);
   }
 
   /// The card for [target] with [darts] darts in hand; null when the tables
