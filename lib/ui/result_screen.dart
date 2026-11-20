@@ -24,11 +24,12 @@ web.HTMLElement buildResultScreen(ViewContext ctx) {
 /// What the result screen shows of an answer, above its buttons: the verdict,
 /// the number, your darts and the optimal route on boards, and "Also optimal".
 /// [marks] are where the darts were pressed. Checkout tutorial's Practice shows
-/// its answers the same way, but with [listExtras] off: "Also optimal" alone,
-/// no route boxes under it, so its boards can be bigger.
+/// its answers the same way, but with [learnMore]: no "Also optimal" and no
+/// route boxes (so its boards can be bigger), "Go to Learn for more" instead,
+/// which calls it.
 List<web.HTMLElement> resultView(
     ViewContext ctx, AttemptResult result, List<BoardPoint?> marks,
-    {bool listExtras = true}) {
+    {void Function()? learnMore}) {
   final challenge = result.challenge;
   final round = result.round;
   final entered = result.playerRoute.darts;
@@ -78,15 +79,13 @@ List<web.HTMLElement> resultView(
   // "Also optimal". Never the route you entered or the optimal route already on
   // screen - those (and every other optimal route) are in the popup that
   // "Also optimal" opens.
-  final extras = best == null || !listExtras
+  final extras = best == null || learnMore != null
       ? const <CheckoutRoute>[]
       : BetterDoubles.extras(result.optimalRoutes, exclude: [
           if (showBest) best,
           if (showYours) result.playerRoute,
         ]);
-  // Without the boxes, "Also optimal" is there whenever there is more than one.
-  web.HTMLElement? extraBoxes() => extras.isEmpty &&
-          (listExtras || result.optimalRoutes.length < 2)
+  web.HTMLElement? extraBoxes() => extras.isEmpty
       ? null
       : el('div', cls: 'extra-routes', children: [
           // The words "Also optimal" are the button that opens the popup.
@@ -112,7 +111,16 @@ List<web.HTMLElement> resultView(
 
   // "Also optimal" with its boxes (or "Only possibility"): in the middle under
   // the boards - after a miss under both of them, otherwise under the one board.
-  final more = extraBoxes() ?? onlyPossibility;
+  // Tutorial Practice: the rest is in Learn, one press away.
+  final more = learnMore == null
+      ? extraBoxes() ?? onlyPossibility
+      : best == null
+          ? null
+          : el('div', cls: 'learn-more', children: [
+              if (onlyPossibility != null) onlyPossibility,
+              button(tr('Go to Learn for more'),
+                  cls: 'text-link extra-title learn-link', focusKey: 'learn-more', onPressed: (_) => learnMore()),
+            ]);
 
   return [
     el('p',
