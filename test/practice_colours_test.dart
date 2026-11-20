@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// The practice screens (Checkout practice and Checkout input): the number keys
+/// The practice screens (Checkout practice and its Input): the number keys
 /// stay grey, everything else is white - pinned from the stylesheet.
 void main() {
   final css = File('web/styles.css').readAsStringSync();

@@ -22,15 +22,12 @@ import '../stats/statistics_service.dart';
 import '../storage/storage_service.dart';
 import '../timing/attempt_timer.dart';
 import 'game_mode.dart';
+import 'number_input.dart';
 import 'tutorial_session.dart';
 
-/// menu: away from a checkout. entering: Checkout input is waiting for a
-/// number. impossible: the number entered has no checkout. playing / result:
-/// a checkout is on screen / has just been answered.
-enum GamePhase { menu, entering, impossible, playing, result }
-
-/// What happened to a number typed into Checkout input.
-enum NumberEntry { accepted, impossible, outOfRange }
+/// menu: away from a checkout. playing / result: a checkout is on screen / has
+/// just been answered.
+enum GamePhase { menu, playing, result }
 
 /// Everything the result screen needs to display.
 class AttemptResult {
@@ -182,9 +179,13 @@ class GameController {
   /// True while a checkout is being replayed: no clock, no score, no saving.
   bool _replay = false;
 
-  /// Checkout input: the number that has no checkout, and the insult for it.
+  /// Checkout practice: a number typed in Input that has no checkout, and the
+  /// insult for it.
   int? _impossibleNumber;
   String? _insult;
+
+  /// Checkout practice's Input keypad.
+  late final NumberInput numberInput = NumberInput(now: _now);
 
   String _playerName = defaultPlayerName;
   bool _needsPlayerName = true;
@@ -210,7 +211,8 @@ class GameController {
   /// Replay session, which starts a new one (and a new score).
   bool get isSessionOver => _sessionOver;
 
-  /// Checkout input: the number with no checkout, and the insult shown for it.
+  /// Checkout practice: a number typed in Input with no checkout (Play says so,
+  /// with the insult), or null.
   int? get impossibleNumber => _impossibleNumber;
   String? get insult => _insult;
 
@@ -254,7 +256,7 @@ class GameController {
     return _optimal.optimalRoutesIn(challenge.target, challenge.darts);
   }
 
-  /// Practice and Checkout input: the number on screen can be played with two
+  /// Practice: the number on screen can be played with two
   /// or three darts and at most one dart has been thrown, so pressing the boxes
   /// switches between them (after a dart, the darts thrown stay).
   bool get canChooseDarts {
@@ -372,9 +374,8 @@ class GameController {
     _notify();
   }
 
-  /// Begins a new session in [mode]. Checkout calculator and practice show the
-  /// first checkout; Checkout input waits for a number. With no [level] every
-  /// checkout number is equally likely.
+  /// Begins a new session in [mode] with its first checkout. With no [level]
+  /// every checkout number is equally likely.
   void startGame([DifficultyLevel? level, GameMode mode = GameMode.calculator]) {
     _mode = mode;
     _difficulty = level;
@@ -385,32 +386,40 @@ class GameController {
     _sessionOver = false;
     _replay = false;
     _generator.reset();
-    if (mode == GameMode.input) {
-      _waitForNumber();
-    } else {
-      _nextChallenge();
-    }
+    _nextChallenge();
   }
 
-  /// Checkout input: the player entered [number]. A number that can be checked
-  /// out starts the game on it; one that cannot shows the "impossible" screen;
-  /// anything outside 2 to 170 is refused.
-  NumberEntry enterNumber(int number) {
-    if (_phase != GamePhase.entering) return NumberEntry.outOfRange;
-    if (number < CheckoutEngine.minCheckout || number > CheckoutEngine.maxCheckout) {
-      return NumberEntry.outOfRange;
+  /// Checkout practice's Input: types a digit ([NumberInput.type]). A number
+  /// from 2 to 170 is at once the one Play plays, with the darts it would be
+  /// dealt with; one with no checkout says so in Play, with an insult.
+  void typeDigit(int digit) {
+    if (_mode != GameMode.choice || _phase != GamePhase.playing) return;
+    numberInput.type(digit);
+    _playTyped();
+  }
+
+  /// Checkout practice's Input: takes the last digit away (UNDO).
+  void deleteDigit() {
+    if (_mode != GameMode.choice || _phase != GamePhase.playing) return;
+    numberInput.delete();
+    _playTyped();
+  }
+
+  void _playTyped() {
+    final number = numberInput.number;
+    if (number == null || number == (_impossibleNumber ?? _challenge?.target)) {
+      _notify();
+      return;
     }
     final challenge = _generator.forNumber(number);
     if (challenge == null) {
       _impossibleNumber = number;
       _insult = Phrases.randomInsult(_random);
-      _phase = GamePhase.impossible;
       _notify();
-      return NumberEntry.impossible;
+      return;
     }
     _replay = false;
     _begin(challenge);
-    return NumberEntry.accepted;
   }
 
   /// Fills the next free box. Ignored when the hand is full or not playing.
@@ -520,17 +529,13 @@ class GameController {
   /// on after [isSessionOver]).
   void replaySession() => startGame(_difficulty, _mode);
 
-  /// Continues: the next number (Checkout input: back to typing a number).
+  /// Continues: the next number (also from a typed number with no checkout).
   /// Not once the session is over.
   void nextCheckout() {
-    if (_phase != GamePhase.result && _phase != GamePhase.impossible) return;
+    if (_phase != GamePhase.result && _impossibleNumber == null) return;
     if (_sessionOver) return;
     _replay = false;
-    if (_mode == GameMode.input) {
-      _waitForNumber();
-    } else {
-      _nextChallenge();
-    }
+    _nextChallenge();
   }
 
   /// Plays the number just finished again from the start. A replay has no
@@ -627,21 +632,12 @@ class GameController {
     }
   }
 
-  void _waitForNumber() {
-    _challenge = null;
-    _round = null;
-    _result = null;
-    _impossibleNumber = null;
-    _insult = null;
-    _entered.clear();
-    _timer.stop();
-    _phase = GamePhase.entering;
-    _notify();
-  }
-
   void _nextChallenge() {
     final deal = _mode == GameMode.calculator ? Deal.calculator : Deal.practice;
-    _begin(_generator.next(_difficulty, deal));
+    final challenge = _generator.next(_difficulty, deal);
+    // Checkout practice: the number dealt is in Input too.
+    if (_mode == GameMode.choice) numberInput.show(challenge.target);
+    _begin(challenge);
   }
 
   void _begin(Challenge challenge) {

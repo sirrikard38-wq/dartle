@@ -21,7 +21,7 @@ class OptimalRouteService {
   final Map<(int, int), List<CheckoutRoute>> _cache = {};
 
   /// A two-dart number above this can come with three darts in the calculator;
-  /// up to it, three darts are a choice in Checkout practice and Checkout input.
+  /// up to it, three darts are a choice in Checkout practice.
   static const int threeDartAbove = 60;
 
   /// The optimal routes for [target] with [darts] darts in hand, the table's own
@@ -191,7 +191,7 @@ class OptimalRouteService {
       optimalRoutesIn(target, 3).isNotEmpty;
 
   /// True when [target] is a two-dart number up to 60, which can be played with
-  /// three darts by choice in Checkout practice and Checkout input.
+  /// three darts by choice in Checkout practice.
   bool hasPracticeThreeDartOption(int target) =>
       _engine.minimumDarts(target) == 2 &&
       target <= threeDartAbove &&

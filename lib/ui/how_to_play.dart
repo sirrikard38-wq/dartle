@@ -20,7 +20,7 @@ web.HTMLElement buildHowToPlay(GameController game) {
     el('summary', text: tr('How to play')),
     if (practice)
       section(
-          tr(game.mode == GameMode.input ? 'Checkout input' : 'Checkout practice'),
+          tr('Checkout practice'),
           tr('Choose your own darts to check the number out. The big number is what '
               'you still need. Before every dart the board lights up the optimal darts '
               'in grey and fades the rest, so you can see where to aim. Press anywhere '

@@ -9,13 +9,11 @@ import 'dom.dart';
 import 'favorites_ui.dart';
 import 'footer.dart';
 import 'game_screen.dart';
-import 'impossible_screen.dart';
 import 'install.dart';
 import 'leaderboard_screen.dart';
 import 'menu_screen.dart';
 import 'modal.dart';
 import 'modes_screen.dart';
-import 'number_entry_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
 import 'swipes.dart';
@@ -42,7 +40,6 @@ class DartleApp {
         if (phase == GamePhase.playing) {
           _ctx.pickedMultiplier = ViewContext.startingMultiplier(_game.challenge);
         }
-        if (phase == GamePhase.entering) _ctx.numberBuffer = '';
         // Celebrate the moment an optimal checkout is revealed (not in a replay).
         final result = _game.lastResult;
         if (phase == GamePhase.result &&
@@ -122,8 +119,6 @@ class DartleApp {
     final screen = switch (_game.phase) {
       GamePhase.playing => buildGameScreen(_ctx),
       GamePhase.result => buildResultScreen(_ctx),
-      GamePhase.entering => buildNumberEntryScreen(_ctx),
-      GamePhase.impossible => buildImpossibleScreen(_ctx),
       GamePhase.menu => switch (_page) {
           MenuPage.welcome => buildWelcomeScreen(_ctx),
           MenuPage.home => buildMenuScreen(_ctx),
@@ -386,32 +381,8 @@ class DartleApp {
             _game.nextCheckout();
           }
         }
-      case GamePhase.entering:
-        _onEntryKey(event, onButton);
-      case GamePhase.impossible:
-        if (event.key == 'Enter' && !onButton) {
-          final next = _root.querySelector('[data-focus="next"]');
-          if (next != null && !next.hasAttribute('disabled')) {
-            event.preventDefault();
-            _game.nextCheckout();
-          }
-        }
       case GamePhase.menu:
         break;
-    }
-  }
-
-  /// Checkout input: type the number on the keyboard too.
-  void _onEntryKey(web.KeyboardEvent event, bool onButton) {
-    final key = event.key;
-    if (key == 'Backspace') {
-      event.preventDefault();
-      deleteNumberDigit(_ctx);
-    } else if (key == 'Enter' && !onButton) {
-      event.preventDefault();
-      submitNumber(_ctx);
-    } else if (key.length == 1 && '0123456789'.contains(key)) {
-      typeNumberDigit(_ctx, key);
     }
   }
 

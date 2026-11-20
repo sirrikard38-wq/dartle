@@ -69,7 +69,7 @@ List<web.HTMLElement> resultView(
   final showBest = best != null && !result.isOptimal;
 
   // Every optimal route, each with its marked board and boxes, in a popup: all
-  // of them, the same as Checkout input lights up. It opens from "Also optimal"
+  // of them, the same as Checkout practice lights up. It opens from "Also optimal"
   // (there is no separate link and the popup has no title of its own). Each
   // board has the favorite dart in its corner.
   void openPossibilities() =>

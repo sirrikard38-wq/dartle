@@ -31,6 +31,7 @@ export 'src/favorites/favorites.dart';
 export 'src/game/app_factory.dart';
 export 'src/game/game_controller.dart';
 export 'src/game/game_mode.dart';
+export 'src/game/number_input.dart';
 export 'src/game/tutorial_session.dart';
 export 'src/i18n/i18n.dart';
 export 'src/leaderboard/leaderboard_service.dart';

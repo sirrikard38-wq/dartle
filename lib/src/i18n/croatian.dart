@@ -21,7 +21,6 @@ const Map<String, String> croatian = {
   'Checkout calculator by PK Normal': 'Checkout kalkulator, autor PK Normal',
   'Checkout calculator': 'Checkout kalkulator',
   'Checkout practice': 'Checkout vježba',
-  'Checkout input': 'Checkout unos',
   'Checkout tutorial': 'Checkout učenje',
   'Learn what to aim at, and why.': 'Nauči što gađati i zašto.',
   'Learn': 'Učenje',
@@ -80,7 +79,6 @@ const Map<String, String> croatian = {
   'Fill the boxes with the optimal checkout for the darts you have left.':
       'Popuni kućice optimalnim checkoutom za strelice koje ti ostaju.',
   'Choose your own optimal route.': 'Odaberi vlastitu optimalnu rutu.',
-  'See the possibilities, enter a number.': 'Pogledaj mogućnosti, upiši broj.',
 
   // --------------------------------------------------------------- header
   'Current score': 'Trenutni rezultat',
@@ -107,9 +105,7 @@ const Map<String, String> croatian = {
 
   // ------------------------------------------------------- number entry
   'UNDO': 'PONIŠTI',
-  'ENTER': 'UNESI',
   'Delete the last digit': 'Obriši zadnju znamenku',
-  'Press ENTER to play it.': 'Pritisni UNESI za igru.',
   'A number from 2 to 170.': 'Broj od 2 do 170.',
   'No number yet': 'Još nema broja',
   'Number {n}': 'Broj {n}',

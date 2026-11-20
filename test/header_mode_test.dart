@@ -40,7 +40,7 @@ void main() {
 
     test('the modes keep their names, which the menus and the buttons use', () {
       expect(GameMode.values.map((m) => m.label),
-          ['Checkout calculator', 'Checkout practice', 'Checkout input']);
+          ['Checkout calculator', 'Checkout practice']);
     });
   });
 

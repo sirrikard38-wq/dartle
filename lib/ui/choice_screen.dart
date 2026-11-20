@@ -15,14 +15,17 @@ TileState tileStateFor(DartQuality quality) => switch (quality) {
       DartQuality.poor || DartQuality.bust => TileState.absent,
     };
 
-/// Checkout practice and Checkout input: pick your own darts one at a time.
-/// The big number is what you still need. Before every choice the board lights
-/// up the optimal darts; once you press one it plays out like Checkout
-/// calculator - the tile is coloured and your mark is left on the board - and
-/// the board then lights up the optimal darts for the new number.
+/// Checkout practice: Input | Play | Learn, as in Checkout tutorial. Input types
+/// the number to play (at once the one Play and Learn show; a number dealt by
+/// Next checkout is in it too). Play: pick your own darts one at a time. The
+/// big number is what you still need. Before every choice the board lights up
+/// the optimal darts; once you press one it plays out like Checkout calculator
+/// - the tile is coloured and your mark is left on the board - and the board
+/// then lights up the optimal darts for the new number.
 web.HTMLElement buildChoiceScreen(ViewContext ctx) {
   final game = ctx.game;
   final round = game.round!;
+  final impossible = game.impossibleNumber;
   final steps = round.steps;
   ctx.syncMarks();
 
@@ -38,7 +41,16 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
   final choose = game.canChooseDarts;
   final other = round.maxDarts == 3 ? 2 : 3;
 
-  web.HTMLElement play() => el('div', cls: 'tab-page', children: [
+  // A number typed in Input with no checkout: Play says so, with an insult,
+  // and Next checkout deals another.
+  web.HTMLElement noCheckout(int number) => el('div', cls: 'tab-page play-area', children: [
+        el('p', cls: 'target small', text: '$number'),
+        el('p', cls: 'impossible-title', text: tr('This number is impossible to checkout.'), attrs: {'role': 'status'}),
+        el('p', cls: 'insult', text: game.insult ?? ''),
+        button(tr('Next checkout'), cls: 'cta', focusKey: 'next', onPressed: (_) => game.nextCheckout()),
+      ]);
+
+  web.HTMLElement play() => impossible != null ? noCheckout(impossible) : el('div', cls: 'tab-page', children: [
     el('div', cls: 'play-area', children: [
       el('p', cls: 'meta', text: tr('Finish on a double or Bull.')),
       el('p', cls: 'target', text: '${round.remaining}', attrs: {
@@ -71,6 +83,12 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
   // Learn: what to aim at on the number on screen with the darts left - the
   // route and a miss, the same boards as Checkout tutorial.
   web.HTMLElement learn() {
+    if (impossible != null) {
+      return el('div', cls: 'tab-page play-area', children: [
+        el('p', cls: 'target', text: '$impossible'),
+        el('p', cls: 'hint', text: tr('This number is impossible to checkout.')),
+      ]);
+    }
     final card = game.tutorial.tutor.card(round.remaining, round.dartsLeft);
     return el('div', cls: 'tab-page play-area', children: [
       el('p', cls: 'target', text: '${round.remaining}'),
@@ -83,10 +101,16 @@ web.HTMLElement buildChoiceScreen(ViewContext ctx) {
     swipeTabs(
       ctx,
       name: 'choice',
-      labels: [tr('Play'), tr('Learn')],
-      index: ctx.learning ? 1 : 0,
-      choose: (i) => ctx.learning = i == 1,
-      pageOf: (i) => i == 1 ? learn() : play(),
+      labels: [tr('Input'), tr('Play'), tr('Learn')],
+      index: ctx.choiceTab,
+      choose: (i) => ctx.choiceTab = i,
+      pageOf: (i) => switch (i) {
+        0 => el('div',
+            cls: 'tutorial-page tab-input',
+            children: inputPage(ctx, game.numberInput.digits, onDigit: game.typeDigit, onDelete: game.deleteDigit)),
+        2 => learn(),
+        _ => play(),
+      },
     ),
   ]);
 }

@@ -4,8 +4,8 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
-/// After Start: pick Checkout calculator, Checkout practice, Checkout input or
-/// Checkout tutorial.
+/// After Start: pick Checkout calculator, Checkout practice or Checkout
+/// tutorial.
 web.HTMLElement buildModesScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -14,7 +14,10 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
         cls: 'mode-card',
         focusKey: 'mode-${mode.name}',
         ariaLabel: '${tr(mode.label)}: ${tr(mode.blurb)}',
-        onPressed: (_) => game.startGame(null, mode));
+        onPressed: (_) {
+          ctx.choiceTab = 1; // a new game starts on Play
+          game.startGame(null, mode);
+        });
     b.appendChild(el('strong', text: tr(mode.label)));
     b.appendChild(el('span', text: tr(mode.blurb)));
     return b;

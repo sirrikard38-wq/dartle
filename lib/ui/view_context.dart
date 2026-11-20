@@ -31,13 +31,9 @@ class ViewContext {
   /// "single". It stays selected across darts until changed.
   Multiplier? pickedMultiplier;
 
-  /// Checkout input: the digits typed so far.
-  String numberBuffer = '';
-
-  /// Checkout practice and Checkout input: the Learn page is showing (the
-  /// route and a miss for the number on screen) instead of Play. It stays from
-  /// one number to the next.
-  bool learning = false;
+  /// Checkout practice: the page showing, 0 Input, 1 Play, 2 Learn. It stays
+  /// from one number to the next; a new game starts on Play.
+  int choiceTab = 1;
 
   /// Where each entered dart landed on the board, aligned with
   /// `game.entered`. An entry is null when the dart was not entered by

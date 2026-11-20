@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:test/test.dart';
 
-/// The number keys of Checkout input are grey, not white - pinned from the
+/// The number keys of the Input keypad are grey, not white - pinned from the
 /// stylesheet (it is drawn in the browser).
 void main() {
   final css = File('web/styles.css').readAsStringSync();

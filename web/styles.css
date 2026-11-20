@@ -1065,27 +1065,35 @@ summary { cursor: pointer; color: var(--muted); }
   margin: 0; line-height: 1.05;
 }
 .input-top .hint { min-height: 1.4em; margin: 6px 0 0; }
-.input-title { margin: 10px 0 0; font-size: 1rem; font-weight: 700; text-align: center; padding: 0 16px; color: var(--muted); }
-/* The words at the top, the number in the room between them and the keypad:
-   raised a sixth of its height, so the middle of the room runs through its
-   lower third. What it says hangs under it and moves nothing. */
-.input-top { justify-content: flex-start; }
-.input-number { flex: 1 1 0; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
-.number-wrap { position: relative; transform: translateY(-16.7%); }
+.input-title { margin: 20px 0 0; font-size: 1rem; font-weight: 700; text-align: center; padding: 0 16px; color: var(--muted); }
+/* The words at the top, the number in the middle of the room between them and
+   the keypad. What it says hangs under it and moves nothing. */
+.input-top { justify-content: flex-start; flex: none; }
+/* The room for the number: the words and the keypad close together (half as
+   far apart as when the room took all the height). */
+.input-number { flex: none; height: clamp(110px, 19vh, 170px); height: clamp(110px, 19dvh, 170px); width: 100%; display: flex; align-items: center; justify-content: center; }
+.number-wrap { position: relative; }
 .input-top .number-wrap .hint {
   position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   width: max-content; max-width: calc(100vw - 32px); min-height: 0; margin: 4px 0 0; text-align: center;
 }
-.screen.tutorial .tab-input .keypad {
+/* Input (tutorial and Checkout practice): the keypad right under the number. */
+.screen .tab-input .keypad {
   width: min(100%, 360px); grid-template-columns: repeat(3, 1fr); gap: 8px;
   padding: 0 16px; margin: 6px auto 12px;
 }
-.screen.tutorial .tab-input .pad-key {
+.screen .tab-input .pad-key {
   height: clamp(46px, 8vh, 64px); height: clamp(46px, 8dvh, 64px);
   font-size: 1.5rem; border-radius: 4px;
 }
-.screen.tutorial .tab-input .pad-undo { font-size: 0.85rem; gap: 6px; }
-.screen.tutorial .tab-input .pad-undo svg { width: 18px; height: 18px; }
+.screen .tab-input .pad-undo { font-size: 0.85rem; gap: 6px; }
+.screen .tab-input .pad-undo svg { width: 18px; height: 18px; }
+/* Input open: the tutorial leaves room again for the links at the foot
+   (Install, Instagram, Email), which then show. */
+.screen.tutorial.on-input {
+  height: calc(100vh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
 /* Learn and Missing: the routes in columns, a heading over each column once
    ("Route" and "Miss into single"; "Left neighbour", "Route", "Right
    neighbour"). Each board is as wide as its column (170px at the most) and

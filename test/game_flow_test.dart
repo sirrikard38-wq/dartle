@@ -28,6 +28,13 @@ void main() {
       );
 
   /// Starts calculator checkouts until one is dealt that [wanted] accepts.
+  // Checkout practice's Input: types [n] as a new number (Play plays it at once).
+  void typeNumber(int n) {
+    for (final digit in '$n'.split('')) {
+      game.typeDigit(int.parse(digit));
+    }
+  }
+
   void dealUntil(bool Function(Challenge c) wanted, {GameMode mode = GameMode.calculator}) {
     for (var i = 0; i < 5000; i++) {
       game.startGame(null, mode);
@@ -149,7 +156,7 @@ void main() {
       expect(GameMode.calculator.hasSound, isTrue);
       expect(GameMode.calculator.isRecorded, isTrue);
       expect(GameMode.calculator.isChallenge, isTrue);
-      for (final mode in [GameMode.choice, GameMode.input]) {
+      for (final mode in [GameMode.choice]) {
         expect(mode.hasSound, isFalse, reason: mode.name);
         expect(mode.isRecorded, isFalse, reason: mode.name);
         expect(mode.isChallenge, isFalse, reason: mode.name);
@@ -497,8 +504,8 @@ void main() {
         game.startGame(null, mode);
         expect(game.undosLeft, isNull);
       }
-      game.startGame(null, GameMode.input);
-      expect(game.enterNumber(85), NumberEntry.accepted);
+      game.startGame(null, GameMode.choice);
+      typeNumber(85);
       expect(game.undosLeft, isNull);
     });
   });
@@ -640,72 +647,70 @@ void main() {
     });
   });
 
-  group('Checkout input', () {
-    test('waits for a number, with no checkout on screen', () {
-      game.startGame(null, GameMode.input);
-      expect(game.phase, GamePhase.entering);
-      expect(game.challenge, isNull);
-      expect(game.round, isNull);
+  group('Checkout practice: Input', () {
+    test('the number dealt is in Input too; the next digit starts a new number', () {
+      game.startGame(null, GameMode.choice);
+      expect(game.numberInput.digits, '${game.challenge!.target}');
+      game.typeDigit(5);
+      expect(game.numberInput.digits, '5');
     });
 
-    test('numbers below 2 and above 170 are refused', () {
-      game.startGame(null, GameMode.input);
-      for (final n in [-5, 0, 1, 171, 999]) {
-        expect(game.enterNumber(n), NumberEntry.outOfRange, reason: '$n');
-        expect(game.phase, GamePhase.entering);
-      }
+    test('numbers below 2 and above 170 change nothing', () {
+      game.startGame(null, GameMode.choice);
+      final dealt = game.challenge!.target;
+      typeNumber(1);
+      expect(game.challenge!.target, dealt);
+      game.startGame(null, GameMode.choice);
+      typeNumber(171);
+      expect(game.numberInput.number, isNull);
+      expect(game.challenge!.target, 17, reason: 'the last number that could be played');
     });
 
-    test('a number with a checkout starts a practice round on it', () async {
-      game.startGame(null, GameMode.input);
-      expect(game.enterNumber(57), NumberEntry.accepted);
+    test('a number with a checkout is at once the round played', () async {
+      game.startGame(null, GameMode.choice);
+      typeNumber(57);
       expect(game.phase, GamePhase.playing);
       expect(game.challenge!.target, 57);
-      expect(game.round, isNotNull);
       expect(game.round!.target, 57);
       expect(game.choiceHints, isNotEmpty);
       await followAdvice();
       expect(game.lastResult!.isCorrect && game.lastResult!.isOptimal, isTrue);
-      expect(game.history, isEmpty, reason: 'nothing is saved in Checkout input');
+      expect(game.history, isEmpty, reason: 'nothing is saved in Checkout practice');
       expect(game.lastResult!.score.kind, ScoreKind.none);
     });
 
     test('one-dart numbers are allowed here', () {
-      game.startGame(null, GameMode.input);
-      expect(game.enterNumber(40), NumberEntry.accepted);
+      game.startGame(null, GameMode.choice);
+      typeNumber(40);
       expect(game.challenge!.dartCount, 1);
       expect(game.round!.dartsLeft, 1);
       expect(game.choiceHints, {DartThrow.parse('D20')});
     });
 
-    test('a number with no checkout shows the impossible screen and an insult', () {
-      game.startGame(null, GameMode.input);
+    test('a number with no checkout says so, with an insult; Next checkout deals another', () {
       for (final n in [159, 162, 163, 165, 166, 168, 169]) {
-        game.startGame(null, GameMode.input);
-        expect(game.enterNumber(n), NumberEntry.impossible, reason: '$n');
-        expect(game.phase, GamePhase.impossible);
-        expect(game.impossibleNumber, n);
+        game.startGame(null, GameMode.choice);
+        typeNumber(n);
+        expect(game.impossibleNumber, n, reason: '$n');
         expect(Phrases.insults, contains(game.insult));
-        expect(game.challenge, isNull, reason: 'no game is shown');
       }
-    });
-
-    test('Next checkout goes back to typing a number, from every screen', () async {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(169);
       game.nextCheckout();
-      expect(game.phase, GamePhase.entering);
       expect(game.impossibleNumber, isNull);
-
-      game.enterNumber(85);
-      await followAdvice();
-      game.nextCheckout();
-      expect(game.phase, GamePhase.entering);
+      expect(game.phase, GamePhase.playing);
+      expect(game.numberInput.digits, '${game.challenge!.target}');
+      // A number that can be played clears it too.
+      typeNumber(169);
+      for (var i = 0; i < 3; i++) {
+        game.deleteDigit(); // UNDO, three times
+      }
+      typeNumber(85);
+      expect(game.impossibleNumber, isNull);
+      expect(game.challenge!.target, 85);
     });
 
     test('Replay checkout plays the same number again', () async {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(85);
+      game.startGame(null, GameMode.choice);
+      typeNumber(85);
       await followAdvice();
       game.replayCheckout();
       expect(game.challenge!.target, 85);
@@ -713,20 +718,20 @@ void main() {
       expect(game.isReplay, isTrue);
     });
 
-    test('a number is only accepted while waiting for one', () {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(85);
-      expect(game.enterNumber(57), NumberEntry.outOfRange);
-      expect(game.challenge!.target, 85);
+    test('nothing is typed into Checkout calculator', () {
+      game.startGame(null, GameMode.calculator);
+      final dealt = game.challenge!.target;
+      typeNumber(85);
+      expect(game.challenge!.target, dealt);
     });
   });
 
   test('every mode but the calculator is excluded from statistics and the leaderboard', () async {
-    for (final mode in [GameMode.choice, GameMode.input]) {
-      game.startGame(null, mode);
-      if (mode == GameMode.input) game.enterNumber(72);
-      await followAdvice();
-    }
+    game.startGame(null, GameMode.choice);
+    await followAdvice();
+    game.startGame(null, GameMode.choice);
+    typeNumber(72); // a number typed in Input
+    await followAdvice();
     expect(game.history, isEmpty);
     expect(game.summary.totalAttempts, 0);
     expect(game.sessionPoints, 0);
@@ -771,9 +776,9 @@ void main() {
       expect(game.sessionStreak, 1);
     });
 
-    test('practice and input: pressing the boxes switches between two and three darts', () {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(64);
+    test('practice: pressing the boxes switches between two and three darts', () {
+      game.startGame(null, GameMode.choice);
+      typeNumber(64);
       expect(game.challenge!.darts, 2, reason: 'a typed number starts on its fewest darts');
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts();
@@ -791,8 +796,8 @@ void main() {
     });
 
     test('after the first dart the boxes still switch, and the dart stays', () {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(68);
+      game.startGame(null, GameMode.choice);
+      typeNumber(68);
       game.chooseOtherDarts(); // three darts
       expect(game.choiceHints, {for (final d in ['T12', 'T20', 'T16', 'T18']) DartThrow.parse(d)});
       game.selectDart(DartThrow.parse('T12')); // leaves 32
@@ -807,8 +812,8 @@ void main() {
     });
 
     test('88: T20 leaves D14 - lit with three darts and with two', () {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(88);
+      game.startGame(null, GameMode.choice);
+      typeNumber(88);
       game.chooseOtherDarts(); // three darts
       game.selectDart(DartThrow.parse('T20'));
       expect(game.choiceHints, {DartThrow.parse('D14')});
@@ -818,20 +823,20 @@ void main() {
 
     test('one- and three-dart numbers have no choice; every two-dart number has', () {
       for (final n in [40, 50, 150]) {
-        game.startGame(null, GameMode.input);
-        game.enterNumber(n);
+        game.startGame(null, GameMode.choice);
+        typeNumber(n);
         expect(game.canChooseDarts, isFalse, reason: '$n');
       }
       for (final n in [3, 47, 60, 61]) {
-        game.startGame(null, GameMode.input);
-        game.enterNumber(n);
+        game.startGame(null, GameMode.choice);
+        typeNumber(n);
         expect(game.canChooseDarts, isTrue, reason: '$n');
       }
     });
 
     test('47 with three darts: S7, then D20 finishes with a dart in hand and is optimal', () async {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(47);
+      game.startGame(null, GameMode.choice);
+      typeNumber(47);
       expect(game.challenge!.darts, 2); // under 60 it starts on two darts
       expect(game.canChooseDarts, isTrue);
       game.chooseOtherDarts();
@@ -850,8 +855,8 @@ void main() {
     });
 
     test('47 with three darts: the double missed into S20, then D10 checks out', () async {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(47);
+      game.startGame(null, GameMode.choice);
+      typeNumber(47);
       game.chooseOtherDarts();
       game.selectDart(DartThrow.parse('S7'));
       game.selectDart(DartThrow.parse('S20'));
@@ -863,8 +868,8 @@ void main() {
     });
 
     test('47: three darts back to two after the first dart lights the double of two darts', () {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(47);
+      game.startGame(null, GameMode.choice);
+      typeNumber(47);
       game.chooseOtherDarts();
       game.selectDart(DartThrow.parse('S7'));
       expect(game.canChooseDarts, isTrue);
@@ -879,8 +884,8 @@ void main() {
     });
 
     test('74 with three darts: T14 then D16 with a dart in hand is the table\'s route: optimal', () async {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(74);
+      game.startGame(null, GameMode.choice);
+      typeNumber(74);
       game.chooseOtherDarts();
       expect(game.challenge!.darts, 3);
       expect(game.choiceHints, contains(DartThrow.parse('T14')));
@@ -896,8 +901,8 @@ void main() {
     });
 
     test('64 with three darts: the two-dart T14 D11 is good, but not in the given number of darts', () async {
-      game.startGame(null, GameMode.input);
-      game.enterNumber(64);
+      game.startGame(null, GameMode.choice);
+      typeNumber(64);
       game.chooseOtherDarts();
       game.selectDart(DartThrow.parse('T14')); // not lit with three darts: T16 and T8
       game.selectDart(DartThrow.parse('D11'));

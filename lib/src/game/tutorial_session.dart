@@ -4,12 +4,12 @@ import '../board/board_geometry.dart';
 import '../content/phrases.dart';
 import '../domain/challenge.dart';
 import '../domain/challenge_generator.dart';
-import '../domain/checkout_engine.dart';
 import '../domain/checkout_tutor.dart';
 import '../domain/checkout_validator.dart';
 import '../domain/dart_throw.dart';
 import '../scoring/scoring_service.dart';
 import 'game_controller.dart';
+import 'number_input.dart';
 
 /// The parts of Checkout tutorial, in the order they stand on the screen.
 enum TutorialTab { input, practice, learn, favorites, missing }
@@ -30,7 +30,7 @@ class TutorialSession {
   })  : _generator = generator,
         _validator = validator,
         _random = random ?? Random(),
-        _now = now ?? DateTime.now {
+        input = NumberInput(now: now) {
     newQuestion();
   }
 
@@ -38,17 +38,21 @@ class TutorialSession {
   final ChallengeGenerator _generator;
   final CheckoutValidator _validator;
   final Random _random;
-  final DateTime Function() _now;
+
+  /// Input's keypad: the digits typed and when.
+  final NumberInput input;
 
   TutorialTab tab = TutorialTab.practice;
 
-  /// Input: the digits typed (empty for none). Learn: the darts in hand.
-  String typedDigits = '';
+  /// Input: the digits typed (empty for none).
+  String get typedDigits => input.digits;
+
+  /// Learn: the darts in hand.
   int learnDarts = 3;
 
   /// This long after the last key, the next digit starts a new number instead
   /// of going on the end of the old one.
-  static const Duration freshAfter = Duration(seconds: 3);
+  static const Duration freshAfter = NumberInput.freshAfter;
 
   /// Practice: the number dealt, the darts thrown at it so far with where each
   /// was pressed on the board (null when typed), and the verdict once it is
@@ -59,47 +63,24 @@ class TutorialSession {
   AttemptResult? result;
 
   /// The number typed, when the digits make one from 2 to 170.
-  int? get typedTarget => _number(typedDigits);
+  int? get typedTarget => input.number;
 
   /// The number Practice plays, Learn shows its card for and Favorites its
   /// favorites: the last one typed from 2 to 170, or dealt.
   int get shownTarget => practice.target;
-
-  static int? _number(String digits) {
-    final value = int.tryParse(digits);
-    return value != null && value >= CheckoutEngine.minCheckout && value <= CheckoutEngine.maxCheckout
-        ? value
-        : null;
-  }
-
-  /// Input holds a number that was dealt (Next checkout), not typed: the next
-  /// digit starts a new number.
-  bool _dealt = false;
-
-  /// When a key of Input was last pressed.
-  DateTime? _typedAt;
 
   /// Types a digit of the number (three at the most, no leading zero). After a
   /// dealt number, or [freshAfter] since the last key, it starts a new number.
   /// A number from 2 to 170 is at once the one Practice, Learn and Favorites
   /// show.
   void typeDigit(int digit) {
-    final now = _now();
-    final last = _typedAt;
-    if (_dealt || (last != null && now.difference(last) >= freshAfter)) typedDigits = '';
-    _dealt = false;
-    _typedAt = now;
-    if (typedDigits.length >= 3 || (typedDigits.isEmpty && digit == 0)) return;
-    typedDigits += '$digit';
+    input.type(digit);
     _showTyped();
   }
 
   /// Takes the last digit away (UNDO); the number left is the one shown.
   void deleteDigit() {
-    _dealt = false;
-    _typedAt = _now();
-    if (typedDigits.isEmpty) return;
-    typedDigits = typedDigits.substring(0, typedDigits.length - 1);
+    input.delete();
     _showTyped();
   }
 
@@ -125,8 +106,7 @@ class TutorialSession {
   /// it too.
   void play(Challenge challenge) {
     _setPractice(challenge);
-    typedDigits = '${challenge.target}';
-    _dealt = true;
+    input.show(challenge.target);
   }
 
   void _setPractice(Challenge challenge) {

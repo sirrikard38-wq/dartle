@@ -45,7 +45,7 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
       TutorialTab.missing => _missing(ctx, session),
     }),
   )..classList.add('play-area');
-  return el('main', cls: 'screen tutorial', children: [area]);
+  return el('main', cls: 'screen tutorial${session.tab == TutorialTab.input ? ' on-input' : ''}', children: [area]);
 }
 
 /// Chips over pages side by side ([labels], the page [index] showing): a press
@@ -107,15 +107,19 @@ web.HTMLElement swipeTabs(
 /// Input: the number, what it says, and the keypad. A number from 2 to 170 is
 /// at once the one Practice, Learn and Favorites show. Three seconds after the
 /// last key (or after Next checkout) the next digit starts a new number.
-List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) {
-  final digits = session.typedDigits;
+List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) =>
+    inputPage(ctx, session.typedDigits, onDigit: session.typeDigit, onDelete: session.deleteDigit);
 
+/// The Input page of Checkout tutorial and Checkout practice: the words, the
+/// [digits] typed with what they say, and the keypad ([onDigit], [onDelete]).
+List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
+    {required void Function(int digit) onDigit, required void Function() onDelete}) {
   web.HTMLButtonElement digit(int n) => button('$n',
       cls: 'key pad-key',
       focusKey: 'input-digit-$n',
       onPressed: (kb) {
-        session.typeDigit(n);
         ctx.keepFocus(kb ? 'input-digit-$n' : null);
+        onDigit(n);
         ctx.rerender();
       });
 
@@ -125,14 +129,14 @@ List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) {
       ariaLabel: tr('Delete the last digit'),
       disabled: digits.isEmpty,
       onPressed: (kb) {
-        session.deleteDigit();
         ctx.keepFocus(kb ? 'input-undo' : null);
+        onDelete();
         ctx.rerender();
       });
   undo.insertBefore(undoIcon(), undo.firstChild);
 
-  // What the number says, as Checkout input does: a number outside 2 to 170,
-  // or one that cannot be checked out at all.
+  // What the number says: a number outside 2 to 170, or one that cannot be
+  // checked out at all.
   final typed = int.tryParse(digits);
   final String line;
   if (typed == null) {

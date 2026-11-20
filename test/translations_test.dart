@@ -176,7 +176,6 @@ void main() {
       I18n.current = Language.hr;
       expect(tr(GameMode.calculator.label), 'Checkout kalkulator');
       expect(tr(GameMode.choice.label), 'Checkout vježba');
-      expect(tr(GameMode.input.label), 'Checkout unos');
       expect(tr(LeaderboardSort.points.label), 'Ukupno bodova');
       final score = const ScoringService().score(
         correct: true,

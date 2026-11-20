@@ -74,12 +74,10 @@ void mirrorAndBackTests() {
   });
 
   group('the Back dart goes one step back', () {
-    test('from a game, a result or the number pad: the game modes', () {
+    test('from a game or a result: the game modes', () {
       for (final phase in [
         GamePhase.playing,
         GamePhase.result,
-        GamePhase.entering,
-        GamePhase.impossible,
       ]) {
         expect(ViewContext.backTarget(phase), MenuPage.modes, reason: '$phase');
       }

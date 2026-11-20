@@ -103,7 +103,7 @@ void main() {
       expect(screen, contains('RouteOrder.forPopup(routes)'));
       expect(screen, contains('showAllOptimal(ctx, challenge.target, result.optimalRoutes)'));
       expect(screen, contains('routeGrid('));
-      // Every optimal route, never a shorter list (the same as Checkout input lights).
+      // Every optimal route, never a shorter list (the same as Checkout practice lights).
       expect(screen, isNot(contains('listed')));
       expect(screen, isNot(contains('Shoot more')));
       expect(File('lib/ui/result_screen.dart').readAsStringSync(), isNot(contains('RoutePages')));
