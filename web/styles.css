@@ -1088,7 +1088,10 @@ summary { cursor: pointer; color: var(--muted); }
 /* The favorite dart grows with its board (cqw: the board's width), just as
    big as the empty corner outside the ring of numbers. */
 .route-grid .fav-btn { width: 16cqw; height: 18cqw; padding: 1.5cqw; top: -3cqw; right: -3cqw; }
-.route-grid .fav-icon { width: 6.5cqw; height: 12cqw; }
+.route-grid .fav-icon { width: 6.5cqw; height: 12cqw; }/* Learn: a third bigger, and inside the board's own box (the second column
+   ends at the edge of the screen, where anything past it is cut off). */
+.route-grid.two .fav-btn { width: 18cqw; height: 22cqw; padding: 1cqw; top: -2cqw; right: 2cqw; }
+.route-grid.two .fav-icon { width: 8.7cqw; height: 16cqw; }
 .route-grid .board-figure, .learn-review .board-figure { flex: none; width: 100%; max-width: 170px; container-type: inline-size; }
 .route-grid .board-figure .tile-row.small .tile, .learn-review .board-figure .tile-row.small .tile {
   width: min(44px, (100cqw - 8px) / 3); height: 36px; min-width: 0; overflow: hidden;
