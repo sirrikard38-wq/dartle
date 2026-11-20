@@ -301,7 +301,8 @@ class DartleApp {
     _toast.classList.toggle('low', low);
     _toast.classList.add('show');
     _toastTimer?.cancel();
-    _toastTimer = Timer(const Duration(milliseconds: 1800), () {
+    // Added to / removed from favorites: half as long as other messages.
+    _toastTimer = Timer(Duration(milliseconds: low ? 900 : 1800), () {
       _toast.classList.remove('show');
     });
   }

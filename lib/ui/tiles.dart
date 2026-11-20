@@ -10,9 +10,9 @@ String _stateWord(TileState state) => switch (state) {
       TileState.absent => tr('not in the route'),
     };
 
-/// Glyphs so state never depends on colour alone.
+/// Glyphs so a mistake never depends on colour alone. A box of an optimal
+/// dart shows the dart only, with no mark.
 const Map<TileState, String> _stateMarks = {
-  TileState.correct: '✓',
   TileState.present: '•',
   TileState.absent: '×',
 };
@@ -105,7 +105,7 @@ web.HTMLElement _tile(DartThrow? dart,
     'style': '--i:$index',
   }, children: [
     textNode(dart?.notation ?? ''),
-    if (state != null) el('span', cls: 'mark', text: _stateMarks[state]!, attrs: {'aria-hidden': 'true'}),
+    if (_stateMarks[state] case final mark?) el('span', cls: 'mark', text: mark, attrs: {'aria-hidden': 'true'}),
     // Every empty box holds one dart.
     if (glyph)
       el('span', cls: 'tile-darts', attrs: {'aria-hidden': 'true'}, children: [

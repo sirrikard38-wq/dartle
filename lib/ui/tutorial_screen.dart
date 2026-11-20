@@ -146,6 +146,7 @@ List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) {
 
   return [
     el('div', cls: 'input-top', children: [
+      el('p', cls: 'input-title', text: tr('Type a number to check out and learn.')),
       el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
           text: digits.isEmpty ? '–' : digits,
           attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),

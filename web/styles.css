@@ -856,12 +856,19 @@ summary { cursor: pointer; color: var(--muted); }
   position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   background: var(--white); color: var(--ink);
   padding: 12px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
-  opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 40; width: max-content; max-width: 90vw; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity 450ms ease-out; z-index: 40; width: max-content; max-width: 90vw; text-align: center;
 }
-.toast.show { opacity: 1; }
+/* In at once, out slowly. */
+.toast.show { opacity: 1; transition: opacity 120ms ease-out; }
 /* Added to / removed from favorites: near the foot, out of the way of the
    number and the boards. */
 .toast.low { top: auto; bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+/* Dark with a white edge, so it shows over the black page and over a white
+   button alike. */
+.toast.low {
+  background: var(--ink); color: var(--white); border: 2px solid var(--white);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+}
 
 @media (max-width: 400px) {
   :root { --side-w: 42px; }
@@ -1035,6 +1042,7 @@ summary { cursor: pointer; color: var(--muted); }
   margin: 0; line-height: 1.05;
 }
 .input-top .hint { min-height: 1.4em; margin: 6px 0 0; }
+.input-title { margin: 0 0 8px; font-size: 1rem; font-weight: 700; text-align: center; padding: 0 16px; }
 .screen.tutorial .tab-input .keypad {
   width: min(100%, 360px); grid-template-columns: repeat(3, 1fr); gap: 8px;
   padding: 0 16px; margin: 6px auto 12px;
@@ -1053,7 +1061,10 @@ summary { cursor: pointer; color: var(--muted); }
 .route-grid { display: grid; gap: 6px 10px; width: 100%; align-items: start; justify-items: center; margin: 4px 0 2px; }
 .route-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .route-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.route-grid .grid-head { margin: 2px 0 0; text-align: center; font-size: 0.75rem; }
+.route-grid .grid-head { margin: 2px 0 0; text-align: center; font-size: 0.95rem; color: var(--fg); }
+/* In Learn and Missing the favorite dart is half the size. */
+.route-grid .fav-btn { width: 22px; height: 22px; padding: 3px; top: -4px; right: -4px; }
+.route-grid .fav-icon { width: 7px; height: 12px; }
 .route-grid .board-figure, .learn-review .board-figure { flex: none; width: 100%; max-width: 170px; container-type: inline-size; }
 .route-grid .board-figure .tile-row.small .tile, .learn-review .board-figure .tile-row.small .tile {
   width: min(44px, (100cqw - 8px) / 3); height: 36px; min-width: 0; overflow: hidden;
@@ -1070,7 +1081,8 @@ summary { cursor: pointer; color: var(--muted); }
   margin: 6px 0 4px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
 }
 .learn-review > .label { margin: 0 0 4px; }
-.learn-review .board-figure { width: min(150px, 42vw); }
+/* As big as a board in the columns under it. */
+.learn-review .board-figure { width: calc((100% - 10px) / 2); max-width: 170px; }
 .review-headline { margin: 4px 0 2px; font-weight: 700; font-size: 1.05rem; }
 .learn-review .card-line { max-width: 38ch; text-align: center; font-size: 0.9rem; line-height: 1.3; }
 .learn-review.wrong .review-headline { color: var(--burgundy-soft); }
