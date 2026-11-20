@@ -121,39 +121,83 @@ void main() {
       return dealt.darts == darts ? dealt : dealt.withDarts(darts, optimal.optimalRoutesIn(target, darts).first);
     }
 
-    test('Learn: digits make the number, from 2 to 170', () {
-      final session = newSession(1);
-      // Learn starts on the Practice question, with its darts.
+    test('Input: digits make the number, from 2 to 170, and every part shows it', () {
+      final clock = DateTime(2026);
+      final session = TutorialSession(tutor,
+          generator: ChallengeGenerator(catalog, random: Random(1)),
+          validator: CheckoutValidator(engine, optimal),
+          random: Random(1),
+          now: () => clock);
+      // Input starts on the Practice question; Learn has its darts.
       final question = session.practiceTarget;
-      expect(session.learnTarget, question);
+      expect(session.typedTarget, question);
       expect(session.learnDarts, session.practiceDarts);
       // The first digit typed starts a new number.
       session.typeDigit(0); // no leading zero
-      expect(session.learnDigits, '');
+      expect(session.typedDigits, '');
+      session.typeDigit(1); // 1: not a number to play, the question stays
+      expect(session.shownTarget, question);
       session
-        ..typeDigit(1)
         ..typeDigit(2)
         ..typeDigit(7)
         ..typeDigit(4); // three digits at the most
-      expect(session.learnTarget, 127);
-      // The card waits until the typing stops.
-      expect(session.shownTarget, question);
-      session
-        ..learnDarts = 3
-        ..showTypedNumber();
+      expect(session.typedTarget, 127);
+      // At once the number of Practice, Learn and Favorites.
+      expect(session.shownTarget, 127);
+      expect(session.practiceTarget, 127);
+      expect(session.thrown, isEmpty);
+      session.learnDarts = 3;
       expect(session.learnCard!.aims, [d('T20')]);
       session.learnDarts = 2;
       expect(session.learnCard!.darts, 2);
       session.deleteDigit();
-      expect(session.learnTarget, 12);
+      expect(session.shownTarget, 12);
       session
         ..deleteDigit()
         ..deleteDigit();
-      expect(session.learnTarget, isNull);
-      // A new question is in Learn too.
+      expect(session.typedTarget, isNull);
+      expect(session.shownTarget, 12); // the last number stays
+      // A new question is in Input too, and the next digit starts afresh.
       session.newQuestion();
-      expect(session.learnTarget, session.practiceTarget);
+      expect(session.typedTarget, session.practiceTarget);
       expect(session.learnDarts, session.practiceDarts);
+      session.typeDigit(4);
+      expect(session.typedDigits, '4');
+    });
+
+    test('Input: 3 seconds after the last key, the next digit starts a new number', () {
+      var clock = DateTime(2026);
+      final session = TutorialSession(tutor,
+          generator: ChallengeGenerator(catalog, random: Random(2)),
+          validator: CheckoutValidator(engine, optimal),
+          random: Random(2),
+          now: () => clock);
+      session
+        ..typeDigit(1)
+        ..typeDigit(0);
+      clock = clock.add(const Duration(seconds: 2)); // still typing
+      session.typeDigit(2);
+      expect(session.typedDigits, '102');
+      // Off to Practice and Learn, back after more than 3 seconds: 4 is a new number.
+      clock = clock.add(const Duration(seconds: 3));
+      session.typeDigit(4);
+      expect(session.typedDigits, '4');
+      expect(session.shownTarget, 4);
+      session.typeDigit(0);
+      expect(session.typedDigits, '40');
+      // UNDO counts as a key: what is left can be typed on.
+      clock = clock.add(const Duration(seconds: 5));
+      session.deleteDigit();
+      session.typeDigit(1);
+      expect(session.typedDigits, '41');
+      // A number with no checkout is played too: "No checkout" is the answer.
+      clock = clock.add(const Duration(seconds: 3));
+      session
+        ..typeDigit(1)
+        ..typeDigit(6)
+        ..typeDigit(9);
+      expect(session.practice.hasCheckout, isFalse);
+      expect(session.learnCard, isNull);
     });
 
     test('Practice deals as Checkout calculator: now and then a number with no checkout', () {

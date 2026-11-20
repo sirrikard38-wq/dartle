@@ -1015,3 +1015,45 @@ summary { cursor: pointer; color: var(--muted); }
   .practice-result > .headline { font-size: 1.3rem; }
   .practice-result .result-boards { margin: 0 0 2px; }
 }
+
+/* ---------- Tutorial Input, and Learn without a keypad ---------- */
+/* Input: the number in the middle of the room, the keypad at the foot, as
+   big as in Checkout input (smaller on a short screen). */
+.tutorial-page.tab-input { overflow: hidden; }
+.input-top {
+  flex: 1 1 0; min-height: 0; width: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.input-top .number-display {
+  font-size: clamp(3.4rem, 12vh, 6.5rem); font-size: clamp(3.4rem, 12dvh, 6.5rem);
+  margin: 0; line-height: 1.05;
+}
+.input-top .hint { min-height: 1.4em; margin: 6px 0 0; }
+.screen.tutorial .tab-input .keypad {
+  width: min(100%, 360px); grid-template-columns: repeat(3, 1fr); gap: 8px;
+  padding: 0 16px; margin: 6px auto 12px;
+}
+.screen.tutorial .tab-input .pad-key {
+  height: clamp(46px, 8vh, 64px); height: clamp(46px, 8dvh, 64px);
+  font-size: 1.5rem; border-radius: 4px;
+}
+.screen.tutorial .tab-input .pad-undo { font-size: 0.85rem; gap: 6px; }
+.screen.tutorial .tab-input .pad-undo svg { width: 18px; height: 18px; }
+/* Learn: no keypad under it, so the boards are bigger - the route and a miss,
+   then two more optimal routes, two by two. */
+.tab-learn .learn-top .tutor-fig .board-figure {
+  max-width: min(var(--learn-board, 170px), 170px, 19vh); max-width: min(var(--learn-board, 170px), 170px, 19dvh);
+}
+.tab-learn .learn-top .number-display { font-size: clamp(2.5rem, 7dvh, 3.4rem); }
+.tutor-more { margin-top: 2px; }
+/* In Learn a board's box is as tall as what is in it (the 200px start size of
+   a board on the result screen is its width there, not its height here), and
+   on a small board the route boxes share its width. */
+.tutor-fig .board-figure { flex: none; }
+.tab-learn .learn-top .board-figure .tile-row.small .tile {
+  width: min(44px, (var(--learn-board, 170px) - 8px) / 3);
+}
+.tab-learn .learn-top .board-figure .tile-row.small .tile {
+  min-width: 0; overflow: hidden;
+  font-size: min(0.85rem, (var(--learn-board, 170px) - 8px) / 8);
+}

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:js_interop';
 import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
@@ -15,19 +14,20 @@ import 'swipes.dart';
 import 'tiles.dart';
 import 'view_context.dart';
 
-/// Checkout tutorial: Learn (type a number, choose the darts in hand, see the
-/// route and a miss on two boards) and Practice (a number and darts are given
-/// and played out as in Checkout calculator; then the same boards). A swipe
-/// to the side goes from one to the other.
+/// Checkout tutorial: Input (type a number), Practice (play it out as in
+/// Checkout calculator), Learn (the route and a miss on boards, and more
+/// optimal routes) and Favorites (its favorite routes), all for one number. A
+/// swipe to the side goes from one to the next.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
-  // In the order of [TutorialTab]: Practice, Learn, Favorites.
+  // In the order of [TutorialTab]: Input, Practice, Learn, Favorites.
   final area = swipeTabs(
     ctx,
     name: 'tutorial',
     labels: [
       for (final which in TutorialTab.values)
         switch (which) {
+          TutorialTab.input => tr('Input'),
           TutorialTab.practice => tr('Practice'),
           TutorialTab.learn => tr('Learn'),
           TutorialTab.favorites => tr('Favorites'),
@@ -35,7 +35,8 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
     ],
     index: session.tab.index,
     choose: (i) => session.tab = TutorialTab.values[i],
-    pageOf: (i) => el('div', cls: 'tutorial-page', children: switch (TutorialTab.values[i]) {
+    pageOf: (i) => el('div', cls: 'tutorial-page tab-${TutorialTab.values[i].name}', children: switch (TutorialTab.values[i]) {
+      TutorialTab.input => _input(ctx, session),
       TutorialTab.learn => _learn(ctx, session),
       TutorialTab.practice => _practice(ctx, session),
       TutorialTab.favorites => _favorites(ctx, session),
@@ -100,100 +101,53 @@ web.HTMLElement swipeTabs(
   return area;
 }
 
-/// The card waits this long after the last digit, so it does not jump about
-/// while a number is typed.
-const Duration _cardDelay = Duration(seconds: 1);
-Timer? _cardTimer;
-
-/// Redraws the screen with [change], keeping the keypad where it is on the
-/// screen: what is above it moves instead (the page scrolls by as much as the
-/// keypad would have moved).
-void _keepKeypadInPlace(ViewContext ctx, void Function() change) {
-  double? keypadTop() => web.document.querySelector('.screen.tutorial .keypad')?.getBoundingClientRect().top;
-  final before = keypadTop();
-  change();
-  ctx.rerender();
-  final after = keypadTop();
-  if (before != null && after != null && after != before) {
-    web.window.scrollBy((0).toJS, after - before);
-  }
-}
-
-/// Learn: the number typed, the darts in hand, the boards and the keypad. The
-/// keypad stays put: the boards show a second after the last digit, and what
-/// they add goes above the keypad.
-List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
-  final digits = session.learnDigits;
-  final card = session.learnCard;
-
-  void typed() {
-    _cardTimer?.cancel();
-    _cardTimer = Timer(_cardDelay, () {
-      if (session.shownDigits == session.learnDigits) return;
-      _keepKeypadInPlace(ctx, session.showTypedNumber);
-    });
-  }
-
-  web.HTMLButtonElement darts(int n) => button('$n',
-      cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
-      focusKey: 'learn-darts-$n',
-      ariaLabel: trn(n, '{n} dart in hand', '{n} darts in hand'),
-      attrs: {'aria-pressed': '${session.learnDarts == n}'},
-      onPressed: (kb) {
-        ctx.keepFocus(kb ? 'learn-darts-$n' : null);
-        _keepKeypadInPlace(ctx, () => session.learnDarts = n);
-      });
+/// Input: the number, what it says, and the keypad. A number from 2 to 170 is
+/// at once the one Practice, Learn and Favorites show. Three seconds after the
+/// last key (or after Next checkout) the next digit starts a new number.
+List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) {
+  final digits = session.typedDigits;
 
   web.HTMLButtonElement digit(int n) => button('$n',
       cls: 'key pad-key',
-      focusKey: 'learn-digit-$n',
+      focusKey: 'input-digit-$n',
       onPressed: (kb) {
         session.typeDigit(n);
-        ctx.keepFocus(kb ? 'learn-digit-$n' : null);
+        ctx.keepFocus(kb ? 'input-digit-$n' : null);
         ctx.rerender();
-        typed();
       });
 
   final undo = button(tr('UNDO'),
       cls: 'key pad-key pad-undo',
-      focusKey: 'learn-undo',
+      focusKey: 'input-undo',
       ariaLabel: tr('Delete the last digit'),
       disabled: digits.isEmpty,
       onPressed: (kb) {
         session.deleteDigit();
-        ctx.keepFocus(kb ? 'learn-undo' : null);
+        ctx.keepFocus(kb ? 'input-undo' : null);
         ctx.rerender();
-        typed();
       });
   undo.insertBefore(undoIcon(), undo.firstChild);
 
-  // What the number shown says, as Checkout input does: a number outside 2 to
-  // 170, or one that cannot be checked out at all (with one of the insults).
-  final shown = int.tryParse(session.shownDigits);
-  final web.HTMLElement below;
-  if (shown == null) {
-    below = el('p', cls: 'hint', text: tr('Type a number from 2 to 170.'));
-  } else if (shown < CheckoutEngine.minCheckout || shown > CheckoutEngine.maxCheckout) {
-    below = el('p', cls: 'hint', text: tr('A number from 2 to 170.'));
-  } else if (ctx.game.hasNoCheckout(shown)) {
-    below = el('div', cls: 'tutor-card', children: [
-      el('p', cls: 'impossible-title', text: tr('This number is impossible to checkout.'), attrs: {'role': 'status'}),
-      el('p', cls: 'insult', text: Phrases.randomInsult(math.Random(shown))),
-    ]);
+  // What the number says, as Checkout input does: a number outside 2 to 170,
+  // or one that cannot be checked out at all.
+  final typed = int.tryParse(digits);
+  final String line;
+  if (typed == null) {
+    line = tr('Type a number from 2 to 170.');
+  } else if (typed < CheckoutEngine.minCheckout || typed > CheckoutEngine.maxCheckout) {
+    line = tr('A number from 2 to 170.');
+  } else if (ctx.game.hasNoCheckout(typed)) {
+    line = tr('This number is impossible to checkout.');
   } else {
-    below = card == null ? el('span') : tutorBoards(ctx, card);
+    line = '';
   }
 
   return [
-    // Everything but the keypad: it scrolls on its own when it is long, so the
-    // keypad never moves.
-    el('div', cls: 'learn-top', children: [
+    el('div', cls: 'input-top', children: [
       el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
           text: digits.isEmpty ? '–' : digits,
           attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),
-      el('p', cls: 'label', text: tr('Darts in hand')),
-      el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]),
-      below,
+      el('p', cls: 'hint', text: line, attrs: {'role': 'status'}),
     ]),
     el('div', cls: 'keypad', attrs: {'aria-label': tr('Number pad')}, children: [
       digit(1), digit(2), digit(3),
@@ -204,15 +158,71 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
   ];
 }
 
-/// Favorites: the favorite routes of the number in Learn (the Practice
-/// question, unless another number was typed), as the Favorites popup shows
+/// Learn: the number (typed in Input, or the Practice question), the darts in
+/// hand, and the boards: the route and a miss, then two more optimal routes.
+List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
+  final target = session.shownTarget;
+  final card = session.learnCard;
+
+  web.HTMLButtonElement darts(int n) => button('$n',
+      cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
+      focusKey: 'learn-darts-$n',
+      ariaLabel: trn(n, '{n} dart in hand', '{n} darts in hand'),
+      attrs: {'aria-pressed': '${session.learnDarts == n}'},
+      onPressed: (kb) {
+        ctx.keepFocus(kb ? 'learn-darts-$n' : null);
+        session.learnDarts = n;
+        ctx.rerender();
+      });
+
+  // A number that cannot be checked out at all says so, with one of the
+  // insults, as Checkout input does.
+  final web.HTMLElement below = ctx.game.hasNoCheckout(target)
+      ? el('div', cls: 'tutor-card', children: [
+          el('p', cls: 'impossible-title', text: tr('This number is impossible to checkout.'), attrs: {'role': 'status'}),
+          el('p', cls: 'insult', text: Phrases.randomInsult(math.Random(target))),
+        ])
+      : card == null
+          ? el('span')
+          : tutorBoards(ctx, card, more: 2);
+
+  final top = el('div', cls: 'learn-top', children: [
+    el('p', cls: 'target number-display', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
+    el('p', cls: 'label', text: tr('Darts in hand')),
+    el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]),
+    below,
+  ]);
+  _fitBoards(top);
+  return [top];
+}
+
+/// Once Learn is on the screen: when its lines (a "Why not" or two) would make
+/// it longer than the screen, the boards get smaller by just that much, so all
+/// of it fits with no scrolling. Each row of boards gives back the same. A
+/// board stays 90px at the least: on a short screen what is still too long
+/// scrolls.
+void _fitBoards(web.HTMLElement top) {
+  void fit(int tries) => Timer.run(() {
+        if (!top.isConnected || tries == 0) return;
+        final over = top.scrollHeight - top.clientHeight;
+        final board = top.querySelector('.tutor-fig .board-figure') as web.HTMLElement?;
+        final rows = top.querySelectorAll('.tutor-boards').length;
+        if (over <= 0 || board == null || rows == 0) return;
+        final width = board.getBoundingClientRect().width;
+        final smaller = math.max(90, width - over / rows - 2);
+        if (smaller >= width) return;
+        top.style.setProperty('--learn-board', '${smaller.floor()}px');
+        fit(tries - 1); // once more, for what rounding left
+      });
+  fit(3);
+}
+
+/// Favorites: the favorite routes of the number (typed in Input, or the
+/// Practice question), as the Favorites popup shows
 /// them: a page for 2 darts and one for 3 (and 1 when there is one), swiped
 /// left and right or chosen at the top.
 List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
   final target = session.shownTarget;
-  if (target == null) {
-    return [el('p', cls: 'hint', text: tr('Type a number in Learn to see its favorites.'))];
-  }
   final number = el('p', cls: 'target', text: '$target');
   if (ctx.game.hasNoCheckout(target)) {
     return [number, el('p', cls: 'hint', text: tr('This number is impossible to checkout.'))];
@@ -306,9 +316,11 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
 
 /// What to aim at, then two boards side by side: the route, and a miss into
 /// the next area with what it leaves (for a pair of hits, the other hit). Each
-/// board can be made a favorite. Under them the targets almost as good and,
-/// where a miss changes everything, why not the tempting other target.
-web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
+/// board can be made a favorite. Then up to [more] other optimal routes on
+/// boards of their own (tutorial Learn shows two), "Also optimal" for all of
+/// them and, where a miss changes everything, why not the tempting other
+/// target.
+web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card, {int more = 0}) {
   final aims = card.aims;
   final route = card.route;
   final target = card.target;
@@ -325,12 +337,18 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
     aim = tr('Aim at {dart}.', {'dart': aims.first.notation});
   }
 
+  final all = route == null ? const <CheckoutRoute>[] : ctx.game.tutorial.tutor.optimalRoutes(target, card.darts);
   final boards = <web.HTMLElement>[];
+  final onBoards = <CheckoutRoute>[];
   if (route != null) {
     boards.add(titled(tr('Route'), routeFigure(ctx, target, route)));
+    onBoards.add(route);
     if (aims.length == 2 && card.hits.length == 2) {
       final other = card.routeOf(card.hits[1]);
-      if (other != null) boards.add(titled(tr('Or'), routeFigure(ctx, target, other)));
+      if (other != null) {
+        boards.add(titled(tr('Or'), routeFigure(ctx, target, other)));
+        onBoards.add(other);
+      }
     } else if (card.shownMiss case final miss?) {
       final title = tr('Miss into {dart}', {'dart': miss.dart.notation});
       final missRoute = card.routeOf(miss);
@@ -346,10 +364,17 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
       el('p', cls: 'card-line', text: tr('Aim for a good number to leave.')),
     ],
     if (boards.isNotEmpty) el('div', cls: 'result-boards tutor-boards', children: boards),
+    // Two more optimal routes, when there are: one with a better double first,
+    // as the result screen picks them.
+    if (more > 0)
+      if (BetterDoubles.extras(all, exclude: onBoards).take(more).toList() case final extra when extra.isNotEmpty)
+        el('div', cls: 'result-boards tutor-boards tutor-more', children: [
+          for (final r in extra) titled(tr('Optimal'), routeFigure(ctx, target, r)),
+        ]),
     // As on the result screen: "Also optimal" opens every optimal route, or
     // the one route there is says so.
     if (route != null)
-      if (ctx.game.tutorial.tutor.optimalRoutes(target, card.darts) case final all when all.length > 1)
+      if (all.length > 1)
         button(tr('Also optimal'),
             cls: 'text-link extra-title tutor-all',
             focusKey: 'tutor-all',

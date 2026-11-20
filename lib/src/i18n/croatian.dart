@@ -29,7 +29,8 @@ const Map<String, String> croatian = {
   'Removed from favorites!': 'Maknuto iz favorita!',
   'No favorites with {n} dart yet.|No favorites with {n} darts yet.':
       'Još nema favorita s {n} strelicom.|Još nema favorita s {n} strelice.|Još nema favorita s {n} strelica.',
-  'Type a number in Learn to see its favorites.': 'Upiši broj u Učenju da vidiš njegove favorite.',
+  'Input': 'Unos',
+  'Optimal': 'Optimalno',
   'Practice': 'Vježba',
   'Darts in hand': 'Strelice u ruci',
   '{n} dart in hand|{n} darts in hand': '{n} strelica u ruci|{n} strelice u ruci|{n} strelica u ruci',
