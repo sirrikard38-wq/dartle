@@ -259,7 +259,12 @@ web.HTMLElement _reviewBox(ViewContext ctx, TutorialSession session, PracticeRev
           marks: spreadMarks(darts, session.marks, math.Random(routeSeed(review.route.notation))),
           label: tr('Your darts: {route}', {'route': review.route.notation}),
         ),
-        tileRow(darts, slots: darts.length, small: true, states: List.filled(darts.length, state), label: review.route.notation),
+        tileRow(darts,
+            slots: darts.length,
+            small: true,
+            states: List.filled(darts.length, state),
+            label: review.route.notation,
+            lefts: leftsAfter(target, darts)),
       ]),
     el('p', cls: 'review-headline', text: headline),
     for (final line in lines) el('p', cls: 'card-line', text: line),
@@ -313,7 +318,7 @@ web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   _fillRows(grid, [
     for (final route in _learnRouteList(card, all))
       () => [
-            routeFigure(ctx, target, route),
+            routeFigure(ctx, target, route, showLeft: true),
             _outcomeCell(ctx, card,
                 tutor.outcome(target, card.darts, CheckoutTutor.singleOrTriple(route.darts.first))),
           ],
@@ -350,11 +355,11 @@ void _fillRows(web.HTMLElement grid, List<List<web.HTMLElement> Function()> rows
 }
 
 /// A board for what a missed dart leaves: the dart and the route after it
-/// (any checkout there is, optimal or not), and the line under it.
+/// (any checkout there is, optimal or not), what is left under each dart.
 web.HTMLElement _outcomeCell(ViewContext ctx, TutorCard card, DartOutcome miss) {
   final route = card.routeOf(miss);
   if (route == null) return _deadEnd(card, miss);
-  return routeFigure(ctx, card.target, route)..append(el('p', cls: 'hint', text: _outcome(card, miss.dart.notation, miss)));
+  return routeFigure(ctx, card.target, route, showLeft: true);
 }
 
 /// Missing: for every first dart of the optimal routes (any bed of 1 to 20:
@@ -391,7 +396,7 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
           if (CheckoutTutor.sideNeighbours(first) case (final left, final right))
             () => [
                   outcome(left),
-                  routeFigure(ctx, target, route),
+                  routeFigure(ctx, target, route, showLeft: true),
                   outcome(right),
                   // A treble or a double can also land in its own single.
                   if (first.multiplier != Multiplier.single) ...[
@@ -585,9 +590,23 @@ web.HTMLElement _deadEnd(TutorCard card, DartOutcome miss) => el('figure', cls: 
         marks: spreadMarks([miss.dart], const [], math.Random(routeSeed(miss.dart.notation))),
         label: tr('Miss into {dart}', {'dart': miss.dart.notation}),
       ),
-      tileRow([miss.dart], slots: 1, small: true, states: const [TileState.absent], label: miss.dart.notation),
-      el('p', cls: 'hint', text: _outcome(card, miss.dart.notation, miss)),
+      tileRow([miss.dart],
+          slots: 1,
+          small: true,
+          states: const [TileState.absent],
+          label: miss.dart.notation,
+          lefts: [card.target - miss.dart.score]),
+      el('p', cls: 'hint', text: _deadEndWhy(card, miss)),
     ]);
+
+/// Why a miss is a dead end: a bust, nothing left to throw, or no checkout
+/// with the darts after it.
+String _deadEndWhy(TutorCard card, DartOutcome miss) {
+  if (miss.bust) return tr('Bust');
+  final after = card.darts - 1;
+  if (after == 0) return tr('Left for the next visit.');
+  return trn(after, 'No checkout with {n} dart.', 'No checkout with {n} darts.');
+}
 
 /// One line for what a dart leaves, each dart with what is left after it:
 /// "S19 (108) --> no checkout with 2 darts".

@@ -16,8 +16,9 @@ int routeSeed(String text) =>
     text.codeUnits.fold<int>(17, (hash, unit) => (hash * 31 + unit) & 0x7fffffff);
 
 /// One route on its own small board with its boxes under it, as the popups show
-/// it, with the favorite dart in its top corner.
-web.HTMLElement routeFigure(ViewContext ctx, int target, CheckoutRoute route) =>
+/// it, with the favorite dart in its top corner. [showLeft]: under each dart
+/// in its box, what is left of [target] after it.
+web.HTMLElement routeFigure(ViewContext ctx, int target, CheckoutRoute route, {bool showLeft = false}) =>
     el('figure', cls: 'board-figure', children: [
       buildDartboard(
         linesOnly: true,
@@ -28,9 +29,17 @@ web.HTMLElement routeFigure(ViewContext ctx, int target, CheckoutRoute route) =>
           slots: route.length,
           small: true,
           states: List.filled(route.length, TileState.correct),
-          label: route.notation),
+          label: route.notation,
+          lefts: showLeft ? leftsAfter(target, route.darts) : null),
       favoriteButton(ctx, target, route),
     ]);
+
+/// What is left of [target] after each of [darts] in turn (121, S17 T20 D22
+/// would be 104, 44, 0).
+List<int> leftsAfter(int target, List<DartThrow> darts) {
+  var left = target;
+  return [for (final dart in darts) left -= dart.score];
+}
 
 /// Every route of [routes] as a board with its boxes, in the order given. A
 /// number can have over a hundred (61 with three darts), and drawing them all

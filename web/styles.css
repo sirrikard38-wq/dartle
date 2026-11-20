@@ -1073,6 +1073,11 @@ summary { cursor: pointer; color: var(--muted); }
   font-size: min(0.85rem, 100cqw / 9);
 }
 .route-grid .board-figure .hint { font-size: 0.75rem; margin: 2px 0 0; line-height: 1.25; }
+/* A box with what is left under the dart: S17 over (104). */
+.board-figure .tile-row.small .tile.with-left { height: 44px; align-content: center; gap: 1px; line-height: 1; }
+.tile-left { font-size: 0.8em; font-weight: 600; opacity: 0.75; }
+/* Three boards to a row: narrow boxes, so BULL needs smaller letters. */
+.route-grid.three .board-figure .tile-row.small .tile { font-size: min(0.85rem, 100cqw / 11); letter-spacing: -0.02em; }
 /* Missing: under a treble or double route, its own single. */
 .same-number { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .route-grid .same-number .grid-head { font-size: 0.8rem; margin: 0 0 2px; }

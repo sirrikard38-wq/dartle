@@ -41,6 +41,8 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 /// * [used] are the boxes that are already used (crossed out in burgundy, with
 ///   their darts dotted). They cannot be filled: [darts], [states] and
 ///   [activeIndex] count only the free boxes, left to right.
+/// * [lefts] puts under each dart, in brackets, what is left after it
+///   (121: S17 over (104)).
 web.HTMLElement tileRow(
   List<DartThrow> darts, {
   required int slots,
@@ -50,6 +52,7 @@ web.HTMLElement tileRow(
   String? label,
   bool showDarts = false,
   Set<int> used = const {},
+  List<int>? lefts,
 }) {
   final free = [for (var i = 0; i < slots; i++) if (!used.contains(i)) i];
   return el('div', cls: 'tile-row${small ? ' small' : ''}', attrs: {
@@ -69,6 +72,7 @@ web.HTMLElement tileRow(
               : null,
           active: free.indexOf(i) == activeIndex,
           showDarts: showDarts,
+          left: lefts != null && free.indexOf(i) < lefts.length ? lefts[free.indexOf(i)] : null,
         ),
   ]);
 }
@@ -78,7 +82,8 @@ web.HTMLElement _tile(DartThrow? dart,
     TileState? state,
     required bool active,
     required bool showDarts,
-    bool usedBox = false}) {
+    bool usedBox = false,
+    int? left}) {
   // A coloured tile plays the animated end-of-attempt flip (`reveal`).
   // The small dart marks a box still to throw: once a dart is in it, only
   // the dart's name shows (S16), in the middle of the box.
@@ -90,6 +95,7 @@ web.HTMLElement _tile(DartThrow? dart,
     if (usedBox) 'used',
     if (glyph) 'has-darts',
     if (state != null) 'reveal ${state.name}',
+    if (left != null) 'with-left',
   ].join(' ');
 
   final description = usedBox
@@ -105,6 +111,7 @@ web.HTMLElement _tile(DartThrow? dart,
     'style': '--i:$index',
   }, children: [
     textNode(dart?.notation ?? ''),
+    if (left != null) el('span', cls: 'tile-left', text: '($left)'),
     if (_stateMarks[state] case final mark?) el('span', cls: 'mark', text: mark, attrs: {'aria-hidden': 'true'}),
     // Every empty box holds one dart.
     if (glyph)

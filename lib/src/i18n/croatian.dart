@@ -40,6 +40,7 @@ const Map<String, String> croatian = {
   'Type a number to check out and learn.': 'Upiši broj koji želiš zatvoriti i naučiti.',
   'Miss: single or triple': 'Promašaj: single ili triple',
   'Same number': 'Isti broj',
+  'Left for the next visit.': 'Ostaje za sljedeći posjet.',
   'Left neighbour': 'Lijevi susjed',
   'Right neighbour': 'Desni susjed',
   'Every optimal route starts at the bull, so there is no neighbour to miss into.':
