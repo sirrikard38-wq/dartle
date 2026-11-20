@@ -101,7 +101,7 @@ web.HTMLButtonElement favoriteButton(ViewContext ctx, int target, CheckoutRoute 
   b = button('', cls: 'fav-btn', attrs: {'data-fav': id}, onPressed: (_) async {
     final on = !b.classList.contains('on');
     showEverywhere(on); // at once; the save follows
-    ctx.toast(on ? tr('Added to favorites!') : tr('Removed from favorites!'));
+    ctx.toast(on ? tr('Added to favorites!') : tr('Removed from favorites!'), low: true);
     showEverywhere(await game.toggleFavorite(target, route));
   });
   b.appendChild(favoriteDartIcon());

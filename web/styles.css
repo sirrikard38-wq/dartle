@@ -669,6 +669,9 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .fav-shape { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .fav-btn.on { color: var(--white); }
 .fav-btn.on .fav-shape { fill: var(--white); }
+/* On a result screen (the board of your darts) the dart is twice as long. */
+.result-boards .fav-btn { width: 36px; height: 60px; }
+.result-boards .fav-icon { width: 17px; height: 48px; }
 /* The Favorites screen: every number from 170 down to 2. */
 .fav-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
@@ -853,9 +856,12 @@ summary { cursor: pointer; color: var(--muted); }
   position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   background: var(--white); color: var(--ink);
   padding: 12px 18px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
-  opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 40; max-width: 90vw; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 40; width: max-content; max-width: 90vw; text-align: center;
 }
 .toast.show { opacity: 1; }
+/* Added to / removed from favorites: near the foot, out of the way of the
+   number and the boards. */
+.toast.low { top: auto; bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 
 @media (max-width: 400px) {
   :root { --side-w: 42px; }

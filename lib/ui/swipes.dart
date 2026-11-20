@@ -196,7 +196,9 @@ class SwipeMark {
       // row's own: only what the fill covers of them shows.
       final words = (row.cloneNode(true) as web.HTMLElement)
         ..className = 'chips marker-words'
-        ..style.width = '${row.clientWidth}px';
+        // Its exact width: rounded down (clientWidth) the last chip can drop
+        // to a second line and the words no longer sit over the row's own.
+        ..style.width = '${row.getBoundingClientRect().width}px';
       mark = (web.document.createElement('span') as web.HTMLElement)
         ..className = 'chip-marker'
         ..append(words);

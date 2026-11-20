@@ -296,8 +296,9 @@ class DartleApp {
     }
   }
 
-  void _showToast(String message) {
+  void _showToast(String message, {bool low = false}) {
     _toast.textContent = message;
+    _toast.classList.toggle('low', low);
     _toast.classList.add('show');
     _toastTimer?.cancel();
     _toastTimer = Timer(const Duration(milliseconds: 1800), () {
