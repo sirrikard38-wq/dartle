@@ -34,7 +34,6 @@ const Map<String, String> croatian = {
   'Darts in hand': 'Strelice u ruci',
   '{n} dart in hand|{n} darts in hand': '{n} strelica u ruci|{n} strelice u ruci|{n} strelica u ruci',
   'Type a number from 2 to 170.': 'Upiši broj od 2 do 170.',
-  'Route': 'Ruta',
   'Or': 'Ili',
   'Missing': 'Promašaji',
   'Type a number to check out and learn.': 'Upiši broj koji želiš zatvoriti i naučiti.',

@@ -148,10 +148,16 @@ List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) {
   return [
     el('div', cls: 'input-top', children: [
       el('p', cls: 'input-title', text: tr('Type a number to check out and learn.')),
-      el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
-          text: digits.isEmpty ? '–' : digits,
-          attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),
-      el('p', cls: 'hint', text: line, attrs: {'role': 'status'}),
+      // The number between the words and the keypad, a little above the
+      // middle; what it says hangs under it.
+      el('div', cls: 'input-number', children: [
+        el('div', cls: 'number-wrap', children: [
+          el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
+              text: digits.isEmpty ? '–' : digits,
+              attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),
+          el('p', cls: 'hint', text: line, attrs: {'role': 'status'}),
+        ]),
+      ]),
     ]),
     el('div', cls: 'keypad', attrs: {'aria-label': tr('Number pad')}, children: [
       digit(1), digit(2), digit(3),
@@ -303,16 +309,16 @@ List<CheckoutRoute> _learnRouteList(TutorCard card, List<CheckoutRoute> all) {
   return shown;
 }
 
-/// Learn's routes: every optimal route in the column "Route", and beside each
-/// what its first dart leaves when it lands in the other bed of its number -
-/// the single of a treble or double (T18: S18), the treble of a single (S18:
-/// T18), 25 for the Bull. Then why not the tempting other target.
+/// Learn's routes: every optimal route in the column "Optimal route", and
+/// beside each what its first dart leaves when it lands in the other bed of
+/// its number - the single of a treble or double (T18: S18), the treble of a
+/// single (S18: T18), 25 for the Bull.
 web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   final target = card.target;
   final tutor = ctx.game.tutorial.tutor;
   final all = tutor.optimalRoutes(target, card.darts);
   final grid = el('div', cls: 'route-grid two', children: [
-    el('p', cls: 'label grid-head', text: tr('Route')),
+    el('p', cls: 'label grid-head', text: tr('Optimal route')),
     el('p', cls: 'label grid-head', text: tr('Miss: single or triple')),
   ]);
   _fillRows(grid, [
@@ -326,11 +332,6 @@ web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   return el('div', cls: 'tutor-card', children: [
     grid,
     if (all.length == 1) el('p', cls: 'hint only-one', text: tr('Only possibility')),
-    if (card.whyNot case final other?) ...[
-      el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),
-      for (final miss in card.whyNotMisses)
-        el('p', cls: 'card-line', text: _outcome(card, tr('Miss into {dart}', {'dart': miss.dart.notation}), miss)),
-    ],
   ]);
 }
 
@@ -387,7 +388,7 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
     } else {
       final grid = el('div', cls: 'route-grid three', children: [
         el('p', cls: 'label grid-head', text: tr('Left neighbour')),
-        el('p', cls: 'label grid-head', text: tr('Route')),
+        el('p', cls: 'label grid-head', text: tr('Optimal route')),
         el('p', cls: 'label grid-head', text: tr('Right neighbour')),
       ]);
       web.HTMLElement outcome(DartThrow dart) => _outcomeCell(ctx, card, tutor.outcome(target, card.darts, dart));
@@ -543,7 +544,7 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
   final all = route == null ? const <CheckoutRoute>[] : ctx.game.tutorial.tutor.optimalRoutes(target, card.darts);
   final boards = <web.HTMLElement>[];
   if (route != null) {
-    boards.add(titled(tr('Route'), routeFigure(ctx, target, route)));
+    boards.add(titled(tr('Optimal route'), routeFigure(ctx, target, route)));
     if (aims.length == 2 && card.hits.length == 2) {
       final other = card.routeOf(card.hits[1]);
       if (other != null) {
