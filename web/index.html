@@ -8,6 +8,10 @@
   <title>Dartle — Darts Checkout Trainer</title>
   <meta name="description" content="Learn the optimal darts checkouts, Wordle-style.">
   <meta name="theme-color" content="#000000">
+  <!-- Black from the very first frame, before styles.css is read: no white
+       flash when the app opens or reloads itself. -->
+  <meta name="color-scheme" content="dark">
+  <style>html, body { background: #000; }</style>
 
   <!-- Installable app (Android, iPhone, iPad). -->
   <link rel="manifest" href="manifest.webmanifest">

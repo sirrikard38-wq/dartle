@@ -255,18 +255,40 @@ class DartleApp {
   /// which has no way back.
   Future<void> Function()? _back;
 
-  /// Whether the browser has a step of its own history for the way back.
-  bool _backEntry = false;
+  /// The steps of the browser's history the app keeps for the ways back: one
+  /// for each level under the menu ([_depth]).
+  int _historyDepth = 0;
 
-  /// The phone's own ways back do what the Back dart does, animation and all:
-  /// the back button or the swipe from the left edge of a browser (one step
-  /// of the browser's history is kept for it whenever there is a way back), and
-  /// on an iPhone the app on the home screen, which has no swipe of its own, a
-  /// swipe from the left edge.
+  /// Steps back the app took itself (its Back dart, a button to the menu):
+  /// their popstate is not the phone's way back.
+  int _ownPops = 0;
+
+  /// How deep the screen is: the menu 0; the game modes, Favorites and
+  /// Leaderboard 1; a game or the tutorial (under the game modes) 2.
+  int get _depth {
+    if (_game.phase != GamePhase.menu) return 2;
+    return switch (_page) {
+      MenuPage.welcome || MenuPage.home => 0,
+      MenuPage.tutorial => 2,
+      _ => 1,
+    };
+  }
+
+  /// The phone's own ways back go one step back: the back button or the swipe
+  /// from the edge (a step of the browser's history is kept for each level),
+  /// and on an iPhone the app on the home screen, which has no swipe of its
+  /// own, a swipe from the left edge. The phone's back has already shown its
+  /// own slide (with the picture of the screen it goes back to), so the app
+  /// goes there at once, with no Back dart animation after it.
   void _listenForBack() {
     web.EventStreamProviders.popStateEvent.forTarget(web.window).listen((_) {
-      _backEntry = false;
-      _back?.call();
+      if (_ownPops > 0) {
+        _ownPops--;
+        return;
+      }
+      if (_historyDepth == 0) return; // a step from before: nothing to leave
+      _historyDepth--;
+      _showPage(ViewContext.backTarget(_game.phase, _page));
     });
     if (!isInstalledApp || !isIos) return;
     double? startX;
@@ -286,13 +308,24 @@ class DartleApp {
     });
   }
 
-  /// Keeps one step of the browser's history while there is a way back.
+  /// Keeps one step of the browser's history for each level under the menu.
+  /// A step is added as a screen goes a level deeper, before the new screen is
+  /// drawn: the browser keeps a picture of the screen being left with it, and
+  /// shows that picture as the phone's back slides to it - the screen the way
+  /// back goes to (from a game: the game modes, not the menu). Going back up
+  /// another way (the Back dart, a button) takes the steps off again.
   void _syncHistory() {
-    final deep = !(_game.phase == GamePhase.menu && (_page == MenuPage.home || _page == MenuPage.welcome));
-    if (!deep) _back = null;
-    if (deep && !_backEntry) {
+    final depth = _depth;
+    if (depth == 0) _back = null;
+    while (_historyDepth < depth) {
       web.window.history.pushState(null, '');
-      _backEntry = true;
+      _historyDepth++;
+    }
+    if (_historyDepth > depth) {
+      final steps = _historyDepth - depth;
+      _historyDepth = depth;
+      _ownPops++;
+      web.window.history.go(-steps);
     }
   }
 
