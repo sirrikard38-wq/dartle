@@ -42,7 +42,7 @@ web.Element dartGlyph() => svg('svg', cls: 'dart-glyph', attrs: {
 ///   their darts dotted). They cannot be filled: [darts], [states] and
 ///   [activeIndex] count only the free boxes, left to right.
 /// * [lefts] puts under each dart, in brackets, what is left after it
-///   (121: S17 over (104)).
+///   (121: S17 over (104)); nothing under the dart that checks out.
 web.HTMLElement tileRow(
   List<DartThrow> darts, {
   required int slots,
@@ -111,7 +111,8 @@ web.HTMLElement _tile(DartThrow? dart,
     'style': '--i:$index',
   }, children: [
     textNode(dart?.notation ?? ''),
-    if (left != null) el('span', cls: 'tile-left', text: '($left)'),
+    // 0 after the last dart goes without saying: the box keeps its height.
+    if (left != null && left != 0) el('span', cls: 'tile-left', text: '($left)'),
     if (_stateMarks[state] case final mark?) el('span', cls: 'mark', text: mark, attrs: {'aria-hidden': 'true'}),
     // Every empty box holds one dart.
     if (glyph)
