@@ -995,8 +995,14 @@ summary { cursor: pointer; color: var(--muted); }
   width: min(100cqw - 2 * (var(--side-w) + var(--side-gap)) - 12px, 100cqh, 380px);
   min-width: 0;
 }
+/* Tutorial Practice: S, D and T a third smaller (28px), so the board gets
+   their room; as far apart as before (52px from one to the next), not
+   crowded together. */
+.tutorial-page:has(> .board-view) .board-view { --side-w: 28px; }
+.tutorial-page:has(> .board-view) .mode-col { gap: 24px; }
 .tutorial-page:has(> .board-view) .mode-col .key.mode.side {
-  width: min(var(--side-w), (100cqh - 20px) / 3); height: min(var(--side-w), (100cqh - 20px) / 3);
+  width: min(var(--side-w), (100cqh - 48px) / 3); height: min(var(--side-w), (100cqh - 48px) / 3);
+  font-size: 0.9rem;
 }
 .tutorial-page:has(> .board-view) .action-row { margin-bottom: 0; flex: none; }
 .screen.tutorial .tutorial-tabs { margin-bottom: 6px; }
@@ -1088,9 +1094,7 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .screen .tab-input .pad-undo { font-size: 0.85rem; gap: 6px; }
 .screen .tab-input .pad-undo svg { width: 18px; height: 18px; }
-/* Tutorial Input: the links of the foot at the foot of the page. */
-.input-foot { margin-top: auto; width: 100%; }
-.input-foot .app-footer { margin-top: 0; }
+
 /* Learn and Missing: the routes in columns, a heading over each column once
    ("Route" and "Miss into single"; "Left neighbour", "Route", "Right
    neighbour"). Each board is as wide as its column (170px at the most) and

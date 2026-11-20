@@ -7,7 +7,6 @@ import '../dartle.dart';
 import 'dartboard.dart';
 import 'dom.dart';
 import 'favorites_ui.dart';
-import 'footer.dart';
 import 'game_screen.dart';
 import 'keyboard.dart';
 import 'result_screen.dart';
@@ -110,14 +109,8 @@ web.HTMLElement swipeTabs(
 /// Input: the number, what it says, and the keypad. A number from 2 to 170 is
 /// at once the one Practice, Learn and Favorites show. Three seconds after the
 /// last key (or after Next checkout) the next digit starts a new number.
-///
-/// The tutorial is as tall as the screen whichever part is open (a part that
-/// slides in is drawn at its own size); Input has the links of the foot
-/// (Install, Instagram, Email) at its own foot, where they show.
-List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) => [
-      ...inputPage(ctx, session.typedDigits, onDigit: session.typeDigit, onDelete: session.deleteDigit),
-      el('div', cls: 'input-foot', children: [buildFooter()]),
-    ];
+List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) =>
+    inputPage(ctx, session.typedDigits, onDigit: session.typeDigit, onDelete: session.deleteDigit);
 
 /// The Input page of Checkout tutorial and Checkout practice: the words, the
 /// [digits] typed with what they say, and the keypad ([onDigit], [onDelete]).
