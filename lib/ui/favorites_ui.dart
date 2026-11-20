@@ -113,7 +113,10 @@ web.HTMLButtonElement favoriteButton(ViewContext ctx, int target, CheckoutRoute 
     // The message in the middle of the board whose dart was pressed.
     final board = b.closest('.board-figure')?.querySelector('.dartboard')?.getBoundingClientRect();
     ctx.toast(on ? tr('Added to favorites!') : tr('Removed from favorites!'),
-        low: true, at: board == null ? null : (x: board.left + board.width / 2, y: board.top + board.height / 2));
+        low: true,
+        at: board == null
+            ? null
+            : (x: board.left + board.width / 2, y: board.top + board.height / 2, width: board.width));
     showEverywhere(await game.toggleFavorite(target, route));
   });
   b.appendChild(favoriteDartIcon());

@@ -296,15 +296,20 @@ class DartleApp {
     }
   }
 
-  void _showToast(String message, {bool low = false, ({double x, double y})? at}) {
+  void _showToast(String message, {bool low = false, ({double x, double y, double width})? at}) {
     _toast.textContent = message;
     _toast.classList.toggle('low', low);
     // On a point (the middle of a board): placed there, else where its class
     // puts it.
     _toast.classList.toggle('at-point', at != null);
+    // On a board it is no wider than the board, its letters smaller to fit
+    // (a small board in Learn or Missing).
     _toast.style
       ..left = at == null ? '' : '${at.x}px'
-      ..top = at == null ? '' : '${at.y}px';
+      ..top = at == null ? '' : '${at.y}px'
+      ..maxWidth = at == null ? '' : '${at.width}px'
+      ..fontSize = at == null ? '' : 'min(0.9rem, ${(at.width / 12).toStringAsFixed(1)}px)'
+      ..padding = at == null ? '' : '0.6em 0.8em';
     _toast.classList.add('show');
     _toastTimer?.cancel();
     // Added to / removed from favorites: half as long as other messages.
