@@ -1042,7 +1042,7 @@ summary { cursor: pointer; color: var(--muted); }
   margin: 0; line-height: 1.05;
 }
 .input-top .hint { min-height: 1.4em; margin: 6px 0 0; }
-.input-title { margin: 0 0 8px; font-size: 1rem; font-weight: 700; text-align: center; padding: 0 16px; }
+.input-title { margin: 0 0 8px; font-size: 1rem; font-weight: 700; text-align: center; padding: 0 16px; color: var(--muted); }
 .screen.tutorial .tab-input .keypad {
   width: min(100%, 360px); grid-template-columns: repeat(3, 1fr); gap: 8px;
   padding: 0 16px; margin: 6px auto 12px;
@@ -1058,13 +1058,15 @@ summary { cursor: pointer; color: var(--muted); }
    neighbour"). Each board is as wide as its column (170px at the most) and
    its boxes share that width. The page scrolls when there are many. */
 .tab-learn .learn-top .number-display, .tab-missing .learn-top .number-display { font-size: clamp(2.5rem, 7dvh, 3.4rem); }
-.route-grid { display: grid; gap: 6px 10px; width: 100%; align-items: start; justify-items: center; margin: 4px 0 2px; }
+.route-grid { display: grid; gap: 12px 20px; width: 100%; align-items: start; justify-items: center; margin: 4px 0 2px; }
 .route-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.route-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.route-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 6px; }
 .route-grid .grid-head { margin: 2px 0 0; text-align: center; font-size: 0.95rem; color: var(--fg); }
 /* In Learn and Missing the favorite dart is half the size. */
-.route-grid .fav-btn { width: 22px; height: 22px; padding: 3px; top: -4px; right: -4px; }
-.route-grid .fav-icon { width: 7px; height: 12px; }
+/* The favorite dart grows with its board (cqw: the board's width), just as
+   big as the empty corner outside the ring of numbers. */
+.route-grid .fav-btn { width: 16cqw; height: 18cqw; padding: 1.5cqw; top: -3cqw; right: -3cqw; }
+.route-grid .fav-icon { width: 6.5cqw; height: 12cqw; }
 .route-grid .board-figure, .learn-review .board-figure { flex: none; width: 100%; max-width: 170px; container-type: inline-size; }
 .route-grid .board-figure .tile-row.small .tile, .learn-review .board-figure .tile-row.small .tile {
   width: min(44px, (100cqw - 8px) / 3); height: 36px; min-width: 0; overflow: hidden;
