@@ -249,7 +249,8 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
 
   return [
     el('div', cls: 'learn-top', children: [
-      el('p', cls: 'target number-display', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
+      _numberSpacer(),
+      el('p', cls: 'target number-display tab-number', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
       el('p', cls: 'label', text: tr('Darts in hand')),
       _dartsChips(ctx, session, 'learn'),
       if (review != null) _reviewBox(ctx, session, review),
@@ -464,7 +465,8 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
   }
   return [
     el('div', cls: 'learn-top missing-top', children: [
-      el('p', cls: 'target number-display', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
+      _numberSpacer(),
+      el('p', cls: 'target number-display tab-number', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
       el('p', cls: 'label', text: tr('Darts in hand')),
       _dartsChips(ctx, session, 'missing'),
       body,
@@ -478,7 +480,10 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
 /// left and right or chosen at the top.
 List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
   final target = session.shownTarget;
-  final number = el('p', cls: 'target', text: '$target');
+  final number = el('div', cls: 'tab-number-wrap', children: [
+    _numberSpacer(),
+    el('p', cls: 'target tab-number', text: '$target'),
+  ]);
   if (ctx.game.hasNoCheckout(target)) {
     return [number, el('p', cls: 'hint', text: tr('This number is impossible to checkout.'))];
   }
@@ -493,6 +498,12 @@ List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
   final (names, pages) = favoritePages(ctx, target, counts, swipe: false);
   return [number, names, pages];
 }
+
+/// Above the number of Learn, Miss and Favorites: Practice's line ("Finish on
+/// a double or Bull."), unseen, so the number stands where Practice's does
+/// and a swipe from one to the other does not move it.
+web.HTMLElement _numberSpacer() =>
+    el('p', cls: 'meta tab-spacer', text: tr('Finish on a double or Bull.'), attrs: {'aria-hidden': 'true'});
 
 /// Practice: Checkout calculator without the clock. A number is dealt as the
 /// calculator deals it - now and then one with no checkout, for the "No

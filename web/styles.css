@@ -1387,3 +1387,22 @@ body.money-pad-open { padding-bottom: 240px; }
 .felga-grid .felgas { text-align: center; }
 .felga-club-sum { color: var(--fg); font-variant-numeric: tabular-nums; }
 .felga-spent { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 30px 5mm 0; color: var(--muted); }
+/* The number of every part of Checkout calculator as big as Practice's and,
+   but for Input, in the same place (an unseen copy of Practice's line above
+   it): a swipe from part to part does not make it jump. */
+.screen.tutorial .tab-spacer { visibility: hidden; margin: 2px 0 4px; flex: none; }
+.screen.tutorial .tab-number-wrap { display: flex; flex-direction: column; align-items: center; }
+.screen.tutorial .tab-number,
+.screen.tutorial .learn-top > .target.tab-number,
+.screen.tutorial .input-top .number-display {
+  font-size: clamp(3rem, 9vh, 6.5rem); font-size: clamp(3rem, 9dvh, 6.5rem);
+  line-height: 1; margin: 0 0 6px; flex: none;
+}
+@media (max-height: 780px) {
+  .screen.tutorial .tab-spacer { margin: 0 0 2px; }
+  .screen.tutorial .tab-number,
+  .screen.tutorial .learn-top > .target.tab-number,
+  .screen.tutorial .input-top .number-display {
+    font-size: clamp(2.6rem, 7vh, 6.5rem); font-size: clamp(2.6rem, 7dvh, 6.5rem); margin-bottom: 2px;
+  }
+}
