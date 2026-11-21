@@ -19,6 +19,7 @@ import 'sound.dart';
 import 'swipes.dart';
 import 'to_top.dart';
 import 'tutorial_screen.dart';
+import 'update_reload.dart';
 import 'view_context.dart';
 import 'welcome_screen.dart';
 
@@ -86,8 +87,21 @@ class DartleApp {
   void start() {
     _started = true;
     _page = MenuPage.welcome;
+    // Reloaded for a newer version: back where it was (the game modes, say),
+    // not on the welcome screen and then the menu.
+    final resume = MenuPage.values.asNameMap()[takeResumePage()];
+    if (resume != null && resume != MenuPage.welcome && !_game.needsPlayerName) {
+      takeSkipIntro();
+      _page = resume;
+    }
+    // The steps of history kept for the way back survive a reload.
+    final state = web.window.history.state.dartify();
+    if (state is Map && state['d'] is num) _historyDepth = (state['d'] as num).toInt();
     render();
   }
+
+  /// The menu page on screen, for a reload to come back to.
+  String get pageName => _page.name;
 
   /// Opens a menu page. Leaving a checkout stops its timer and the unfinished
   /// attempt is not recorded.
@@ -313,8 +327,8 @@ class DartleApp {
     final depth = _depth;
     if (depth == 0) _back = null;
     while (_historyDepth < depth) {
-      web.window.history.pushState(null, '');
       _historyDepth++;
+      web.window.history.pushState({'d': _historyDepth}.jsify(), '');
     }
     if (_historyDepth > depth) {
       final steps = _historyDepth - depth;

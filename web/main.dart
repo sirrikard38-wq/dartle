@@ -22,7 +22,7 @@ Future<void> main() async {
   // being played (any menu page), never in the middle of a checkout.
   var updateWaiting = false;
   void reloadIfIdle() {
-    if (updateWaiting && game.phase == GamePhase.menu) reloadForUpdate();
+    if (updateWaiting && game.phase == GamePhase.menu) reloadForUpdate(page: app.pageName);
   }
 
   game.addListener(reloadIfIdle);
