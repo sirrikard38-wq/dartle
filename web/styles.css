@@ -1250,11 +1250,27 @@ summary { cursor: pointer; color: var(--muted); }
   text-align: right; outline: none; min-width: 0; max-width: 40vw; font-variant-numeric: tabular-nums;
 }
 .money .euro { color: var(--muted); }
-/* The − that turns the number below zero (a phone's number keys have none). */
-.money-sign {
-  border: 0; background: none; color: var(--muted); font: inherit; font-weight: 700;
-  padding: 0 4px 0 0; margin: 0; min-width: 0; line-height: 1;
+/* -1 / +1 pressed: the button, the name and its felgas flash white with
+   black letters and fade back over 2 s (a white box round the name and the
+   number, which moves nothing). */
+@keyframes felga-flash {
+  0% { background-color: transparent; box-shadow: 0 0 0 6px transparent; color: inherit; }
+  10%, 55% { background-color: var(--white); box-shadow: 0 0 0 6px var(--white); color: var(--ink); }
+  100% { background-color: transparent; box-shadow: 0 0 0 6px transparent; color: inherit; }
 }
-.money-sign:active { color: var(--fg); }
+/* The button itself turns white (no white box round it: it has its own). */
+@keyframes felga-flash-button {
+  0% { background-color: transparent; border-color: var(--line-strong); color: var(--fg); }
+  10%, 55% { background-color: var(--white); border-color: var(--white); color: var(--ink); }
+  100% { background-color: transparent; border-color: var(--line-strong); color: var(--fg); }
+}
+.felga-step.flash { animation: felga-flash-button 2s ease-out both; }
+.felga-name.flash, .felga-cell.felgas.flash > span { border-radius: 6px; }
+.felga-name.flash { animation: felga-flash 2s ease-out both; }
+.felga-cell.felgas.flash > span {
+  display: inline-block; min-width: 2ch; animation: felga-flash 2s ease-out both; animation-delay: inherit;
+}
+/* "Felga" right over its digits, the digits under it in the middle. */
+.felga-grid .felgas { text-align: center; }
 .felga-club-sum { color: var(--fg); font-variant-numeric: tabular-nums; }
 .felga-spent { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 30px 5mm 0; color: var(--muted); }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
@@ -17,6 +18,13 @@ bool _adding = false;
 
 /// + or X was just pressed: the icon turns once, not on every redraw.
 bool _justToggled = false;
+
+/// The last -1 or +1 pressed: for [_flashTime] that button, the name and the
+/// felgas of that name flash white with black letters, and fade back.
+FelgaMember? _flashMember;
+int _flashBy = 0;
+DateTime _flashAt = DateTime(2000);
+const Duration _flashTime = Duration(seconds: 2);
 
 FelgaLedger get _book {
   return _ledger ??= FelgaLedger.fromJson(() {
@@ -108,24 +116,43 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     newName = el('div', cls: 'felga-new', children: [el('span'), input, tick]);
   }
 
-  web.HTMLElement step(FelgaMember member, int by) => button(by > 0 ? '+1' : '-1',
-      cls: 'felga-step',
-      ariaLabel: by > 0
-          ? tr('{name}: one point more', {'name': member.name})
-          : tr('{name}: one point less', {'name': member.name}),
-      onPressed: (_) {
-        member.points += by;
-        changed();
-      });
+  // The flash of the last -1 / +1 goes on where it was if the page is drawn
+  // again meanwhile.
+  final flashed = DateTime.now().difference(_flashAt);
+  final flashing = flashed < _flashTime;
+  T flash<T extends web.HTMLElement>(T element, bool on) {
+    if (on && flashing) {
+      element.classList.add('flash');
+      element.style.animationDelay = '-${flashed.inMilliseconds}ms';
+    }
+    return element;
+  }
+
+  web.HTMLElement step(FelgaMember member, int by) => flash(
+      button(by > 0 ? '+1' : '-1',
+          cls: 'felga-step',
+          ariaLabel: by > 0
+              ? tr('{name}: one point more', {'name': member.name})
+              : tr('{name}: one point less', {'name': member.name}),
+          onPressed: (_) {
+            member.points += by;
+            _flashMember = member;
+            _flashBy = by;
+            _flashAt = DateTime.now();
+            changed();
+          }),
+      member == _flashMember && by == _flashBy);
 
   // A money box: four digits wide (wider for a longer number), the grey €
   // after it, written with a dot for thousands and a comma for decimals while
-  // it is typed. The cursor always goes to the end; the − before it turns the
-  // number below zero and back (a phone's number keys have no minus).
+  // it is typed. It opens the phone-number keys, which have a minus (the
+  // number keys with a decimal point have none on Android): a minus typed
+  // turns the number below zero and back, a dot typed is the decimal comma.
+  // The cursor always goes to the end.
   web.HTMLInputElement moneyBox(String label, String value) {
     final input = el('input', cls: 'money-input', attrs: {
       'type': 'text',
-      'inputmode': 'decimal',
+      'inputmode': 'tel',
       'autocomplete': 'off',
       'aria-label': label,
     }) as web.HTMLInputElement;
@@ -136,8 +163,18 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
           input.setSelectionRange(end, end);
         });
     fit();
-    input.onInput.listen((_) {
-      input.value = formatTypedEuro(input.value);
+    var last = input.value;
+    input.onInput.listen((event) {
+      final typed = event.isA<web.InputEvent>() ? (event as web.InputEvent).data : null;
+      var text = input.value;
+      if (typed == '-') {
+        // Anywhere in the number: the sign turns.
+        final digits = last.replaceAll('-', '');
+        text = last.startsWith('-') ? digits : '-$digits';
+      } else if (typed == '.' && text.endsWith('.')) {
+        text = '${text.substring(0, text.length - 1)},';
+      }
+      input.value = last = formatTypedEuro(text);
       fit();
     });
     input.onFocus.listen((_) => toEnd());
@@ -148,16 +185,8 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     return input;
   }
 
-  web.HTMLElement money(web.HTMLInputElement input) {
-    final sign = button('−', cls: 'money-sign', ariaLabel: tr('Change the sign'), onPressed: (_) {
-      input.value = formatTypedEuro(input.value.startsWith('-') ? input.value.substring(1) : '-${input.value}');
-      input.dispatchEvent(web.Event('input'));
-      input.focus();
-    });
-    // Pressed, it leaves the box being typed in (nothing is confirmed yet).
-    sign.onMouseDown.listen((event) => event.preventDefault());
-    return el('label', cls: 'money', children: [sign, input, el('span', cls: 'euro', text: '€')]);
-  }
+  web.HTMLElement money(web.HTMLInputElement input) =>
+      el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
 
   // What each paid, whoever owes the most first: a number in the box is added
   // to Paid (or taken off, below zero) when it is confirmed, and the box is
@@ -198,11 +227,12 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     if (ledger.members.isNotEmpty) ...[
       el('div', cls: 'felga-grid owes', children: [
         el('span'),
-        el('span', cls: 'felga-head', text: 'Felga'),
+        el('span', cls: 'felga-head felgas', text: 'Felga'),
         el('span', cls: 'felga-head', text: 'Kazna'),
         for (final member in ledger.byPoints) ...[
           el('span', cls: 'felga-cell name', text: member.name),
-          el('span', cls: 'felga-cell num', text: '${member.points}'),
+          flash(el('span', cls: 'felga-cell num felgas', children: [el('span', text: '${member.points}')]),
+              member == _flashMember),
           el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.owedCents(member))),
         ],
       ]),
@@ -214,7 +244,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       el('div', cls: 'felga-names', children: [
         for (final member in ledger.members) ...[
           step(member, -1),
-          el('span', cls: 'felga-name', text: member.name),
+          flash(el('span', cls: 'felga-name', text: member.name), member == _flashMember),
           step(member, 1),
         ],
       ]),
