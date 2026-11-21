@@ -74,6 +74,24 @@ class OptimalRouteService {
         add(CheckoutRoute([first, ...route.darts]));
       }
     }
+    // Three darts in hand on a number two darts can check out: the first dart
+    // of a two-dart route (a treble or a double) missed into its single, then
+    // any optimal two-dart finish of what that leaves, counts too - the three
+    // darts are there for it. 92: T20 D16, or S20 and then 72 with two darts:
+    // S20 T18 D9, S20 T16 D12 ... Not the Bull into 25 (82 stays Bull D16).
+    if (darts == 3 && most == 2) {
+      final firsts = {for (final route in List.of(routes)) if (route.length == 2) route.darts.first};
+      for (final first in firsts) {
+        if (first.number == DartThrow.bullNumber || first.multiplier == Multiplier.single) continue;
+        final single = DartThrow(Multiplier.single, first.number);
+        final left = target - single.score;
+        if (left < 2) continue;
+        for (final route in optimalRoutesIn(left, 2)) {
+          final missed = CheckoutRoute([single, ...route.darts]);
+          if (_engine.isLegalRoute(target, missed) && !routes.any(missed.isEquivalentTo)) routes.add(missed);
+        }
+      }
+    }
     return routes;
   }
 

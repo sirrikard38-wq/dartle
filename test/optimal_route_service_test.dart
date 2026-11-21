@@ -104,22 +104,34 @@ void main() {
       expect(optimal.optimalRoutesIn(116, 3).first.notation, 'T19 S19 D20');
     });
 
-    test('three darts on a two-dart number: only two-dart routes', () {
+    test('three darts on a two-dart number: two-dart routes, or their first dart missed into its single', () {
       // 61: the table's 25 D18, not Bull S3 D4.
       expect(notations(61, 3), {'25 D18'});
       expect(optimal.aimsIn(61, 3), {DartThrow.outerBull});
       // 82: Bull D16, not 25 S17 D20.
       expect(notations(82, 3), {'Bull D16'});
       expect(optimal.aimsIn(82, 3), {DartThrow.bull});
-      // 110: no two-dart route in the three-dart row, so the two-dart row's.
-      expect(notations(110, 3), {'T20 Bull'});
+      // 110: no two-dart route in the three-dart row, so the two-dart row's -
+      // and T20 missed into S20, then 90 with two darts.
+      expect(notations(110, 3), {'T20 Bull', 'S20 T18 D18', 'S20 T20 D15'});
       expect(optimal.isOptimalIn(110, 3, r('T20 S18 D16')), isFalse);
+      // A three-dart route starts with the single of a two-dart route's first
+      // dart: 92 is T20 D16 - or S20, then 72 with two darts (T18 D9 too).
       for (var target = 2; target <= 170; target++) {
         if (optimal.optimalRoutesIn(target, 2).isEmpty) continue;
+        final singles = {
+          for (final route in optimal.optimalRoutesIn(target, 3))
+            if (route.length <= 2 && route.darts.first.multiplier != Multiplier.single)
+              DartThrow(Multiplier.single, route.darts.first.number),
+        };
         for (final route in optimal.optimalRoutesIn(target, 3)) {
-          expect(route.length, lessThanOrEqualTo(2), reason: '$target $route');
+          if (route.length <= 2) continue;
+          expect(singles, contains(route.darts.first), reason: '$target $route');
         }
       }
+      expect(optimal.isOptimalIn(92, 3, r('S20 T18 D9')), isTrue);
+      expect(optimal.isOptimalIn(92, 3, r('S20 T16 D12')), isTrue);
+      expect(optimal.isOptimalIn(92, 3, r('S19 T19 D9')), isFalse);
       // With two darts it is T11 D14.
       expect(notations(61, 2), {'T11 D14'});
     });
