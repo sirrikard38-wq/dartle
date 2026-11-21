@@ -42,7 +42,7 @@ void main() {
     expect(reload.indexOf('setItem'), lessThan(reload.indexOf('location.reload()')),
         reason: 'the flag is set before the reload');
     expect(reload, contains('storage.removeItem(skipIntroKey)'), reason: 'used once');
-    expect(main, contains('reloadForUpdate()'));
+    expect(main, contains('reloadForUpdate(page: app.pageName)'));
     expect(welcome, contains('if (takeSkipIntro())'));
     expect(welcome, contains("screen.classList.add('skip')"));
   });
