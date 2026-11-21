@@ -20,11 +20,12 @@ bool _adding = false;
 bool _justToggled = false;
 
 /// The last -1 or +1 pressed: for [_flashTime] that button, the name and the
-/// felgas of that name flash white with black letters, and fade back.
+/// felgas of that name flash white with black letters (soft, blurred edges),
+/// and fade back.
 FelgaMember? _flashMember;
 int _flashBy = 0;
 DateTime _flashAt = DateTime(2000);
-const Duration _flashTime = Duration(seconds: 2);
+const Duration _flashTime = Duration(milliseconds: 1500);
 
 FelgaLedger get _book {
   return _ledger ??= FelgaLedger.fromJson(() {
@@ -135,7 +136,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
               ? tr('{name}: one point more', {'name': member.name})
               : tr('{name}: one point less', {'name': member.name}),
           onPressed: (_) {
-            member.points += by;
+            ledger.step(member, by, DateTime.now());
             _flashMember = member;
             _flashBy = by;
             _flashAt = DateTime.now();
@@ -265,6 +266,18 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       money(club),
       el('span', cls: 'felga-club-sum', text: formatEuro(ledger.clubCents)),
     ]),
+    // The history: each -1 / +1 under the name and the day, with that day's
+    // felgas of the name; the latest at the top.
+    if (ledger.history.isNotEmpty) ...[
+      _arrow(),
+      el('div', cls: 'felga-grid history', children: [
+        for (final day in ledger.history) ...[
+          el('span', cls: 'felga-cell name', text: day.name),
+          el('span', cls: 'felga-cell date', text: day.date),
+          el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
+        ],
+      ]),
+    ],
   ]);
 }
 

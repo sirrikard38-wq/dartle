@@ -1251,25 +1251,29 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .money .euro { color: var(--muted); }
 /* -1 / +1 pressed: the button, the name and its felgas flash white with
-   black letters and fade back over 2 s (a white box round the name and the
-   number, which moves nothing). */
+   black letters and fade back over 1.5 s. The white has no edge of its own:
+   a wide blurred glow round it, so it looks like a flash of light (and it
+   moves nothing). */
 @keyframes felga-flash {
-  0% { background-color: transparent; box-shadow: 0 0 0 6px transparent; color: inherit; }
-  10%, 55% { background-color: var(--white); box-shadow: 0 0 0 6px var(--white); color: var(--ink); }
-  100% { background-color: transparent; box-shadow: 0 0 0 6px transparent; color: inherit; }
+  0% { background-color: rgba(255, 255, 255, 0); box-shadow: 0 0 14px 10px rgba(255, 255, 255, 0); color: inherit; }
+  12%, 50% { background-color: rgba(255, 255, 255, 0.95); box-shadow: 0 0 14px 10px rgba(255, 255, 255, 0.95); color: var(--ink); }
+  100% { background-color: rgba(255, 255, 255, 0); box-shadow: 0 0 14px 10px rgba(255, 255, 255, 0); color: inherit; }
 }
 /* The button itself turns white (no white box round it: it has its own). */
 @keyframes felga-flash-button {
-  0% { background-color: transparent; border-color: var(--line-strong); color: var(--fg); }
-  10%, 55% { background-color: var(--white); border-color: var(--white); color: var(--ink); }
-  100% { background-color: transparent; border-color: var(--line-strong); color: var(--fg); }
+  0% { background-color: rgba(255, 255, 255, 0); border-color: var(--line-strong); box-shadow: 0 0 12px 4px rgba(255, 255, 255, 0); color: var(--fg); }
+  12%, 50% { background-color: rgba(255, 255, 255, 0.95); border-color: rgba(255, 255, 255, 0.95); box-shadow: 0 0 12px 4px rgba(255, 255, 255, 0.9); color: var(--ink); }
+  100% { background-color: rgba(255, 255, 255, 0); border-color: var(--line-strong); box-shadow: 0 0 12px 4px rgba(255, 255, 255, 0); color: var(--fg); }
 }
-.felga-step.flash { animation: felga-flash-button 2s ease-out both; }
-.felga-name.flash, .felga-cell.felgas.flash > span { border-radius: 6px; }
-.felga-name.flash { animation: felga-flash 2s ease-out both; }
+.felga-step.flash { animation: felga-flash-button 1.5s ease-out both; }
+.felga-name.flash, .felga-cell.felgas.flash > span { border-radius: 10px; }
+.felga-name.flash { animation: felga-flash 1.5s ease-out both; }
 .felga-cell.felgas.flash > span {
-  display: inline-block; min-width: 2ch; animation: felga-flash 2s ease-out both; animation-delay: inherit;
+  display: inline-block; min-width: 2ch; animation: felga-flash 1.5s ease-out both; animation-delay: inherit;
 }
+/* The history under Club money: name, day, that day's felgas. */
+.felga-grid.history { grid-template-columns: auto auto minmax(4ch, auto); margin-top: 0; }
+.felga-cell.date { color: var(--muted); }
 /* "Felga" right over its digits, the digits under it in the middle. */
 .felga-grid .felgas { text-align: center; }
 .felga-club-sum { color: var(--fg); font-variant-numeric: tabular-nums; }

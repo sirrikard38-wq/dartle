@@ -11,11 +11,29 @@ class FelgaMember {
   int paidCents;
 }
 
+/// One line of the history: [name]'s felgas on [date] (-1 and +1 of that
+/// day added up).
+class FelgaDay {
+  FelgaDay(this.name, this.date, this.count);
+
+  final String name;
+
+  /// The day, written dd.mm.yyyy.
+  final String date;
+  int count;
+}
+
+/// [day] written as the history shows it: 21.11.2026.
+String felgaDate(DateTime day) =>
+    '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}.${day.year}';
+
 /// Felgalizacija: names with points, what each owes (a point is 0,50 €),
 /// what each has paid, and the club's money: everything paid, with what was
 /// added to it or spent from it.
 class FelgaLedger {
-  FelgaLedger({List<FelgaMember>? members, this.clubCents = 0}) : members = members ?? [];
+  FelgaLedger({List<FelgaMember>? members, this.clubCents = 0, List<FelgaDay>? history})
+      : members = members ?? [],
+        history = history ?? [];
 
   /// One point costs this many cents.
   static const int centsPerPoint = 50;
@@ -25,6 +43,21 @@ class FelgaLedger {
   /// "Club money": every amount entered for the club, added up - below zero
   /// spent, above zero added.
   int clubCents;
+
+  /// The history: each name's felgas of each day, the latest -1 / +1 first.
+  final List<FelgaDay> history;
+
+  /// [member] got [by] felgas (+1 or -1) on [day]: their points change, and
+  /// their line of that day in the history does and goes to the top (a day
+  /// that comes back to 0 felgas leaves the history).
+  void step(FelgaMember member, int by, DateTime day) {
+    member.points += by;
+    final date = felgaDate(day);
+    final i = history.indexWhere((d) => d.name == member.name && d.date == date);
+    final line = i < 0 ? FelgaDay(member.name, date, 0) : history.removeAt(i);
+    line.count += by;
+    if (line.count != 0) history.insert(0, line);
+  }
 
   /// Adds [name] (trimmed); nothing for an empty one.
   void add(String name) {
@@ -68,6 +101,9 @@ class FelgaLedger {
         'members': [
           for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents},
         ],
+        'history': [
+          for (final d in history) {'name': d.name, 'date': d.date, 'count': d.count},
+        ],
       });
 
   /// From [toJson]; an empty ledger for anything it cannot read.
@@ -82,6 +118,10 @@ class FelgaLedger {
           for (final m in (data['members'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
             FelgaMember(m['name'] as String,
                 points: (m['points'] as num?)?.toInt() ?? 0, paidCents: (m['paid'] as num?)?.toInt() ?? 0),
+        ],
+        history: [
+          for (final d in (data['history'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
+            FelgaDay(d['name'] as String, d['date'] as String, (d['count'] as num?)?.toInt() ?? 0),
         ],
       );
     } on Object {

@@ -62,6 +62,29 @@ void main() {
     expect(ledger.byDebt.map((m) => m.name), ['Riko', 'Sin', 'Miha']);
   });
 
+  test('the history: each name and day with its felgas, the latest -1 / +1 at the top', () {
+    final ledger = FelgaLedger()
+      ..add('Riko')
+      ..add('Miha');
+    final [riko, miha] = ledger.members;
+    final monday = DateTime(2026, 11, 23, 20), tuesday = DateTime(2026, 11, 24, 21);
+    ledger
+      ..step(riko, 1, monday)
+      ..step(riko, 1, monday)
+      ..step(miha, 1, monday)
+      ..step(riko, 1, monday); // Riko again: his line goes back to the top
+    String lines() => ledger.history.map((d) => '${d.name} ${d.date} ${d.count}').join(', ');
+    expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
+    expect(riko.points, 3);
+    ledger.step(miha, 1, tuesday);
+    expect(lines(), 'Miha 24.11.2026 1, Riko 23.11.2026 3, Miha 23.11.2026 1');
+    ledger.step(miha, -1, tuesday); // a mistake taken back: nothing that day
+    expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
+    expect(miha.points, 1);
+    final back = FelgaLedger.fromJson(ledger.toJson());
+    expect(back.history.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
+  });
+
   test('it is kept and read back', () {
     final ledger = FelgaLedger()
       ..add('Riko')
