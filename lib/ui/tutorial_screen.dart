@@ -7,6 +7,7 @@ import '../dartle.dart';
 import 'dartboard.dart';
 import 'dom.dart';
 import 'favorites_ui.dart';
+import 'footer.dart';
 import 'game_screen.dart';
 import 'keyboard.dart';
 import 'result_screen.dart';
@@ -483,6 +484,8 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
         slideIn(1);
       })),
       actions,
+      // The links of the foot right under the answer, on the screen with it.
+      buildFooter(),
     ];
   }
 

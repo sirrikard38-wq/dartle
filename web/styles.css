@@ -1046,12 +1046,19 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .practice-result .result-boards .board-figure {
   flex: none; max-width: none;
-  width: max(100px, min(100cqw - 8px, 100cqh - 88px, 360px));
+  width: max(100px, min(100cqw - 8px, 100cqh - 88px, 290px));
 }
 .practice-result .result-boards .board-figure:not(:only-child) {
   width: max(100px, min((100cqw - 12px) / 2, 100cqh - 88px, 360px));
 }
 .practice-result .result-more { flex: none; margin: 0 0 2px; }
+/* The favorite dart as in Learn: it grows with its board (cqw: the board's
+   width) and sits inside the board's corner, clear of the numbers. */
+.practice-result .result-boards .board-figure { container-type: inline-size; }
+.practice-result .result-boards .fav-btn { width: auto; height: auto; padding: 1cqw; top: -2cqw; right: 2cqw; }
+.practice-result .result-boards .fav-icon { width: min(8.7cqw, 14px); height: min(16cqw, 26px); }
+/* Under the answer: the links of the foot, on the screen with it. */
+.tutorial-page:has(> .practice-result) > .app-footer { margin-top: 0; flex: none; }
 @media (max-height: 780px) {
   .practice-result > .target.small { font-size: 2rem; }
   .practice-result > .headline { font-size: 1.3rem; }

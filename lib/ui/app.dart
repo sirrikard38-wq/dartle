@@ -154,7 +154,13 @@ class DartleApp {
     _root.textContent = '';
     if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
-    if (!fullScreen) _root.appendChild(buildFooter());
+    // Checkout calculator's Practice answer has the links on the screen with
+    // it, at the foot of its own page.
+    final footerInPage = _game.phase == GamePhase.menu &&
+        _page == MenuPage.tutorial &&
+        _game.tutorial.tab == TutorialTab.practice &&
+        _game.tutorial.practiceDone;
+    if (!fullScreen && !footerInPage) _root.appendChild(buildFooter());
     _syncHistory();
 
     final key = _focusKey;

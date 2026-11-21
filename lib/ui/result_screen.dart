@@ -195,6 +195,8 @@ List<web.HTMLElement> resultView(
               small: true,
               states: List.filled(best.length, TileState.correct),
               label: tr('Optimal route')),
+          // The optimal route can be made a favorite too.
+          favoriteButton(ctx, challenge.target, best),
         ]),
     ]),
     // In the middle, under the board or boards; "Also optimal" opens the popup
