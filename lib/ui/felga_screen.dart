@@ -159,10 +159,11 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     return el('label', cls: 'money', children: [sign, input, el('span', cls: 'euro', text: '€')]);
   }
 
-  // What each paid: a number in the box is added to Paid (or taken off, below
-  // zero) when it is confirmed, and the box is empty again.
+  // What each paid, whoever owes the most first: a number in the box is added
+  // to Paid (or taken off, below zero) when it is confirmed, and the box is
+  // empty again.
   final paidRows = <web.HTMLElement>[];
-  for (final member in ledger.members) {
+  for (final member in ledger.byDebt) {
     final box = moneyBox(tr('{name} paid', {'name': member.name}), '');
     box.onChange.listen((_) {
       final cents = parseEuroCents(box.value);

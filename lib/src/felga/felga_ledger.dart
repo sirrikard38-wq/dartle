@@ -48,11 +48,17 @@ class FelgaLedger {
 
   /// The members by points, most first (equal points keep the order they were
   /// added in).
-  List<FelgaMember> get byPoints {
+  List<FelgaMember> get byPoints => _sortedBy((m) => m.points);
+
+  /// The members by what they still owe, most first (below zero last; equal
+  /// debts keep the order they were added in).
+  List<FelgaMember> get byDebt => _sortedBy(debtCents);
+
+  List<FelgaMember> _sortedBy(int Function(FelgaMember member) value) {
     final indexed = [for (var i = 0; i < members.length; i++) (i, members[i])];
     indexed.sort((a, b) {
-      final byPoints = b.$2.points.compareTo(a.$2.points);
-      return byPoints != 0 ? byPoints : a.$1.compareTo(b.$1);
+      final most = value(b.$2).compareTo(value(a.$2));
+      return most != 0 ? most : a.$1.compareTo(b.$1);
     });
     return [for (final (_, m) in indexed) m];
   }

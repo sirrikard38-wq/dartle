@@ -46,6 +46,22 @@ void main() {
     expect(parseEuroCents('-'), isNull);
   });
 
+  test('what each paid is listed by debt, the most first', () {
+    final ledger = FelgaLedger()
+      ..add('Riko')
+      ..add('Miha')
+      ..add('Sin');
+    final [riko, miha, sin] = ledger.members;
+    riko.points = 3; // owes 1,5
+    miha
+      ..points = 5
+      ..paidCents = 400; // owes -1,5 (paid more)
+    sin.points = 2; // owes 1
+    expect(ledger.byDebt.map((m) => m.name), ['Riko', 'Sin', 'Miha']);
+    sin.points = 3; // owes 1,5, like Riko: Riko was added first
+    expect(ledger.byDebt.map((m) => m.name), ['Riko', 'Sin', 'Miha']);
+  });
+
   test('it is kept and read back', () {
     final ledger = FelgaLedger()
       ..add('Riko')
