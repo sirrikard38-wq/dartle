@@ -164,6 +164,17 @@ class TutorialSession {
     _judge(_validator.validateNoCheckout(practice));
   }
 
+  /// The number can be played with two darts or with three (it has no
+  /// one-dart checkout, and a two-dart one) and no dart is thrown yet: a press
+  /// on the boxes switches.
+  bool get canChooseDarts => !practiceDone && thrown.isEmpty && _generator.otherDarts(practice) != null;
+
+  /// Switches the number between two and three darts ([canChooseDarts]).
+  void chooseOtherDarts() {
+    if (!canChooseDarts) return;
+    _setPractice(_generator.otherDarts(practice)!);
+  }
+
   /// Takes back the last dart, while the question is still being played.
   void undoPractice() {
     if (thrown.isEmpty || practiceDone) return;

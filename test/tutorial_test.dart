@@ -309,6 +309,21 @@ void main() {
       expect(bust.practiceRight, isFalse);
     });
 
+    test('Practice: a two-dart number switches between two and three darts, before the first dart', () {
+      final session = newSession(3)..play(challenge(100, 2));
+      expect(session.canChooseDarts, isTrue);
+      session.chooseOtherDarts();
+      expect(session.practiceDarts, 3);
+      expect(session.learnDarts, 3);
+      session.chooseOtherDarts();
+      expect(session.practiceDarts, 2);
+      session.throwPractice(d('T20'));
+      expect(session.canChooseDarts, isFalse, reason: 'not once a dart is thrown');
+      // One-dart and three-dart numbers have no choice.
+      expect((newSession(3)..play(challenge(40, 1))).canChooseDarts, isFalse);
+      expect((newSession(3)..play(challenge(170, 3))).canChooseDarts, isFalse);
+    });
+
     test('Practice: "No checkout" is right on a number with none', () {
       final session = newSession(3)..play(Challenge.noCheckout(169));
       session.pressNoCheckout();

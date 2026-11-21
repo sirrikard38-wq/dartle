@@ -991,7 +991,8 @@ summary { cursor: pointer; color: var(--muted); }
   font-size: clamp(3rem, 9vh, 6.5rem); font-size: clamp(3rem, 9dvh, 6.5rem);
   margin: 0 0 6px; flex: none;
 }
-.tutorial-page:has(> .board-view) > .tile-row { margin: 4px 0; flex: none; }
+.tutorial-page:has(> .board-view) > .tile-row,
+.tutorial-page:has(> .board-view) > .dart-count-toggle { margin: 4px 0; flex: none; }
 .tutorial-page:has(> .board-view) > .remaining { margin: 4px 0 0; flex: none; }
 .tutorial-page:has(> .board-view) > .remaining strong {
   font-size: clamp(2.4rem, 6.5vh, 4.5rem); font-size: clamp(2.4rem, 6.5dvh, 4.5rem);

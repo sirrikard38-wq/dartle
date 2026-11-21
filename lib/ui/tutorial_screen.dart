@@ -549,8 +549,24 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
       'aria-label': trn(challenge.dartsLeft, 'Checkout {target}, {n} dart left', 'Checkout {target}, {n} darts left',
           {'target': challenge.target}),
     }),
-    tileRow(session.thrown,
-        slots: Visit.darts, used: challenge.layout.used, activeIndex: session.thrown.length, showDarts: true),
+    // A number with two darts or three: a press on the boxes switches,
+    // before the first dart.
+    if (session.canChooseDarts)
+      button('',
+          cls: 'dart-count-toggle',
+          focusKey: 'practice-darts',
+          ariaLabel: tr('Play {target} with {n} darts',
+              {'target': challenge.target, 'n': challenge.dartsLeft == 3 ? 2 : 3}),
+          onPressed: (kb) {
+            session.chooseOtherDarts();
+            ctx.keepFocus(kb ? 'practice-darts' : null);
+            ctx.rerender();
+          })
+        ..appendChild(tileRow(session.thrown,
+            slots: Visit.darts, used: challenge.layout.used, activeIndex: session.thrown.length, showDarts: true))
+    else
+      tileRow(session.thrown,
+          slots: Visit.darts, used: challenge.layout.used, activeIndex: session.thrown.length, showDarts: true),
     remainingLine(challenge.target, session.thrown),
     buildInputPanel(
       multiplier: finalBox ? Multiplier.double : (ctx.pickedMultiplier ?? Multiplier.single),
