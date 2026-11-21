@@ -20,6 +20,10 @@ const Duration _slideTime = Duration(milliseconds: 80);
 const String _slide = 'transform 80ms ease-out';
 const Duration _finishTime = Duration(milliseconds: 180);
 
+/// True while the chips of a row are being moved ([TabReorder]): no swipe
+/// changes the page meanwhile.
+bool swipesPaused = false;
+
 bool get wantsLessMotion => web.window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /// When a swipe last ended on the next page: the page drawn then is already in
@@ -101,6 +105,10 @@ void followSwipes(
     ownPages = target != null && target.isA<web.Element>() ? (target as web.Element).closest('.fav-pages:not(.fixed)') : null;
   });
   page.onTouchMove.listen((event) {
+    if (swipesPaused) {
+      startX = null;
+      return;
+    }
     final from = startX;
     if (from == null) return;
     final touch = event.changedTouches.item(0)!;

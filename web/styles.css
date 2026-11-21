@@ -952,6 +952,23 @@ summary { cursor: pointer; color: var(--muted); }
 .screen.tutorial .fav-pages { width: 100%; }
 
 .screen.tutorial .tutorial-tabs { margin-bottom: 6px; }
+/* The parts' row stays at the top when the page is scrolled (to the links at
+   the foot, say), so it never moves. */
+.screen.tutorial .tutorial-tabs { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 4px 0; }
+/* A long press: the parts jiggle, as a phone's home screen icons do while
+   they are moved, and the one held follows the finger. */
+.tutorial-tabs > .chip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+@keyframes jiggle {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+.tutorial-tabs.jiggle { touch-action: none; }
+.tutorial-tabs.jiggle > .chip { animation: jiggle 240ms ease-in-out infinite; }
+.tutorial-tabs.jiggle > .chip:nth-child(even) { animation-delay: -120ms; }
+.tutorial-tabs.jiggle > .chip.dragging { animation: none; position: relative; z-index: 2; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8); }
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-tabs.jiggle > .chip { animation: none; outline: 1px dashed var(--muted); }
+}
 /* Tutorial Favorites: 2 Darts and 3 Darts change only with a press on their
    names (no sliding), and the boards stand two by two as in the popups. */
 .fav-pages.fixed { overflow-x: hidden; touch-action: pan-y; }

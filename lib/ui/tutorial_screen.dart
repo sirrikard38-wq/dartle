@@ -12,6 +12,7 @@ import 'game_screen.dart';
 import 'keyboard.dart';
 import 'result_screen.dart';
 import 'swipes.dart';
+import 'tab_reorder.dart';
 import 'tiles.dart';
 import 'view_context.dart';
 
@@ -22,6 +23,7 @@ import 'view_context.dart';
 /// swipe to the side goes from one to the next.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
+  _loadOrder(session);
   // In the order of [TutorialTab]: Input, Practice, Learn, Favorites, Missing.
   final area = swipeTabs(
     ctx,
@@ -38,6 +40,12 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
     ],
     index: session.order.indexOf(session.tab),
     choose: (i) => session.tab = session.order[i],
+    // A long press on a part: they jiggle and can be moved; the order is kept.
+    onReorder: (order) {
+      session.order = [for (final i in order) session.order[i]];
+      _saveOrder(session.order);
+      ctx.rerender();
+    },
     pageOf: (i) => el('div', cls: 'tutorial-page tab-${session.order[i].name}', children: switch (session.order[i]) {
       TutorialTab.input => _input(ctx, session),
       TutorialTab.learn => _learn(ctx, session),
@@ -47,6 +55,34 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
     }),
   )..classList.add('play-area');
   return el('main', cls: 'screen tutorial', children: [area]);
+}
+
+/// Where the order of the tutorial's parts is kept (this device only).
+const String _orderKey = 'dartle.tutorial-order.v1';
+bool _orderLoaded = false;
+
+/// The order the player put the parts in, once per visit; the default when
+/// none was saved (or it does not name every part once).
+void _loadOrder(TutorialSession session) {
+  if (_orderLoaded) return;
+  _orderLoaded = true;
+  try {
+    final saved = web.window.localStorage.getItem(_orderKey);
+    if (saved == null) return;
+    final byName = TutorialTab.values.asNameMap();
+    final tabs = [for (final name in saved.split(',')) byName[name]].whereType<TutorialTab>().toList();
+    if (tabs.length == TutorialTab.values.length && tabs.toSet().length == tabs.length) session.order = tabs;
+  } on Object {
+    // The default order.
+  }
+}
+
+void _saveOrder(List<TutorialTab> order) {
+  try {
+    web.window.localStorage.setItem(_orderKey, order.map((t) => t.name).join(','));
+  } on Object {
+    // Kept for this visit only.
+  }
 }
 
 /// Chips over pages side by side ([labels], the page [index] showing): a press
@@ -63,9 +99,11 @@ web.HTMLElement swipeTabs(
   required void Function(int index) choose,
   required web.HTMLElement Function(int index) pageOf,
   bool fixedHeight = true,
+  void Function(List<int> order)? onReorder,
 }) {
   late final web.HTMLElement row;
   late final SwipeMark mark;
+  TabReorder? reorder;
   bool exists(int i) => i >= 0 && i < labels.length;
 
   // A press glides the fill over to the chip pressed, then the page comes in.
@@ -84,13 +122,17 @@ web.HTMLElement swipeTabs(
       button(labels[i],
           cls: 'chip${i == index ? ' selected' : ''}',
           focusKey: '$name-tab-$i',
-          attrs: {'aria-pressed': '${i == index}'},
+          attrs: {'aria-pressed': '${i == index}', 'data-i': '$i'},
           onPressed: (kb) {
+            // Not while the chips are being moved (a long press).
+            if (reorder?.takeClick() ?? false) return;
             ctx.keepFocus(kb ? '$name-tab-$i' : null);
             show(i);
           }),
   ]);
   mark = SwipeMark(row);
+  // A long press: the chips jiggle and can be put in another order.
+  if (onReorder != null) reorder = TabReorder(row, onDone: onReorder);
   final sliding = el('div', cls: 'slide-page', children: [pageOf(index)]);
   final area = el('div', cls: 'swipe-area', children: [
     row,
