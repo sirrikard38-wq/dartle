@@ -13,7 +13,7 @@ class FelgaMember {
 
 /// One line of the history: [name]'s felgas on [date] (-1 and +1 of that
 /// day added up) - or a reset on [date], with [totals]: every name's felgas
-/// of the history up to it, added up.
+/// since the reset before it, added up.
 class FelgaDay {
   FelgaDay(this.name, this.date, this.count, {this.totals});
 
@@ -28,7 +28,8 @@ class FelgaDay {
   final String date;
   int count;
 
-  /// For a reset: each name's felgas up to it, added up; null for a day.
+  /// For a reset: each name's felgas since the reset before, added up; null
+  /// for a day.
   final Map<String, int>? totals;
 
   bool get isReset => totals != null;
@@ -59,19 +60,31 @@ class FelgaLedger {
   /// day added up in it - the latest -1 / +1 first.
   final List<FelgaDay> history;
 
-  /// The history as it is shown: the resets, and only the days with felgas (a
-  /// day that came to 0 or below is not written).
-  List<FelgaDay> get shownHistory => [for (final d in history) if (d.isReset || d.count > 0) d];
+  /// The days since the last reset as they are shown: only those with felgas
+  /// (a day that came to 0 or below is not written), the latest first.
+  List<FelgaDay> get currentDays {
+    final lastReset = history.indexWhere((d) => d.isReset);
+    final since = lastReset < 0 ? history.length : lastReset;
+    return [for (final d in history.sublist(0, since)) if (!d.isReset && d.count > 0) d];
+  }
+
+  /// The resets, the latest first.
+  List<FelgaDay> get resets => [for (final d in history) if (d.isReset) d];
 
   /// Reset: every name's felgas, what they paid and the club money go back
-  /// to 0 (the names stay). The history stays too, with the reset at its top:
-  /// the date and each name's felgas of the whole history up to it, added up.
+  /// to 0 (the names stay). The days since the last reset leave the history;
+  /// in their place one line stays, the reset: its date and each name's
+  /// felgas of those days added up (since the reset before, not more).
   void reset(DateTime day) {
     final totals = <String, int>{for (final m in members) m.name: 0};
-    for (final d in history) {
-      if (!d.isReset && d.count > 0) totals[d.name] = (totals[d.name] ?? 0) + d.count;
+    final lastReset = history.indexWhere((d) => d.isReset);
+    final since = lastReset < 0 ? history.length : lastReset;
+    for (final d in history.sublist(0, since)) {
+      if (d.count > 0) totals[d.name] = (totals[d.name] ?? 0) + d.count;
     }
-    history.insert(0, FelgaDay.reset(felgaDate(day), totals));
+    history
+      ..removeRange(0, since)
+      ..insert(0, FelgaDay.reset(felgaDate(day), totals));
     for (final m in members) {
       m
         ..points = 0

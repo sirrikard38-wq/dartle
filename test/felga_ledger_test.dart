@@ -78,7 +78,7 @@ void main() {
       ..step(riko, 1, monday)
       ..step(miha, 1, monday)
       ..step(riko, 1, monday); // Riko again: his line goes back to the top
-    String lines() => ledger.shownHistory.map((d) => '${d.name} ${d.date} ${d.count}').join(', ');
+    String lines() => ledger.currentDays.map((d) => '${d.name} ${d.date} ${d.count}').join(', ');
     expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
     expect(riko.points, 3);
     ledger.step(miha, 1, tuesday);
@@ -97,10 +97,10 @@ void main() {
     // One line for each name and day.
     expect(ledger.history.where((d) => d.name == 'Riko' && d.date == '25.11.2026'), hasLength(1));
     final back = FelgaLedger.fromJson(ledger.toJson());
-    expect(back.shownHistory.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
+    expect(back.currentDays.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
   });
 
-  test('reset: everything back to 0, the history stays with the totals up to it', () {
+  test('reset: everything back to 0; the days since the last reset become one line with their totals', () {
     final ledger = FelgaLedger()
       ..add('Riko')
       ..add('Miha')
@@ -120,21 +120,22 @@ void main() {
     expect([for (final m in ledger.members) m.paidCents], [0, 0, 0]);
     expect(ledger.clubCents, 0);
     expect(ledger.members.map((m) => m.name), ['Riko', 'Miha', 'Sin'], reason: 'the names stay');
-    final mark = ledger.shownHistory.first;
-    expect(mark.isReset, isTrue);
+    expect(ledger.currentDays, isEmpty, reason: 'the days of before are gone');
+    final mark = ledger.resets.single;
     expect(mark.date, '24.11.2026');
     expect(mark.totals, {'Riko': 3, 'Miha': 1, 'Sin': 0});
-    expect(ledger.shownHistory.where((d) => !d.isReset), hasLength(3), reason: 'the history stays');
     // After the reset a day starts a new line, even the same day.
     ledger.step(riko, 1, tuesday);
-    expect(ledger.shownHistory.first.count, 1);
-    expect(ledger.shownHistory.first.name, 'Riko');
-    // A second reset counts the whole history up to it.
-    ledger.reset(tuesday);
-    expect(ledger.shownHistory.first.totals, {'Riko': 4, 'Miha': 1, 'Sin': 0});
+    expect(ledger.currentDays.single.count, 1);
+    expect(ledger.currentDays.single.name, 'Riko');
+    // A second reset counts only since the first one; the latest is first.
+    ledger.reset(DateTime(2026, 11, 30));
+    expect(ledger.resets.map((r) => r.date), ['30.11.2026', '24.11.2026']);
+    expect(ledger.resets.first.totals, {'Riko': 1, 'Miha': 0, 'Sin': 0});
+    expect(ledger.currentDays, isEmpty);
     final back = FelgaLedger.fromJson(ledger.toJson());
-    expect(back.shownHistory.first.totals, {'Riko': 4, 'Miha': 1, 'Sin': 0});
-    expect(back.shownHistory.where((d) => d.isReset), hasLength(2));
+    expect(back.resets.first.totals, {'Riko': 1, 'Miha': 0, 'Sin': 0});
+    expect(back.resets.last.totals, {'Riko': 3, 'Miha': 1, 'Sin': 0});
     expect(sin.points, 0);
   });
 

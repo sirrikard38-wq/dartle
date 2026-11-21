@@ -1355,17 +1355,22 @@ body.money-pad-open { padding-bottom: 240px; }
 /* Its two questions: Yes and No side by side. */
 .felga-ask { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
 .felga-ask .cta { min-width: 0; flex: 1 1 0; max-width: 140px; margin: 0; }
-/* A reset in the history: the date and "Up to that date" across the whole
-   row; opened, every name with their felgas up to it. */
-.felga-reset-line { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; margin: 6px 0; }
-.felga-reset-head { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.felga-reset-open {
-  padding: 6px 14px; border-radius: 16px; border: 1px solid var(--line-strong);
-  background: none; color: var(--fg); font: inherit; font-weight: 700; font-size: 0.9rem;
+/* The history: the days, and under them, at the very foot and on the right,
+   the resets as plain underlined text ("Up to 21.11.2026", the latest
+   first); one opened shows every name with their felgas of that time. */
+.felga-history {
+  display: flex; flex-direction: column; align-items: stretch; width: max-content; max-width: calc(100% - 10mm);
 }
-.felga-reset-open.open { background: var(--white); color: var(--ink); border-color: var(--white); }
+.felga-history .felga-grid { width: max-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+.felga-history .felga-cell.name, .felga-reset-totals .felga-cell.name { overflow-wrap: normal; white-space: nowrap; }
+.felga-resets { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 18px; }
+.felga-reset-line { display: flex; flex-direction: column; align-items: flex-end; }
+.felga-reset-link {
+  border: 0; background: none; padding: 4px 0; color: var(--fg); font: inherit; font-size: 0.95rem;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
 .felga-reset-totals {
-  display: grid; grid-template-columns: auto minmax(4ch, auto); gap: 6px 30px; margin-top: 10px; align-items: center;
+  display: grid; grid-template-columns: auto minmax(4ch, auto); gap: 6px 30px; margin: 6px 0 10px; align-items: center;
 }
 /* The title of the history, under its arrow, in capitals. */
 .felga-title { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; text-align: center; color: var(--fg); text-transform: uppercase; letter-spacing: 0.06em; }

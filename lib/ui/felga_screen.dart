@@ -336,21 +336,28 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         });
       }),
     ]);
-    // The history: each -1 / +1 under the name and the day, with that day's
-    // felgas of the name; the latest at the top.
+    // The history: each -1 / +1 since the last reset under the name and the
+    // day, with that day's felgas of the name, the latest at the top; at the
+    // very foot, on the right, a line for each reset ("Up to 21.11.2026"),
+    // the latest first.
+    final days = ledger.currentDays, resets = ledger.resets;
     fill(historyPart, [
-      if (ledger.shownHistory.isNotEmpty) ...[
+      if (days.isNotEmpty || resets.isNotEmpty) ...[
         _arrow(),
         el('h3', cls: 'felga-title', text: tr('Felgas by date')),
-        el('div', cls: 'felga-grid history', children: [
-          for (final day in ledger.shownHistory)
-            if (day.isReset)
-              _resetLine(day, refresh)
-            else ...[
-              el('span', cls: 'felga-cell name', text: day.name),
-              el('span', cls: 'felga-cell date', text: day.date),
-              el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
-            ],
+        el('div', cls: 'felga-history', children: [
+          if (days.isNotEmpty)
+            el('div', cls: 'felga-grid history', children: [
+              for (final day in days) ...[
+                el('span', cls: 'felga-cell name', text: day.name),
+                el('span', cls: 'felga-cell date', text: day.date),
+                el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
+              ],
+            ]),
+          if (resets.isNotEmpty)
+            el('div', cls: 'felga-resets', children: [
+              for (final reset in resets) _resetLine(reset, refresh),
+            ]),
         ]),
       ],
     ]);
@@ -475,20 +482,20 @@ void _ask(String question, void Function() yes) {
   ]);
 }
 
-/// A reset in the history: its date and "Up to that date", which opens (and
-/// closes) every name with their felgas of the whole history up to it, the
-/// most first.
+/// A reset in the history: "Up to 21.11.2026", just underlined text (it can
+/// be pressed): it opens (and closes) every name with their felgas from the
+/// reset before up to this one, the most first.
 web.HTMLElement _resetLine(FelgaDay reset, void Function() refresh) {
   final open = _openResets.contains(reset);
   final totals = reset.totals!.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
   return el('div', cls: 'felga-reset-line', children: [
-    el('div', cls: 'felga-reset-head', children: [
-      el('span', cls: 'felga-cell date', text: reset.date),
-      button(tr('Up to that date'), cls: 'felga-reset-open${open ? ' open' : ''}', onPressed: (_) {
-        if (!_openResets.remove(reset)) _openResets.add(reset);
-        refresh();
-      }),
-    ]),
+    button(tr('Up to {date}', {'date': reset.date}),
+        cls: 'felga-reset-link',
+        attrs: {'aria-expanded': '$open'},
+        onPressed: (_) {
+          if (!_openResets.remove(reset)) _openResets.add(reset);
+          refresh();
+        }),
     if (open)
       el('div', cls: 'felga-reset-totals', children: [
         for (final MapEntry(key: name, value: felgas) in totals) ...[
