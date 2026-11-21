@@ -100,6 +100,44 @@ void main() {
     expect(back.shownHistory.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
   });
 
+  test('reset: everything back to 0, the history stays with the totals up to it', () {
+    final ledger = FelgaLedger()
+      ..add('Riko')
+      ..add('Miha')
+      ..add('Sin');
+    final [riko, miha, sin] = ledger.members;
+    final monday = DateTime(2026, 11, 23), tuesday = DateTime(2026, 11, 24);
+    ledger
+      ..step(riko, 1, monday)
+      ..step(riko, 1, monday)
+      ..step(miha, 1, monday)
+      ..step(riko, 1, tuesday)
+      ..step(miha, -1, tuesday); // below 0 that day: not counted
+    riko.paidCents = 100;
+    ledger.clubCents = -300;
+    ledger.reset(tuesday);
+    expect([for (final m in ledger.members) m.points], [0, 0, 0]);
+    expect([for (final m in ledger.members) m.paidCents], [0, 0, 0]);
+    expect(ledger.clubCents, 0);
+    expect(ledger.members.map((m) => m.name), ['Riko', 'Miha', 'Sin'], reason: 'the names stay');
+    final mark = ledger.shownHistory.first;
+    expect(mark.isReset, isTrue);
+    expect(mark.date, '24.11.2026');
+    expect(mark.totals, {'Riko': 3, 'Miha': 1, 'Sin': 0});
+    expect(ledger.shownHistory.where((d) => !d.isReset), hasLength(3), reason: 'the history stays');
+    // After the reset a day starts a new line, even the same day.
+    ledger.step(riko, 1, tuesday);
+    expect(ledger.shownHistory.first.count, 1);
+    expect(ledger.shownHistory.first.name, 'Riko');
+    // A second reset counts the whole history up to it.
+    ledger.reset(tuesday);
+    expect(ledger.shownHistory.first.totals, {'Riko': 4, 'Miha': 1, 'Sin': 0});
+    final back = FelgaLedger.fromJson(ledger.toJson());
+    expect(back.shownHistory.first.totals, {'Riko': 4, 'Miha': 1, 'Sin': 0});
+    expect(back.shownHistory.where((d) => d.isReset), hasLength(2));
+    expect(sin.points, 0);
+  });
+
   test('it is kept and read back', () {
     final ledger = FelgaLedger()
       ..add('Riko')

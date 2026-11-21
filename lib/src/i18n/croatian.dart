@@ -50,6 +50,13 @@ const Map<String, String> croatian = {
   'Owed to the club': 'Dug klubu',
   'Money in the club now': 'Trenutna lova u klubu',
   'Club money': 'Lova kluba',
+  'Reset': 'Resetiraj',
+  'Yes': 'Da',
+  'No': 'Ne',
+  'Are you sure you want to reset all the data?': 'Jesi li siguran da želiš resetirati sve podatke?',
+  'Are you really 100% million billion percent sure you want to reset the data? The history will stay.':
+      'Jesi li sigurno 100% miliona biliona posto siguran da želiš resetirati podatke? Povijesni podaci će i dalje ostati',
+  'Up to that date': 'Do tog datuma',
   'Fine': 'Kazna',
   'Felgas by date': 'Broj felgi po datumu',
   'Turn the sign': 'Promijeni predznak',

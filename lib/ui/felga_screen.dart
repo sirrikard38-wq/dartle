@@ -6,6 +6,7 @@ import 'package:web/web.dart' as web;
 import '../dartle.dart';
 import 'dom.dart';
 import 'keyboard.dart';
+import 'modal.dart';
 import 'view_context.dart';
 
 /// Where Felgalizacija is kept (this device only).
@@ -322,6 +323,18 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         }),
         el('span', cls: 'felga-club-sum', text: formatEuro(ledger.clubCents)),
       ]),
+      // Reset, asked twice: everything back to 0, the history stays.
+      button(tr('Reset'), cls: 'felga-reset-all', focusKey: 'felga-reset', onPressed: (_) {
+        _ask(tr('Are you sure you want to reset all the data?'), () {
+          _ask(
+              tr('Are you really 100% million billion percent sure you want to reset the data? '
+                  'The history will stay.'), () {
+            ledger.reset(DateTime.now());
+            _flashAt = DateTime(2000); // no flash goes on over the zeros
+            changed();
+          });
+        });
+      }),
     ]);
     // The history: each -1 / +1 under the name and the day, with that day's
     // felgas of the name; the latest at the top.
@@ -330,11 +343,14 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         _arrow(),
         el('h3', cls: 'felga-title', text: tr('Felgas by date')),
         el('div', cls: 'felga-grid history', children: [
-          for (final day in ledger.shownHistory) ...[
-            el('span', cls: 'felga-cell name', text: day.name),
-            el('span', cls: 'felga-cell date', text: day.date),
-            el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
-          ],
+          for (final day in ledger.shownHistory)
+            if (day.isReset)
+              _resetLine(day, refresh)
+            else ...[
+              el('span', cls: 'felga-cell name', text: day.name),
+              el('span', cls: 'felga-cell date', text: day.date),
+              el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
+            ],
         ]),
       ],
     ]);
@@ -441,6 +457,47 @@ class _MoneyPad {
 }
 
 final _MoneyPad _pad = _MoneyPad();
+
+/// The resets whose totals are open in the history.
+final Set<FelgaDay> _openResets = {};
+
+/// A question in a popup with Yes and No; [yes] runs on Yes.
+void _ask(String question, void Function() yes) {
+  showModal(title: tr('Reset'), showTitle: false, body: [
+    modalLine(question),
+    el('div', cls: 'felga-ask', children: [
+      button(tr('Yes'), cls: 'cta', onPressed: (_) {
+        closeModal();
+        yes();
+      }),
+      button(tr('No'), cls: 'cta secondary', onPressed: (_) => closeModal()),
+    ]),
+  ]);
+}
+
+/// A reset in the history: its date and "Up to that date", which opens (and
+/// closes) every name with their felgas of the whole history up to it, the
+/// most first.
+web.HTMLElement _resetLine(FelgaDay reset, void Function() refresh) {
+  final open = _openResets.contains(reset);
+  final totals = reset.totals!.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+  return el('div', cls: 'felga-reset-line', children: [
+    el('div', cls: 'felga-reset-head', children: [
+      el('span', cls: 'felga-cell date', text: reset.date),
+      button(tr('Up to that date'), cls: 'felga-reset-open${open ? ' open' : ''}', onPressed: (_) {
+        if (!_openResets.remove(reset)) _openResets.add(reset);
+        refresh();
+      }),
+    ]),
+    if (open)
+      el('div', cls: 'felga-reset-totals', children: [
+        for (final MapEntry(key: name, value: felgas) in totals) ...[
+          el('span', cls: 'felga-cell name', text: name),
+          el('span', cls: 'felga-cell num felgas', text: '$felgas'),
+        ],
+      ]),
+  ]);
+}
 
 /// Fireworks: 36 sparks flying out of the flash, not in a perfect circle - a
 /// third of them go out to 0.8 cm from the middle, a third to 0.9 cm, a third

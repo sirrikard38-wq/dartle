@@ -1331,6 +1331,27 @@ body.money-pad-open { padding-bottom: 240px; }
 /* The history under Club money: name, day, that day's felgas. */
 .felga-grid.history { grid-template-columns: auto auto minmax(4ch, auto); margin-top: 0; }
 .felga-cell.date { color: var(--muted); }
+/* Reset, under Club money. */
+.felga-reset-all {
+  display: block; margin: 18px auto 0; padding: 8px 22px; border-radius: 20px;
+  border: 1px solid var(--burgundy); background: none; color: var(--burgundy-soft); font: inherit; font-weight: 700;
+}
+.felga-reset-all:active { background: var(--burgundy); color: var(--white); }
+/* Its two questions: Yes and No side by side. */
+.felga-ask { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
+.felga-ask .cta { min-width: 0; flex: 1 1 0; max-width: 140px; margin: 0; }
+/* A reset in the history: the date and "Up to that date" across the whole
+   row; opened, every name with their felgas up to it. */
+.felga-reset-line { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; margin: 6px 0; }
+.felga-reset-head { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.felga-reset-open {
+  padding: 6px 14px; border-radius: 16px; border: 1px solid var(--line-strong);
+  background: none; color: var(--fg); font: inherit; font-weight: 700; font-size: 0.9rem;
+}
+.felga-reset-open.open { background: var(--white); color: var(--ink); border-color: var(--white); }
+.felga-reset-totals {
+  display: grid; grid-template-columns: auto minmax(4ch, auto); gap: 6px 30px; margin-top: 10px; align-items: center;
+}
 /* The title of the history, under its arrow, in capitals. */
 .felga-title { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; text-align: center; color: var(--fg); text-transform: uppercase; letter-spacing: 0.06em; }
 /* "Felga" right over its digits, the digits under it in the middle. */
