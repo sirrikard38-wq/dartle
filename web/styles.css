@@ -1168,3 +1168,74 @@ summary { cursor: pointer; color: var(--muted); }
 .screen.tutorial .tutorial-tabs,
 .screen.tutorial .tutorial-tabs > .chip-marker > .marker-words { flex-wrap: nowrap; gap: 4px; }
 .screen.tutorial .tutorial-tabs .chip { padding: 0 9px; font-size: 0.85rem; min-height: 36px; }
+
+/* ---------- Felgalizacija ---------- */
+.screen.felga { position: relative; align-items: center; padding: 0 0 28px; }
+/* + in the top corner; open, it is an X (turned 45 degrees, quickly). */
+.felga-toggle, .felga-tick {
+  width: 40px; height: 40px; padding: 7px; border: 0; background: none; color: var(--fg); flex: none;
+}
+.felga-toggle { position: absolute; top: 10px; right: 16px; }
+.felga-toggle svg, .felga-tick svg {
+  width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 2.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.felga-toggle.open svg { transform: rotate(45deg); }
+.felga-toggle.turning.open svg { animation: felga-turn 170ms ease-out; }
+.felga-toggle.turning:not(.open) svg { animation: felga-unturn 170ms ease-out; }
+@keyframes felga-turn { from { transform: rotate(0deg); } to { transform: rotate(45deg); } }
+@keyframes felga-unturn { from { transform: rotate(45deg); } to { transform: rotate(0deg); } }
+/* The club's money at the top. */
+.felga-money { margin: 16px 60px 0; text-align: center; }
+.felga-money p { margin: 3px 0; color: var(--muted); }
+.felga-money strong { color: var(--fg); margin-left: 4px; font-variant-numeric: tabular-nums; }
+/* The names start a fifth of the way down the screen, in the middle. */
+.felga-names {
+  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin-top: max(16px, 20vh - 122px); margin-top: max(16px, 20dvh - 122px);
+}
+.felga-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.felga-name { font-size: 1.15rem; font-weight: 700; min-width: 6ch; text-align: center; }
+.felga-step {
+  width: 46px; height: 36px; border: 1px solid var(--line-strong); border-radius: 18px;
+  background: none; color: var(--fg); font-weight: 700; font-size: 0.95rem;
+}
+.felga-step:active { background: var(--white); color: var(--ink); }
+/* A new name: the box (10 letters, wider for a longer name) and its tick, in
+   the middle together. */
+.felga-new { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; }
+.felga-input {
+  box-sizing: content-box; font: inherit; font-size: 1.05rem; padding: 8px 10px; min-width: 0;
+  max-width: calc(100vw - 110px); border: 1px solid var(--line-strong); border-radius: 6px;
+  background: #111; color: var(--fg); text-align: center;
+}
+.felga-input:focus { outline: none; border-color: var(--fg); }
+/* The long grey arrow between the sections: feathers left, point right. */
+.felga-arrow {
+  display: flex; align-items: center; color: var(--muted);
+  width: calc(100% - 10mm); margin: 24px 5mm 18px;
+}
+.felga-arrow svg { flex: none; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.felga-arrow .arrow-feathers { width: 30px; }
+.felga-arrow .arrow-point { width: 18px; }
+.felga-arrow .arrow-point path { fill: currentColor; }
+.felga-arrow .arrow-shaft { flex: 1; height: 2px; background: currentColor; }
+.felga-grid { display: grid; gap: 10px 14px; align-items: center; width: calc(100% - 10mm); max-width: 460px; }
+.felga-grid.owes { grid-template-columns: 1fr auto auto; }
+.felga-grid.paid { grid-template-columns: 1fr auto auto auto; }
+.felga-cell { font-variant-numeric: tabular-nums; }
+.felga-cell.name { font-weight: 700; overflow-wrap: anywhere; }
+.felga-cell.num { text-align: right; }
+.felga-head { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; text-align: right; }
+/* A money box: four digits wide (wider for a longer number), a grey € after. */
+.money {
+  display: inline-flex; align-items: center; gap: 3px; padding: 5px 7px;
+  border: 1px solid var(--line-strong); border-radius: 6px; background: #111;
+}
+.money:focus-within { border-color: var(--fg); }
+.money-input {
+  box-sizing: content-box; font: inherit; padding: 0; border: 0; background: none; color: var(--fg);
+  text-align: right; outline: none; min-width: 0; max-width: 40vw; font-variant-numeric: tabular-nums;
+}
+.money .euro { color: var(--muted); }
+.felga-spent { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 30px 5mm 0; color: var(--muted); }

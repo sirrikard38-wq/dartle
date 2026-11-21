@@ -7,6 +7,7 @@ import '../dartle.dart';
 import 'dart_shot.dart';
 import 'dom.dart';
 import 'favorites_ui.dart';
+import 'felga_screen.dart';
 import 'footer.dart';
 import 'game_screen.dart';
 import 'install.dart';
@@ -140,6 +141,7 @@ class DartleApp {
           MenuPage.favorites => buildFavoritesScreen(_ctx),
           MenuPage.leaderboard => buildLeaderboardScreen(_ctx),
           MenuPage.tutorial => buildTutorialScreen(_ctx),
+          MenuPage.felga => buildFelgaScreen(_ctx),
         },
     };
     // Fade a screen in only when it changes, not on every dart tapped. A popup

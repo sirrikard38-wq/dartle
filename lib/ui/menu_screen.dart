@@ -4,7 +4,7 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
-/// Main menu: Start, Favorites, Leaderboard.
+/// Main menu: Start, Favorites, Felgalizacija, Leaderboard.
 web.HTMLElement buildMenuScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -20,6 +20,11 @@ web.HTMLElement buildMenuScreen(ViewContext ctx) {
             cls: 'menu-btn',
             focusKey: 'favorites',
             onPressed: (_) => ctx.showPage(MenuPage.favorites)),
+        // The club's own page: names, points and money.
+        button('Felgalizacija',
+            cls: 'menu-btn',
+            focusKey: 'felga',
+            onPressed: (_) => ctx.showPage(MenuPage.felga)),
         button(tr('Leaderboard'),
             cls: 'menu-btn',
             focusKey: 'leaderboard',
