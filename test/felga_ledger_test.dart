@@ -32,6 +32,11 @@ void main() {
     expect(formatEuro(ledger.currentCents), '5,75€');
     ledger.clubCents += parseEuroCents('10')!; // added
     expect(formatEuro(ledger.currentCents), '15,75€');
+    // Total money in the club: what everyone still owes (Riko paid 7,5 more).
+    ledger
+      ..add('Miha')
+      ..members.last.points = 4; // owes 2
+    expect(formatEuro(ledger.owedTotalCents), '-5,5€');
   });
 
   test('money is written with a dot for thousands and a comma for decimals, as it is typed', () {

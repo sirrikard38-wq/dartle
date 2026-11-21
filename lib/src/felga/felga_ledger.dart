@@ -75,8 +75,12 @@ class FelgaLedger {
   /// Everything paid in.
   int get totalCents => members.fold(0, (sum, m) => sum + m.paidCents);
 
-  /// The money in the club now: everything paid in, with what was added to it
-  /// or spent from it ([clubCents]).
+  /// "Total money in the club": what everyone still owes, added up (the
+  /// column Owed; one who paid more counts below zero).
+  int get owedTotalCents => members.fold(0, (sum, m) => sum + debtCents(m));
+
+  /// "Money in the club now": everything paid in, with whatever was entered
+  /// as club money ([clubCents]: above zero added, below zero spent).
   int get currentCents => totalCents + clubCents;
 
   /// The members by points, most first (equal points keep the order they were

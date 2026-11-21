@@ -243,7 +243,10 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     final anyone = ledger.members.isNotEmpty;
     fill(moneyPart, [
       el('div', cls: 'felga-money', children: [
-        el('p', children: [textNode('${tr('Total money in the club')} '), el('strong', text: formatEuro(ledger.totalCents))]),
+        el('p', children: [
+          textNode('${tr('Total money in the club')} '),
+          el('strong', text: formatEuro(ledger.owedTotalCents)),
+        ]),
         el('p', children: [textNode('${tr('Money in the club now')} '), el('strong', text: formatEuro(ledger.currentCents))]),
       ]),
     ]);
@@ -347,9 +350,15 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   ]);
 }
 
-/// Fireworks: twelve sparks flying out of the flash, two rings of them.
+/// Fireworks: 36 sparks flying out of the flash, not in a perfect circle - a
+/// third of them go out to 0.8 cm from the middle, a third to 0.9 cm, a third
+/// to 1 cm (1 cm is 37.8 CSS pixels), their directions a little uneven too.
 web.HTMLElement _sparks() => el('span', cls: 'felga-burst', attrs: {'aria-hidden': 'true'}, children: [
-      for (var i = 0; i < 12; i++) el('i', attrs: {'style': '--a: ${i * 30}deg; --d: ${i.isEven ? 30 : 22}px'}),
+      for (var i = 0; i < 36; i++)
+        el('i', attrs: {
+          'style': '--a: ${i * 10 + const [0, 4, -3][i % 3]}deg; '
+              '--d: ${const [30.2, 37.8, 34.0][i % 3]}px',
+        }),
     ]);
 
 /// A very long grey arrow across the screen (5 mm from each edge): the
