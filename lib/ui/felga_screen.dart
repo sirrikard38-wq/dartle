@@ -263,7 +263,8 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
                 el('span', cls: 'felga-cell num felgas', children: [
                   el('span', children: [
                     textNode('${member.points}'),
-                    if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime) _sparks(),
+                    if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime)
+                      _sparks(inward: _flashBy < 0),
                   ]),
                 ]),
                 member == _flashMember),
@@ -354,7 +355,10 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
 /// Fireworks: 36 sparks flying out of the flash, not in a perfect circle - a
 /// third of them go out to 0.8 cm from the middle, a third to 0.9 cm, a third
 /// to 1 cm (1 cm is 37.8 CSS pixels), their directions a little uneven too.
-web.HTMLElement _sparks() => el('span', cls: 'felga-burst', attrs: {'aria-hidden': 'true'}, children: [
+/// For a -1 ([inward]) they run backwards: they appear out there, smoothly,
+/// and fly into the box.
+web.HTMLElement _sparks({bool inward = false}) =>
+    el('span', cls: 'felga-burst${inward ? ' inward' : ''}', attrs: {'aria-hidden': 'true'}, children: [
       for (var i = 0; i < 36; i++)
         el('i', attrs: {
           'style': '--a: ${i * 10 + const [0, 4, -3][i % 3]}deg; '

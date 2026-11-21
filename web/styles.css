@@ -1295,6 +1295,8 @@ summary { cursor: pointer; color: var(--muted); }
   65% { opacity: 0.9; }
   100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
 }
+/* -1: the fireworks backwards - the sparks appear out there and fly into the box. */
+.felga-burst.inward i { animation-direction: reverse; }
 @media (prefers-reduced-motion: reduce) { .felga-burst { display: none; } }
 .felga-step.flash { animation: felga-flash-button 1.5s ease-out both; }
 .felga-name.flash, .felga-cell.felgas.flash > span { border-radius: 10px; }
