@@ -36,12 +36,12 @@ void _save(FelgaLedger ledger) {
   }
 }
 
-/// Felgalizacija: the club's money at the top; the names, each with -1 and +1
-/// (a + in the top corner opens a box for a new name, confirmed with the tick;
-/// the + turns into an X, which closes it); then, under a long arrow, the
-/// names by points with what each owes (a point is 0,50 €); under another,
-/// what each paid (a box adds to it), still to pay and paid; and at the foot
-/// what the club spent.
+/// Felgalizacija: the club's money at the top; the names by felgas with their
+/// fines (a felga is 0,50 €); under a long arrow the names, each with -1 and
+/// +1, and under them a + that opens a box for a new name (confirmed with the
+/// tick; the + turns into an X, which closes it); under another arrow what
+/// each paid (a box adds to it), still to pay and paid; and at the foot the
+/// club money (added above zero, spent below).
 web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   final ledger = _book;
   void changed() {
@@ -70,8 +70,8 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     ]));
 
   // The box for a new name: 10 letters wide, wider as a longer name is typed,
-  // in the middle with its tick; Enter or the tick adds the name and a new
-  // empty box is ready under it.
+  // in the middle of the screen, its tick to the right of it; Enter or the
+  // tick adds the name and a new empty box is ready under it.
   web.HTMLElement? newName;
   if (_adding) {
     final input = el('input', cls: 'felga-input', attrs: {
@@ -105,7 +105,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       ..append(svg('svg', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
         svg('path', attrs: {'d': 'M4 12.5 L9.5 18 L20 6'}),
       ]));
-    newName = el('div', cls: 'felga-new', children: [input, tick]);
+    newName = el('div', cls: 'felga-new', children: [el('span'), input, tick]);
   }
 
   web.HTMLElement step(FelgaMember member, int by) => button(by > 0 ? '+1' : '-1',
@@ -189,7 +189,6 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   });
 
   return el('main', cls: 'screen felga', children: [
-    toggle,
     el('div', cls: 'felga-money', children: [
       el('p', children: [textNode('${tr('Total money in the club')} '), total]),
       el('p', children: [textNode('${tr('Money in the club now')} '), current]),
@@ -209,15 +208,17 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       _arrow(),
     ],
     // The names, with -1 and +1 one under the other (as wide as the longest
-    // name), and the box for a new one.
-    el('div', cls: 'felga-names', children: [
-      for (final member in ledger.members) ...[
-        step(member, -1),
-        el('span', cls: 'felga-name', text: member.name),
-        step(member, 1),
-      ],
-      if (newName != null) newName,
-    ]),
+    // name); under them the box for a new one, and the + (X while it is open).
+    if (ledger.members.isNotEmpty)
+      el('div', cls: 'felga-names', children: [
+        for (final member in ledger.members) ...[
+          step(member, -1),
+          el('span', cls: 'felga-name', text: member.name),
+          step(member, 1),
+        ],
+      ]),
+    if (newName != null) newName,
+    toggle,
     if (ledger.members.isNotEmpty) ...[
       _arrow(),
       el('div', cls: 'felga-grid paid', children: [
