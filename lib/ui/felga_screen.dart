@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:js_interop';
 import 'dart:math' as math;
 
 import 'package:web/web.dart' as web;
@@ -49,58 +48,52 @@ void _save(FelgaLedger ledger) {
 /// fines (a felga is 0,50 €); under a long arrow the names, each with -1 and
 /// +1, and under them a + that opens a box for a new name (confirmed with the
 /// tick; the + turns into an X, which closes it); under another arrow what
-/// each paid (a box adds to it), still to pay and paid; and at the foot the
-/// club money (added above zero, spent below).
+/// each paid (a box adds to it), still to pay and paid; the club money (added
+/// above zero, spent below); and the history of the felgas.
+///
+/// A change does not draw the whole page again: each part is filled anew in
+/// its place, and the box for a new name stays as it is - so the phone's
+/// keyboard stays up and the page does not jump.
 web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   final ledger = _book;
-  void changed() {
-    _save(ledger);
-    ctx.rerender();
+
+  web.HTMLElement part() => el('div', cls: 'felga-part');
+  final moneyPart = part(), owesPart = part(), namesPart = part(), newNamePart = part();
+  final togglePart = part(), paidPart = part(), clubPart = part(), historyPart = part();
+  void fill(web.HTMLElement into, List<web.HTMLElement> children) {
+    into.textContent = '';
+    for (final child in children) {
+      into.append(child);
+    }
   }
 
-  final total = el('strong', text: formatEuro(ledger.totalCents));
-  final current = el('strong', text: formatEuro(ledger.currentCents));
-
-  // + in the top corner; open, it is an X (turned a quarter round).
-  final turn = _justToggled;
-  _justToggled = false;
-  final toggle = button('',
-      cls: 'felga-toggle${_adding ? ' open' : ''}${turn ? ' turning' : ''}',
-      focusKey: 'felga-toggle',
-      ariaLabel: _adding ? tr('Stop adding names') : tr('Add a name'),
-      onPressed: (kb) {
-        _adding = !_adding;
-        _justToggled = true;
-        ctx.keepFocus(_adding ? 'felga-name' : (kb ? 'felga-toggle' : null));
-        ctx.rerender();
-      })
-    ..append(svg('svg', cls: 'felga-plus', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
-      svg('path', attrs: {'d': 'M12 3 V21 M3 12 H21'}),
-    ]));
+  late final void Function() refresh;
+  void changed() {
+    _save(ledger);
+    refresh();
+  }
 
   // The box for a new name: 10 letters wide, wider as a longer name is typed,
   // in the middle of the screen, its tick to the right of it; Enter or the
-  // tick adds the name and a new empty box is ready under it.
-  web.HTMLElement? newName;
-  if (_adding) {
+  // tick adds the name and the box is empty and ready for the next one.
+  void openNameBox({required bool focus}) {
     final input = el('input', cls: 'felga-input', attrs: {
       'type': 'text',
       'maxlength': '40',
       'autocomplete': 'off',
       'enterkeyhint': 'done',
       'aria-label': tr('Name'),
-      'data-focus': 'felga-name',
     }) as web.HTMLInputElement;
     void fit() => input.style.width = '${math.max(10, input.value.length + 1)}ch';
     fit();
     void confirm() {
-      ctx.keepFocus('felga-name');
-      if (input.value.trim().isEmpty) {
-        input.focus();
-        return;
+      if (input.value.trim().isNotEmpty) {
+        ledger.add(input.value);
+        input.value = '';
+        fit();
+        changed();
       }
-      ledger.add(input.value);
-      changed();
+      input.focus();
     }
 
     input.onInput.listen((_) => fit());
@@ -114,15 +107,17 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       ..append(svg('svg', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
         svg('path', attrs: {'d': 'M4 12.5 L9.5 18 L20 6'}),
       ]));
-    newName = el('div', cls: 'felga-new', children: [el('span'), input, tick]);
+    // Pressed, the tick leaves the typing in the box (the keyboard stays up).
+    tick.onMouseDown.listen((event) => event.preventDefault());
+    fill(newNamePart, [el('div', cls: 'felga-new', children: [el('span'), input, tick])]);
+    if (focus) input.focus();
   }
 
-  // The flash of the last -1 / +1 goes on where it was if the page is drawn
+  // The flash of the last -1 / +1 goes on where it was if a part is filled
   // again meanwhile.
-  final flashed = DateTime.now().difference(_flashAt);
-  final flashing = flashed < _flashTime;
   T flash<T extends web.HTMLElement>(T element, bool on) {
-    if (on && flashing) {
+    final flashed = DateTime.now().difference(_flashAt);
+    if (on && flashed < _flashTime) {
       element.classList.add('flash');
       element.style.animationDelay = '-${flashed.inMilliseconds}ms';
     }
@@ -148,136 +143,184 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   // after it, written with a dot for thousands and a comma for decimals while
   // it is typed. It opens the phone-number keys, which have a minus (the
   // number keys with a decimal point have none on Android): a minus typed
-  // turns the number below zero and back, a dot typed is the decimal comma.
-  // The cursor always goes to the end.
-  web.HTMLInputElement moneyBox(String label, String value) {
+  // anywhere turns the number below zero and back, a dot typed at the end is
+  // the decimal comma. The cursor always goes to the end. The number is
+  // confirmed ([onConfirm]) when the box is left or Enter is pressed.
+  web.HTMLElement moneyBox(String label, void Function(int cents) onConfirm) {
     final input = el('input', cls: 'money-input', attrs: {
       'type': 'text',
       'inputmode': 'tel',
+      'enterkeyhint': 'done',
       'autocomplete': 'off',
       'aria-label': label,
     }) as web.HTMLInputElement;
-    input.value = value;
     void fit() => input.style.width = '${math.max(4, input.value.length)}ch';
     void toEnd() => Timer.run(() {
           final end = input.value.length;
           input.setSelectionRange(end, end);
         });
     fit();
-    var last = input.value;
-    input.onInput.listen((event) {
-      final typed = event.isA<web.InputEvent>() ? (event as web.InputEvent).data : null;
+    var last = '';
+    input.onInput.listen((_) {
       var text = input.value;
-      if (typed == '-') {
-        // Anywhere in the number: the sign turns.
-        final digits = last.replaceAll('-', '');
+      final minuses = '-'.allMatches(text).length;
+      final digits = text.replaceAll('-', '');
+      if (minuses > '-'.allMatches(last).length) {
+        // A minus was typed: the sign turns.
         text = last.startsWith('-') ? digits : '-$digits';
-      } else if (typed == '.' && text.endsWith('.')) {
-        text = '${text.substring(0, text.length - 1)},';
+      } else {
+        // The minus kept where it was, or taken away.
+        text = minuses > 0 && last.startsWith('-') ? '-$digits' : digits;
       }
+      // A dot at the end was typed (the dots of the thousands never are).
+      if (text.endsWith('.')) text = '${text.substring(0, text.length - 1)},';
       input.value = last = formatTypedEuro(text);
       fit();
     });
+    var confirming = false;
+    void confirm() {
+      if (confirming) return;
+      final cents = parseEuroCents(input.value);
+      input.value = last = '';
+      fit();
+      if (cents == null || cents == 0) return;
+      confirming = true;
+      onConfirm(cents);
+    }
+
     input.onFocus.listen((_) => toEnd());
     input.onClick.listen((_) => toEnd());
+    input.onBlur.listen((_) => confirm());
     input.onKeyDown.listen((event) {
-      if (event.key == 'Enter') input.blur();
+      if (event.key == 'Enter') {
+        event.preventDefault();
+        input.blur();
+      }
     });
-    return input;
+    return el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
   }
 
-  web.HTMLElement money(web.HTMLInputElement input) =>
-      el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
-
-  // What each paid, whoever owes the most first: a number in the box is added
-  // to Paid (or taken off, below zero) when it is confirmed, and the box is
-  // empty again.
-  final paidRows = <web.HTMLElement>[];
-  for (final member in ledger.byDebt) {
-    final box = moneyBox(tr('{name} paid', {'name': member.name}), '');
-    box.onChange.listen((_) {
-      final cents = parseEuroCents(box.value);
-      if (cents == null) return;
-      member.paidCents += cents;
-      changed();
-    });
-    paidRows.addAll([
-      el('span', cls: 'felga-cell name', text: member.name),
-      money(box),
-      el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.debtCents(member))),
-      el('span', cls: 'felga-cell num', text: formatEuro(member.paidCents)),
-    ]);
+  web.HTMLElement toggleButton() {
+    final turn = _justToggled;
+    _justToggled = false;
+    return button('',
+        cls: 'felga-toggle${_adding ? ' open' : ''}${turn ? ' turning' : ''}',
+        focusKey: 'felga-toggle',
+        ariaLabel: _adding ? tr('Stop adding names') : tr('Add a name'),
+        onPressed: (_) {
+          _adding = !_adding;
+          _justToggled = true;
+          fill(togglePart, [toggleButton()]);
+          if (_adding) {
+            openNameBox(focus: true);
+          } else {
+            fill(newNamePart, []);
+          }
+        })
+      ..append(svg('svg', cls: 'felga-plus', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
+        svg('path', attrs: {'d': 'M12 3 V21 M3 12 H21'}),
+      ]));
   }
 
-  // Club money: an amount above zero is added to the club, below zero spent
-  // from it; each is added up when it is confirmed, and the box is empty again.
-  final club = moneyBox(tr('Club money'), '');
-  club.onChange.listen((_) {
-    final cents = parseEuroCents(club.value);
-    if (cents == null) return;
-    ledger.clubCents += cents;
-    changed();
-  });
-
-  return el('main', cls: 'screen felga', children: [
-    el('div', cls: 'felga-money', children: [
-      el('p', children: [textNode('${tr('Total money in the club')} '), total]),
-      el('p', children: [textNode('${tr('Money in the club now')} '), current]),
-    ]),
-    // Right under the money: the felgas and the fines, most first.
-    if (ledger.members.isNotEmpty) ...[
-      el('div', cls: 'felga-grid owes', children: [
-        el('span'),
-        el('span', cls: 'felga-head felgas', text: 'Felga'),
-        el('span', cls: 'felga-head', text: 'Kazna'),
-        for (final member in ledger.byPoints) ...[
-          el('span', cls: 'felga-cell name', text: member.name),
-          flash(el('span', cls: 'felga-cell num felgas', children: [el('span', text: '${member.points}')]),
-              member == _flashMember),
-          el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.owedCents(member))),
-        ],
+  refresh = () {
+    final anyone = ledger.members.isNotEmpty;
+    fill(moneyPart, [
+      el('div', cls: 'felga-money', children: [
+        el('p', children: [textNode('${tr('Total money in the club')} '), el('strong', text: formatEuro(ledger.totalCents))]),
+        el('p', children: [textNode('${tr('Money in the club now')} '), el('strong', text: formatEuro(ledger.currentCents))]),
       ]),
-      _arrow(),
-    ],
+    ]);
+    // Right under the money: the felgas and the fines, most first.
+    fill(owesPart, [
+      if (anyone) ...[
+        el('div', cls: 'felga-grid owes', children: [
+          el('span'),
+          el('span', cls: 'felga-head felgas', text: 'Felga'),
+          el('span', cls: 'felga-head', text: 'Kazna'),
+          for (final member in ledger.byPoints) ...[
+            el('span', cls: 'felga-cell name', text: member.name),
+            flash(el('span', cls: 'felga-cell num felgas', children: [el('span', text: '${member.points}')]),
+                member == _flashMember),
+            el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.owedCents(member))),
+          ],
+        ]),
+        _arrow(),
+      ],
+    ]);
     // The names, with -1 and +1 one under the other (as wide as the longest
     // name); under them the box for a new one, and the + (X while it is open).
-    if (ledger.members.isNotEmpty)
-      el('div', cls: 'felga-names', children: [
-        for (final member in ledger.members) ...[
-          step(member, -1),
-          flash(el('span', cls: 'felga-name', text: member.name), member == _flashMember),
-          step(member, 1),
-        ],
+    fill(namesPart, [
+      if (anyone)
+        el('div', cls: 'felga-names', children: [
+          for (final member in ledger.members) ...[
+            step(member, -1),
+            flash(el('span', cls: 'felga-name', text: member.name), member == _flashMember),
+            step(member, 1),
+          ],
+        ]),
+    ]);
+    fill(togglePart, [toggleButton()]);
+    // What each paid, whoever owes the most first: a number in the box is
+    // added to Paid (or taken off, below zero), and the box is empty again.
+    fill(paidPart, [
+      if (anyone) ...[
+        _arrow(),
+        el('div', cls: 'felga-grid paid', children: [
+          el('span'),
+          el('span'),
+          el('span', cls: 'felga-head', text: tr('Owed')),
+          el('span', cls: 'felga-head', text: tr('Paid')),
+          for (final member in ledger.byDebt) ...[
+            el('span', cls: 'felga-cell name', text: member.name),
+            moneyBox(tr('{name} paid', {'name': member.name}), (cents) {
+              member.paidCents += cents;
+              changed();
+            }),
+            el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.debtCents(member))),
+            el('span', cls: 'felga-cell num', text: formatEuro(member.paidCents)),
+          ],
+        ]),
+      ],
+    ]);
+    // Club money: an amount above zero is added to the club, below zero spent
+    // from it; each is added up, and the box is empty again.
+    fill(clubPart, [
+      el('div', cls: 'felga-spent', children: [
+        el('span', text: tr('Club money')),
+        moneyBox(tr('Club money'), (cents) {
+          ledger.clubCents += cents;
+          changed();
+        }),
+        el('span', cls: 'felga-club-sum', text: formatEuro(ledger.clubCents)),
       ]),
-    if (newName != null) newName,
-    toggle,
-    if (ledger.members.isNotEmpty) ...[
-      _arrow(),
-      el('div', cls: 'felga-grid paid', children: [
-        el('span'),
-        el('span'),
-        el('span', cls: 'felga-head', text: tr('Owed')),
-        el('span', cls: 'felga-head', text: tr('Paid')),
-        ...paidRows,
-      ]),
-    ],
-    el('div', cls: 'felga-spent', children: [
-      el('span', text: tr('Club money')),
-      money(club),
-      el('span', cls: 'felga-club-sum', text: formatEuro(ledger.clubCents)),
-    ]),
+    ]);
     // The history: each -1 / +1 under the name and the day, with that day's
     // felgas of the name; the latest at the top.
-    if (ledger.history.isNotEmpty) ...[
-      _arrow(),
-      el('div', cls: 'felga-grid history', children: [
-        for (final day in ledger.history) ...[
-          el('span', cls: 'felga-cell name', text: day.name),
-          el('span', cls: 'felga-cell date', text: day.date),
-          el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
-        ],
-      ]),
-    ],
+    fill(historyPart, [
+      if (ledger.history.isNotEmpty) ...[
+        _arrow(),
+        el('div', cls: 'felga-grid history', children: [
+          for (final day in ledger.history) ...[
+            el('span', cls: 'felga-cell name', text: day.name),
+            el('span', cls: 'felga-cell date', text: day.date),
+            el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
+          ],
+        ]),
+      ],
+    ]);
+  };
+
+  refresh();
+  if (_adding) openNameBox(focus: false);
+  return el('main', cls: 'screen felga', children: [
+    moneyPart,
+    owesPart,
+    namesPart,
+    newNamePart,
+    togglePart,
+    paidPart,
+    clubPart,
+    historyPart,
   ]);
 }
 
