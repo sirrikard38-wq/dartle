@@ -1246,18 +1246,22 @@ summary { cursor: pointer; color: var(--muted); }
   position: relative; display: inline-flex; align-items: center; gap: 2px; padding: 5px 6px;
   border: 1px solid var(--line-strong); border-radius: 6px; background: #111;
 }
-/* While a money box is typed in, a minus and a comma of its own stand over
-   it (not every phone keyboard has them); they cover, they move nothing. */
-.money-keys {
-  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
-  display: none; gap: 6px; z-index: 6;
+/* The page's own number keys for the money boxes: they rise from the foot of
+   the screen, − and , in their bottom left corner, ⌫ and ✓ tall on the
+   right. The page gets room under it, so the box can stay in sight. */
+.money-pad {
+  position: fixed; left: 50%; bottom: 0; z-index: 50; width: min(100%, 500px);
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  padding: 8px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: #0d0d0d; border-top: 1px solid var(--line);
+  transform: translate(-50%, 105%); transition: transform 180ms ease-out;
 }
-.money:focus-within .money-keys { display: flex; }
-.money-key {
-  width: 46px; height: 40px; padding: 0; border: 1px solid var(--line-strong); border-radius: 8px;
-  background: #1c1c1c; color: var(--fg); font: inherit; font-size: 1.35rem; font-weight: 700; line-height: 1;
-}
-.money-key:active { background: var(--white); color: var(--ink); }
+.money-pad.open { transform: translate(-50%, 0); }
+.money-pad .money-pad-key { height: 50px; font-size: 1.45rem; border-radius: 6px; }
+.money-pad .money-pad-key.tall { grid-row: span 2; height: auto; }
+.money-pad .money-pad-key.done { background: var(--white); color: var(--ink); }
+.money-pad .money-pad-key svg { width: 26px; height: 26px; }
+body.money-pad-open { padding-bottom: 240px; }
 .money:focus-within { border-color: var(--fg); }
 .money-input {
   box-sizing: content-box; font: inherit; padding: 0; border: 0; background: none; color: var(--fg);

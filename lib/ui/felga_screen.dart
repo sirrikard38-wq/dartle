@@ -5,6 +5,7 @@ import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 import 'dom.dart';
+import 'keyboard.dart';
 import 'view_context.dart';
 
 /// Where Felgalizacija is kept (this device only).
@@ -141,17 +142,15 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
 
   // A money box: four digits wide (wider for a longer number), the grey €
   // after it, written with a dot for thousands and a comma for decimals while
-  // it is typed. The number keys open, and while the box is typed in a minus
-  // and a comma of its own stand over it (many phone keyboards have neither):
-  // the minus turns the number below zero and back. A minus or a dot typed on
-  // a keyboard that has them works too. The cursor always goes to the end.
-  // The number is confirmed ([onConfirm]) when the box is left or Enter is
-  // pressed.
+  // it is typed. It opens no phone keyboard but the page's own number keys
+  // (a phone keyboard cannot be given a minus or a comma): they rise from the
+  // foot of the screen with − and , in their bottom left corner. The cursor
+  // always goes to the end. The number is confirmed ([onConfirm]) with the
+  // tick of those keys, or when the box is left.
   web.HTMLElement moneyBox(String label, void Function(int cents) onConfirm) {
     final input = el('input', cls: 'money-input', attrs: {
       'type': 'text',
-      'inputmode': 'decimal',
-      'enterkeyhint': 'done',
+      'inputmode': 'none',
       'autocomplete': 'off',
       'aria-label': label,
     }) as web.HTMLInputElement;
@@ -162,18 +161,17 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         });
     fit();
     var last = '';
+    // Typed on a real keyboard (a computer): a minus anywhere turns the sign,
+    // a dot at the end is the decimal comma.
     input.onInput.listen((_) {
       var text = input.value;
       final minuses = '-'.allMatches(text).length;
       final digits = text.replaceAll('-', '');
       if (minuses > '-'.allMatches(last).length) {
-        // A minus was typed: the sign turns.
         text = last.startsWith('-') ? digits : '-$digits';
       } else {
-        // The minus kept where it was, or taken away.
         text = minuses > 0 && last.startsWith('-') ? '-$digits' : digits;
       }
-      // A dot at the end was typed (the dots of the thousands never are).
       if (text.endsWith('.')) text = '${text.substring(0, text.length - 1)},';
       input.value = last = formatTypedEuro(text);
       fit();
@@ -189,32 +187,26 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       onConfirm(cents);
     }
 
-    input.onFocus.listen((_) => toEnd());
+    input.onFocus.listen((_) {
+      toEnd();
+      _pad.open(input, (change) {
+        input.value = last = formatTypedEuro(change(input.value));
+        fit();
+        toEnd();
+      });
+    });
     input.onClick.listen((_) => toEnd());
-    input.onBlur.listen((_) => confirm());
+    input.onBlur.listen((_) {
+      _pad.close(input);
+      confirm();
+    });
     input.onKeyDown.listen((event) {
       if (event.key == 'Enter') {
         event.preventDefault();
         input.blur();
       }
     });
-    // The minus and the comma over the box: pressed, they leave the typing in
-    // the box (nothing is confirmed, the keyboard stays up).
-    web.HTMLElement key(String label, String aria, String Function(String text) change) {
-      final b = button(label, cls: 'money-key', ariaLabel: aria, onPressed: (_) {
-        input.value = last = formatTypedEuro(change(input.value));
-        fit();
-        toEnd();
-      });
-      b.onMouseDown.listen((event) => event.preventDefault());
-      return b;
-    }
-
-    final keys = el('span', cls: 'money-keys', children: [
-      key('−', tr('Turn the sign'), (text) => text.startsWith('-') ? text.substring(1) : '-$text'),
-      key(',', tr('Decimal comma'), (text) => text.contains(',') ? text : '$text,'),
-    ]);
-    return el('label', cls: 'money', children: [keys, input, el('span', cls: 'euro', text: '€')]);
+    return el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
   }
 
   web.HTMLElement toggleButton() {
@@ -351,6 +343,94 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     historyPart,
   ]);
 }
+
+/// The number keys of the money boxes, the page's own (a phone keyboard cannot
+/// be given a minus or a comma): they rise from the foot of the screen while a
+/// money box is typed in.
+///
+///     1  2  3  ⌫
+///     4  5  6
+///     7  8  9  ✓
+///     −  ,  0
+///
+/// − turns the number below zero and back, , is the decimal comma, ⌫ takes the
+/// last one away and ✓ confirms. Pressed, they leave the typing in the box.
+class _MoneyPad {
+  web.HTMLElement? _element;
+  web.HTMLInputElement? _input;
+  void Function(String Function(String text) change)? _apply;
+  Timer? _hide;
+  Timer? _watch;
+
+  web.HTMLElement get _pad => _element ??= _build();
+
+  web.HTMLElement _build() {
+    web.HTMLElement key(String label, String aria, void Function() press, {String cls = ''}) {
+      final b = button(label, cls: 'key pad-key money-pad-key $cls', ariaLabel: aria, onPressed: (_) => press());
+      return b;
+    }
+
+    void change(String Function(String text) how) => _apply?.call(how);
+    web.HTMLElement digit(int n) => key('$n', '$n', () => change((t) => '$t$n'));
+    final pad = el('div', cls: 'money-pad', attrs: {'role': 'group', 'aria-label': tr('Number pad')}, children: [
+      digit(1), digit(2), digit(3),
+      key('', tr('Delete the last digit'), () => change((t) => t.isEmpty ? t : t.substring(0, t.length - 1)),
+          cls: 'tall')
+        ..append(undoIcon()),
+      digit(4), digit(5), digit(6),
+      digit(7), digit(8), digit(9),
+      key('✓', tr('Done'), () => _input?.blur(), cls: 'tall done'),
+      key('−', tr('Turn the sign'), () => change((t) => t.startsWith('-') ? t.substring(1) : '-$t')),
+      key(',', tr('Decimal comma'), () => change((t) => t.contains(',') ? t : '$t,')),
+      digit(0),
+    ]);
+    // A press anywhere on the keys leaves the typing in the box.
+    pad.onMouseDown.listen((event) => event.preventDefault());
+    return pad;
+  }
+
+  /// Shows the keys for [input]; [apply] changes what is in it.
+  void open(web.HTMLInputElement input, void Function(String Function(String text) change) apply) {
+    _hide?.cancel();
+    _input = input;
+    _apply = apply;
+    final pad = _pad;
+    if (!pad.isConnected) web.document.body!.append(pad);
+    // Next frame, so that it slides up.
+    Timer.run(() {
+      pad.classList.add('open');
+      web.document.body!.classList.add('money-pad-open');
+      // The box stays in sight above the keys.
+      Timer(const Duration(milliseconds: 200), () {
+        if (_input == input) {
+          input.scrollIntoView(web.ScrollIntoViewOptions(block: 'center', behavior: 'smooth'));
+        }
+      });
+    });
+    // Gone with its box (another page): the keys go too.
+    _watch?.cancel();
+    _watch = Timer.periodic(const Duration(milliseconds: 400), (_) {
+      if (!(_input?.isConnected ?? false)) _close();
+    });
+  }
+
+  /// [input] was left: the keys go down, unless another box takes them at once.
+  void close(web.HTMLInputElement input) {
+    if (_input != input) return;
+    _hide?.cancel();
+    _hide = Timer(const Duration(milliseconds: 60), _close);
+  }
+
+  void _close() {
+    _watch?.cancel();
+    _input = null;
+    _apply = null;
+    _element?.classList.remove('open');
+    web.document.body?.classList.remove('money-pad-open');
+  }
+}
+
+final _MoneyPad _pad = _MoneyPad();
 
 /// Fireworks: 36 sparks flying out of the flash, not in a perfect circle - a
 /// third of them go out to 0.8 cm from the middle, a third to 0.9 cm, a third
