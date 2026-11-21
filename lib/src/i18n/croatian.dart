@@ -135,6 +135,8 @@ const Map<String, String> croatian = {
   'Number pad': 'Tipkovnica s brojevima',
   'This number is impossible to checkout.': 'Za ovaj broj checkout je nemoguć.',
   'Next checkout': 'Sljedeći checkout',
+  'Next': 'Sljedeći',
+  'Replay': 'Ponovi',
 
   // ---------------------------------------------------------- game screen
   'Finish on a double or Bull.': 'Završi na doubleu ili Bullu.',

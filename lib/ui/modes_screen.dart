@@ -30,7 +30,11 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
       cls: 'mode-card',
       focusKey: 'mode-tutorial',
       ariaLabel: '${tr('Checkout calculator')}: ${tr('Learn what to aim at, and why.')}',
-      onPressed: (_) => ctx.showPage(MenuPage.tutorial));
+      onPressed: (_) {
+        // It always opens on Practice.
+        game.tutorial.tab = TutorialTab.practice;
+        ctx.showPage(MenuPage.tutorial);
+      });
   tutorial.appendChild(el('strong', text: tr('Checkout calculator')));
   tutorial.appendChild(el('span', text: tr('Learn what to aim at, and why.')));
 

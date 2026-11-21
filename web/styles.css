@@ -1027,8 +1027,9 @@ summary { cursor: pointer; color: var(--muted); }
 .practice-actions {
   flex: none; width: 100%; display: flex; justify-content: center; gap: 10px; padding: 6px 0 8px;
 }
+/* Replay and Next: each as wide as its word (and some room). */
 .practice-actions .cta, .practice-actions .cta.secondary {
-  margin: 0; min-width: 0; flex: 1 1 0; max-width: 180px; height: 46px; font-size: 0.95rem;
+  margin: 0; min-width: 0; flex: none; width: auto; padding: 0 26px; height: 46px; font-size: 0.95rem;
 }
 /* The answer above them scrolls on its own if it ever has to. */
 .practice-result {
@@ -1059,7 +1060,7 @@ summary { cursor: pointer; color: var(--muted); }
    less its caption and boxes, 88px), two share the row. */
 .practice-result > .headline { margin-top: 4px; }
 .practice-result .result-boards {
-  flex: 1 1 0; min-height: 0; container-type: size; align-items: center; margin: 2px 0 4px;
+  flex: 3 1 0; min-height: 0; container-type: size; align-items: center; margin: 2px 0 4px;
 }
 .practice-result .result-boards .board-figure {
   flex: none; max-width: none;
@@ -1068,7 +1069,12 @@ summary { cursor: pointer; color: var(--muted); }
 .practice-result .result-boards .board-figure:not(:only-child) {
   width: max(100px, min((100cqw - 12px) / 2, 100cqh - 88px, 360px));
 }
-.practice-result .result-more { flex: none; margin: 0 0 2px; }
+/* "Go to Learn to learn why": in capitals, in the middle of the room between
+   the boxes of the answer and Replay / Next. */
+.practice-result .result-more {
+  flex: 1 1 0; min-height: 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.text-link.extra-title.learn-link { text-transform: uppercase; letter-spacing: 0.06em; }
 /* The favorite dart as in Learn: it grows with its board (cqw: the board's
    width) and sits inside the board's corner, clear of the numbers. */
 .practice-result .result-boards .board-figure { container-type: inline-size; }

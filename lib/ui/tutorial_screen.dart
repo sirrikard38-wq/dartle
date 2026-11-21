@@ -217,7 +217,7 @@ List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
   ];
 }
 
-/// The darts in hand, 1, 2 or 3, for Learn and Missing (one choice for both).
+/// The darts in hand, 3, 2 or 1, for Learn and Missing (one choice for both).
 web.HTMLElement _dartsChips(ViewContext ctx, TutorialSession session, String name) {
   web.HTMLButtonElement darts(int n) => button('$n',
       cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
@@ -229,7 +229,7 @@ web.HTMLElement _dartsChips(ViewContext ctx, TutorialSession session, String nam
         session.learnDarts = n;
         ctx.rerender();
       });
-  return el('div', cls: 'chips', children: [darts(1), darts(2), darts(3)]);
+  return el('div', cls: 'chips', children: [darts(3), darts(2), darts(1)]);
 }
 
 /// A number that cannot be checked out at all says so, with one of the
@@ -512,8 +512,8 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
   // Always at the foot, while playing and after: another number, or this one
   // again from the first dart.
   final actions = el('div', cls: 'practice-actions', children: [
-    button(tr('Next checkout'), cls: 'cta', focusKey: 'next', onPressed: (_) => again(session.newQuestion)),
-    button(tr('Replay checkout'), cls: 'cta secondary', focusKey: 'replay', onPressed: (_) => again(session.replay)),
+    button(tr('Replay'), cls: 'cta secondary', focusKey: 'replay', onPressed: (_) => again(session.replay)),
+    button(tr('Next'), cls: 'cta', focusKey: 'next', onPressed: (_) => again(session.newQuestion)),
   ]);
 
   final judged = session.result;
