@@ -325,6 +325,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     fill(historyPart, [
       if (ledger.history.isNotEmpty) ...[
         _arrow(),
+        el('h3', cls: 'felga-title', text: 'Broj felgi po datumu'),
         el('div', cls: 'felga-grid history', children: [
           for (final day in ledger.history) ...[
             el('span', cls: 'felga-cell name', text: day.name),

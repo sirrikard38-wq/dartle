@@ -1306,6 +1306,8 @@ summary { cursor: pointer; color: var(--muted); }
 /* The history under Club money: name, day, that day's felgas. */
 .felga-grid.history { grid-template-columns: auto auto minmax(4ch, auto); margin-top: 0; }
 .felga-cell.date { color: var(--muted); }
+/* The title of the history, under its arrow. */
+.felga-title { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; text-align: center; color: var(--fg); text-transform: none; letter-spacing: normal; }
 /* "Felga" right over its digits, the digits under it in the middle. */
 .felga-grid .felgas { text-align: center; }
 .felga-club-sum { color: var(--fg); font-variant-numeric: tabular-nums; }
