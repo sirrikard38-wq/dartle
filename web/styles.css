@@ -944,7 +944,7 @@ summary { cursor: pointer; color: var(--muted); }
 .learn-top .board-figure .hint { font-size: 0.8rem; margin: 2px 0 0; }
 /* Learn: "Also optimal" bigger and white, between the boards and the keypad. */
 .learn-more { display: flex; flex-direction: column; align-items: center; }
-.text-link.extra-title.learn-link { color: var(--fg); font-size: 0.95rem; letter-spacing: 0.08em; font-weight: 700; }
+.text-link.extra-title.learn-link { color: var(--fg); font-size: 0.95rem; letter-spacing: 0.02em; font-weight: 700; text-transform: none; }
 .text-link.extra-title.tutor-all { color: var(--fg); font-size: 0.95rem; letter-spacing: 0.08em; font-weight: 700; }
 .learn-top .text-link.extra-title.tutor-all { padding: 4px 10px; margin: 4px 0; }
 /* Tutorial Favorites: the number, then 2 Darts and 3 Darts side by side. */

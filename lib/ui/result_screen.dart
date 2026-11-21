@@ -118,7 +118,7 @@ List<web.HTMLElement> resultView(
           ? null
           : el('div', cls: 'learn-more', children: [
               if (onlyPossibility != null) onlyPossibility,
-              button(tr('Go to Learn for more'),
+              button(tr('Go to Learn to learn why'),
                   cls: 'text-link extra-title learn-link', focusKey: 'learn-more', onPressed: (_) => learnMore()),
             ]);
 

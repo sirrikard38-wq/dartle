@@ -26,18 +26,18 @@ web.HTMLElement buildTutorialScreen(ViewContext ctx) {
     ctx,
     name: 'tutorial',
     labels: [
-      for (final which in TutorialTab.values)
+      for (final which in session.order)
         switch (which) {
           TutorialTab.input => tr('Input'),
           TutorialTab.practice => tr('Practice'),
           TutorialTab.learn => tr('Learn'),
           TutorialTab.favorites => tr('Favorites'),
-          TutorialTab.missing => tr('Missing'),
+          TutorialTab.missing => tr('Miss'),
         },
     ],
-    index: session.tab.index,
-    choose: (i) => session.tab = TutorialTab.values[i],
-    pageOf: (i) => el('div', cls: 'tutorial-page tab-${TutorialTab.values[i].name}', children: switch (TutorialTab.values[i]) {
+    index: session.order.indexOf(session.tab),
+    choose: (i) => session.tab = session.order[i],
+    pageOf: (i) => el('div', cls: 'tutorial-page tab-${session.order[i].name}', children: switch (session.order[i]) {
       TutorialTab.input => _input(ctx, session),
       TutorialTab.learn => _learn(ctx, session),
       TutorialTab.practice => _practice(ctx, session),
@@ -393,9 +393,9 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
       body = el('p', cls: 'hint', text: tr('Every optimal route starts at the bull, so there is no neighbour to miss into.'));
     } else {
       final grid = el('div', cls: 'route-grid three', children: [
-        el('p', cls: 'label grid-head', text: tr('Left neighbour')),
+        el('p', cls: 'label grid-head', text: tr('Miss left')),
         el('p', cls: 'label grid-head', text: tr('Optimal route')),
-        el('p', cls: 'label grid-head', text: tr('Right neighbour')),
+        el('p', cls: 'label grid-head', text: tr('Miss right')),
       ]);
       web.HTMLElement outcome(DartThrow dart) => _outcomeCell(ctx, card, tutor.outcome(target, card.darts, dart));
       _fillRows(grid, [

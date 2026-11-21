@@ -4,8 +4,10 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'view_context.dart';
 
-/// After Start: pick Checkout calculator, Checkout practice or Checkout
-/// tutorial.
+/// After Start: Checkout calculator (the learning part: Input, Favorites,
+/// Practice, Learn, Miss - it was Checkout tutorial) first, then Checkout
+/// practice. The timed, scored game is no longer offered (its code and the
+/// leaderboard stay).
 web.HTMLElement buildModesScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -27,16 +29,17 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
   final tutorial = button('',
       cls: 'mode-card',
       focusKey: 'mode-tutorial',
-      ariaLabel: '${tr('Checkout tutorial')}: ${tr('Learn what to aim at, and why.')}',
+      ariaLabel: '${tr('Checkout calculator')}: ${tr('Learn what to aim at, and why.')}',
       onPressed: (_) => ctx.showPage(MenuPage.tutorial));
-  tutorial.appendChild(el('strong', text: tr('Checkout tutorial')));
+  tutorial.appendChild(el('strong', text: tr('Checkout calculator')));
   tutorial.appendChild(el('span', text: tr('Learn what to aim at, and why.')));
 
   return el('main', cls: 'screen modes', children: [
     el('div', cls: 'play-area', children: [
       el('div', cls: 'mode-list', children: [
-        for (final mode in GameMode.values) modeButton(mode),
         tutorial,
+        for (final mode in GameMode.values)
+          if (mode != GameMode.calculator) modeButton(mode),
       ]),
     ]),
   ]);

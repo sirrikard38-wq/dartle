@@ -44,6 +44,16 @@ class TutorialSession {
 
   TutorialTab tab = TutorialTab.practice;
 
+  /// The order the parts stand in on the screen, left to right.
+  static const List<TutorialTab> defaultOrder = [
+    TutorialTab.input,
+    TutorialTab.favorites,
+    TutorialTab.practice,
+    TutorialTab.learn,
+    TutorialTab.missing,
+  ];
+  List<TutorialTab> order = List.of(defaultOrder);
+
   /// Input: the digits typed (empty for none).
   String get typedDigits => input.digits;
 
