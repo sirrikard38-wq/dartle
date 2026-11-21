@@ -236,7 +236,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     fill(moneyPart, [
       el('div', cls: 'felga-money', children: [
         el('p', children: [
-          textNode('${tr('Total money in the club')} '),
+          textNode('${tr('Owed to the club')} '),
           el('strong', text: formatEuro(ledger.owedTotalCents)),
         ]),
         el('p', children: [textNode('${tr('Money in the club now')} '), el('strong', text: formatEuro(ledger.currentCents))]),
@@ -326,11 +326,11 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     // The history: each -1 / +1 under the name and the day, with that day's
     // felgas of the name; the latest at the top.
     fill(historyPart, [
-      if (ledger.history.isNotEmpty) ...[
+      if (ledger.shownHistory.isNotEmpty) ...[
         _arrow(),
         el('h3', cls: 'felga-title', text: tr('Felgas by date')),
         el('div', cls: 'felga-grid history', children: [
-          for (final day in ledger.history) ...[
+          for (final day in ledger.shownHistory) ...[
             el('span', cls: 'felga-cell name', text: day.name),
             el('span', cls: 'felga-cell date', text: day.date),
             el('span', cls: 'felga-cell num felgas', text: '${day.count}'),

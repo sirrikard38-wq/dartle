@@ -47,7 +47,7 @@ const Map<String, String> croatian = {
   '{name} paid': '{name} je dao',
   'Owed': 'Dug',
   'Paid': 'Podmireno',
-  'Total money in the club': 'Ukupna lova u klubu',
+  'Owed to the club': 'Dug klubu',
   'Money in the club now': 'Trenutna lova u klubu',
   'Club money': 'Lova kluba',
   'Fine': 'Kazna',

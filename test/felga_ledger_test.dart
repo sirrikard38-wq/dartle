@@ -78,7 +78,7 @@ void main() {
       ..step(riko, 1, monday)
       ..step(miha, 1, monday)
       ..step(riko, 1, monday); // Riko again: his line goes back to the top
-    String lines() => ledger.history.map((d) => '${d.name} ${d.date} ${d.count}').join(', ');
+    String lines() => ledger.shownHistory.map((d) => '${d.name} ${d.date} ${d.count}').join(', ');
     expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
     expect(riko.points, 3);
     ledger.step(miha, 1, tuesday);
@@ -86,8 +86,18 @@ void main() {
     ledger.step(miha, -1, tuesday); // a mistake taken back: nothing that day
     expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
     expect(miha.points, 1);
+    // A day below zero is not written; it still counts: -1, +1 is 0, then +1.
+    final wednesday = DateTime(2026, 11, 25);
+    ledger.step(riko, -1, wednesday);
+    expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
+    ledger.step(riko, 1, wednesday);
+    expect(lines(), 'Riko 23.11.2026 3, Miha 23.11.2026 1');
+    ledger.step(riko, 1, wednesday);
+    expect(lines(), 'Riko 25.11.2026 1, Riko 23.11.2026 3, Miha 23.11.2026 1');
+    // One line for each name and day.
+    expect(ledger.history.where((d) => d.name == 'Riko' && d.date == '25.11.2026'), hasLength(1));
     final back = FelgaLedger.fromJson(ledger.toJson());
-    expect(back.history.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
+    expect(back.shownHistory.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
   });
 
   test('it is kept and read back', () {

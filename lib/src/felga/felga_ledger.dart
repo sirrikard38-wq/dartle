@@ -44,19 +44,25 @@ class FelgaLedger {
   /// spent, above zero added.
   int clubCents;
 
-  /// The history: each name's felgas of each day, the latest -1 / +1 first.
+  /// The history: one line for each name and day - every -1 and +1 of that
+  /// day added up in it - the latest -1 / +1 first.
   final List<FelgaDay> history;
 
+  /// The history as it is shown: only the days with felgas (a day that came
+  /// to 0 or below is not written).
+  List<FelgaDay> get shownHistory => [for (final d in history) if (d.count > 0) d];
+
   /// [member] got [by] felgas (+1 or -1) on [day]: their points change, and
-  /// their line of that day in the history does and goes to the top (a day
-  /// that comes back to 0 felgas leaves the history).
+  /// so does their one line of that day in the history, which goes to the
+  /// top. The line keeps counting below 1 too (a -1 and then a +1 on a day
+  /// make 0), it is just not shown then.
   void step(FelgaMember member, int by, DateTime day) {
     member.points += by;
     final date = felgaDate(day);
     final i = history.indexWhere((d) => d.name == member.name && d.date == date);
     final line = i < 0 ? FelgaDay(member.name, date, 0) : history.removeAt(i);
     line.count += by;
-    if (line.count != 0) history.insert(0, line);
+    history.insert(0, line);
   }
 
   /// Adds [name] (trimmed); nothing for an empty one.
@@ -75,8 +81,8 @@ class FelgaLedger {
   /// Everything paid in.
   int get totalCents => members.fold(0, (sum, m) => sum + m.paidCents);
 
-  /// "Total money in the club": what everyone still owes, added up (the
-  /// column Owed; one who paid more counts below zero).
+  /// "Owed to the club": what everyone still owes, added up (the column Owed;
+  /// one who paid more counts below zero).
   int get owedTotalCents => members.fold(0, (sum, m) => sum + debtCents(m));
 
   /// "Money in the club now": everything paid in, with whatever was entered
