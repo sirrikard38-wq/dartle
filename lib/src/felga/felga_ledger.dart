@@ -12,18 +12,19 @@ class FelgaMember {
 }
 
 /// Felgalizacija: names with points, what each owes (a point is 0,50 €),
-/// what each has paid, and the club's money: everything paid, less what the
-/// club spent.
+/// what each has paid, and the club's money: everything paid, with what was
+/// added to it or spent from it.
 class FelgaLedger {
-  FelgaLedger({List<FelgaMember>? members, this.spentCents = 0}) : members = members ?? [];
+  FelgaLedger({List<FelgaMember>? members, this.clubCents = 0}) : members = members ?? [];
 
   /// One point costs this many cents.
   static const int centsPerPoint = 50;
 
   final List<FelgaMember> members;
 
-  /// What the club spent.
-  int spentCents;
+  /// "Club money": every amount entered for the club, added up - below zero
+  /// spent, above zero added.
+  int clubCents;
 
   /// Adds [name] (trimmed); nothing for an empty one.
   void add(String name) {
@@ -41,8 +42,9 @@ class FelgaLedger {
   /// Everything paid in.
   int get totalCents => members.fold(0, (sum, m) => sum + m.paidCents);
 
-  /// The money in the club now: everything paid in, less what was spent.
-  int get currentCents => totalCents - spentCents;
+  /// The money in the club now: everything paid in, with what was added to it
+  /// or spent from it ([clubCents]).
+  int get currentCents => totalCents + clubCents;
 
   /// The members by points, most first (equal points keep the order they were
   /// added in).
@@ -56,7 +58,7 @@ class FelgaLedger {
   }
 
   String toJson() => jsonEncode({
-        'spent': spentCents,
+        'club': clubCents,
         'members': [
           for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents},
         ],
@@ -68,7 +70,8 @@ class FelgaLedger {
     try {
       final data = jsonDecode(text) as Map<String, Object?>;
       return FelgaLedger(
-        spentCents: (data['spent'] as num?)?.toInt() ?? 0,
+        // Before "Club money" it was what was spent: that much below zero.
+        clubCents: (data['club'] as num?)?.toInt() ?? -((data['spent'] as num?)?.toInt() ?? 0),
         members: [
           for (final m in (data['members'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
             FelgaMember(m['name'] as String,

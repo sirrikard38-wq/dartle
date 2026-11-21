@@ -1189,13 +1189,13 @@ summary { cursor: pointer; color: var(--muted); }
 .felga-money { margin: 16px 60px 0; text-align: center; }
 .felga-money p { margin: 3px 0; color: var(--muted); }
 .felga-money strong { color: var(--fg); margin-left: 4px; font-variant-numeric: tabular-nums; }
-/* The names start a fifth of the way down the screen, in the middle. */
+/* The names in the middle, -1 and +1 one under the other: the middle column
+   is as wide as the longest name. */
 .felga-names {
-  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;
-  margin-top: max(16px, 20vh - 122px); margin-top: max(16px, 20dvh - 122px);
+  display: grid; grid-template-columns: auto auto auto; justify-content: center; align-items: center;
+  gap: 10px 18px; max-width: calc(100% - 10mm); margin-top: 4px;
 }
-.felga-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
-.felga-name { font-size: 1.15rem; font-weight: 700; min-width: 6ch; text-align: center; }
+.felga-name { font-size: 1.15rem; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
 .felga-step {
   width: 46px; height: 36px; border: 1px solid var(--line-strong); border-radius: 18px;
   background: none; color: var(--fg); font-weight: 700; font-size: 0.95rem;
@@ -1203,7 +1203,7 @@ summary { cursor: pointer; color: var(--muted); }
 .felga-step:active { background: var(--white); color: var(--ink); }
 /* A new name: the box (10 letters, wider for a longer name) and its tick, in
    the middle together. */
-.felga-new { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; }
+.felga-new { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; }
 .felga-input {
   box-sizing: content-box; font: inherit; font-size: 1.05rem; padding: 8px 10px; min-width: 0;
   max-width: calc(100vw - 110px); border: 1px solid var(--line-strong); border-radius: 6px;
@@ -1220,16 +1220,22 @@ summary { cursor: pointer; color: var(--muted); }
 .felga-arrow .arrow-point { width: 18px; }
 .felga-arrow .arrow-point path { fill: currentColor; }
 .felga-arrow .arrow-shaft { flex: 1; height: 2px; background: currentColor; }
-.felga-grid { display: grid; gap: 10px 14px; align-items: center; width: calc(100% - 10mm); max-width: 460px; }
-.felga-grid.owes { grid-template-columns: 1fr auto auto; }
-.felga-grid.paid { grid-template-columns: 1fr auto auto auto; }
+/* The lists: in the middle, the columns apart and as wide as their widest
+   number can get (so a new point moves nothing). */
+.felga-grid {
+  display: grid; align-items: center; justify-content: center; gap: 10px 30px;
+  max-width: calc(100% - 10mm); margin-top: 16px;
+}
+.felga-grid.owes { grid-template-columns: auto minmax(4ch, auto) minmax(7ch, auto); }
+.felga-grid.paid { grid-template-columns: auto auto minmax(6ch, auto) minmax(6ch, auto); gap: 14px 18px; margin-top: 0; }
+.felga-grid.paid .felga-cell.name { max-width: 7em; }
 .felga-cell { font-variant-numeric: tabular-nums; }
 .felga-cell.name { font-weight: 700; overflow-wrap: anywhere; }
 .felga-cell.num { text-align: right; }
 .felga-head { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; text-align: right; }
 /* A money box: four digits wide (wider for a longer number), a grey € after. */
 .money {
-  display: inline-flex; align-items: center; gap: 3px; padding: 5px 7px;
+  display: inline-flex; align-items: center; gap: 2px; padding: 5px 6px;
   border: 1px solid var(--line-strong); border-radius: 6px; background: #111;
 }
 .money:focus-within { border-color: var(--fg); }
@@ -1238,4 +1244,11 @@ summary { cursor: pointer; color: var(--muted); }
   text-align: right; outline: none; min-width: 0; max-width: 40vw; font-variant-numeric: tabular-nums;
 }
 .money .euro { color: var(--muted); }
+/* The − that turns the number below zero (a phone's number keys have none). */
+.money-sign {
+  border: 0; background: none; color: var(--muted); font: inherit; font-weight: 700;
+  padding: 0 4px 0 0; margin: 0; min-width: 0; line-height: 1;
+}
+.money-sign:active { color: var(--fg); }
+.felga-club-sum { color: var(--fg); font-variant-numeric: tabular-nums; }
 .felga-spent { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 30px 5mm 0; color: var(--muted); }

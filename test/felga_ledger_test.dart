@@ -18,7 +18,7 @@ void main() {
     expect(formatEuro(FelgaLedger.owedCents(miha)), '2,5€');
   });
 
-  test('debt is what is owed less what was paid; the club has what was paid, less what it spent', () {
+  test('debt is what is owed less what was paid; the club has what was paid, with what was added or spent', () {
     final ledger = FelgaLedger()..add('Riko');
     final riko = ledger.members.single..points = 3;
     riko.paidCents += parseEuroCents('1')!;
@@ -27,9 +27,11 @@ void main() {
     expect(formatEuro(FelgaLedger.debtCents(riko)), '2,5€');
     riko.paidCents += parseEuroCents('10')!;
     expect(formatEuro(FelgaLedger.debtCents(riko)), '-7,5€', reason: 'paid more than owed');
-    ledger.spentCents = parseEuroCents('3,25')!;
+    ledger.clubCents += parseEuroCents('-3,25')!; // spent
     expect(formatEuro(ledger.totalCents), '9€');
     expect(formatEuro(ledger.currentCents), '5,75€');
+    ledger.clubCents += parseEuroCents('10')!; // added
+    expect(formatEuro(ledger.currentCents), '15,75€');
   });
 
   test('money is written with a dot for thousands and a comma for decimals, as it is typed', () {
@@ -47,7 +49,7 @@ void main() {
   test('it is kept and read back', () {
     final ledger = FelgaLedger()
       ..add('Riko')
-      ..spentCents = 1250;
+      ..clubCents = -1250;
     ledger.members.single
       ..points = 4
       ..paidCents = 300;
@@ -55,7 +57,9 @@ void main() {
     expect(back.members.single.name, 'Riko');
     expect(back.members.single.points, 4);
     expect(back.members.single.paidCents, 300);
-    expect(back.spentCents, 1250);
+    expect(back.clubCents, -1250);
     expect(FelgaLedger.fromJson('nonsense').members, isEmpty);
+    // Saved before "Club money": what was spent comes back below zero.
+    expect(FelgaLedger.fromJson('{"spent": 400, "members": []}').clubCents, -400);
   });
 }
