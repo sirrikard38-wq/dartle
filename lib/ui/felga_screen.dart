@@ -7,6 +7,7 @@ import '../dartle.dart';
 import 'dom.dart';
 import 'keyboard.dart';
 import 'modal.dart';
+import 'swipes.dart';
 import 'view_context.dart';
 
 /// Where Felgalizacija is kept (this device only).
@@ -232,7 +233,49 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       ]));
   }
 
+  // Where each row of the two sorted lists is, before a change...
+  Map<String, double> rowTops() {
+    final tops = <String, double>{};
+    for (final part in [owesPart, paidPart]) {
+      final cells = part.querySelectorAll('[data-row]');
+      for (var i = 0; i < cells.length; i++) {
+        final cell = cells.item(i) as web.HTMLElement;
+        tops.putIfAbsent(cell.getAttribute('data-row')!, () => cell.getBoundingClientRect().top);
+      }
+    }
+    return tops;
+  }
+
+  // ...and after it each row glides from where it was to its new place: two
+  // names that change places move towards each other at the same time.
+  void slideRows(Map<String, double> before) {
+    if (before.isEmpty || wantsLessMotion) return;
+    final moved = <web.HTMLElement>[];
+    for (final part in [owesPart, paidPart]) {
+      final cells = part.querySelectorAll('[data-row]');
+      for (var i = 0; i < cells.length; i++) {
+        final cell = cells.item(i) as web.HTMLElement;
+        final was = before[cell.getAttribute('data-row')];
+        if (was == null) continue;
+        final dy = was - cell.getBoundingClientRect().top;
+        if (dy.abs() < 1) continue;
+        cell.style
+          ..transition = 'none'
+          ..transform = 'translateY(${dy}px)';
+        moved.add(cell);
+      }
+    }
+    if (moved.isEmpty) return;
+    moved.first.getBoundingClientRect(); // so that the start is drawn
+    for (final cell in moved) {
+      cell.style
+        ..transition = 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)'
+        ..transform = '';
+    }
+  }
+
   refresh = () {
+    final before = rowTops();
     final anyone = ledger.members.isNotEmpty;
     fill(moneyPart, [
       el('div', cls: 'felga-money', children: [
@@ -250,11 +293,10 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
           el('span'),
           el('span', cls: 'felga-head felgas', text: 'Felga'),
           el('span', cls: 'felga-head', text: tr('Fine')),
-          el('span'),
           for (final member in ledger.byPoints) ...[
-            el('span', cls: 'felga-cell name', text: member.name),
+            el('span', cls: 'felga-cell name', text: member.name, attrs: {'data-row': 'o:${member.name}'}),
             flash(
-                el('span', cls: 'felga-cell num felgas', children: [
+                el('span', cls: 'felga-cell num felgas', attrs: {'data-row': 'o:${member.name}'}, children: [
                   el('span', children: [
                     textNode('${member.points}'),
                     if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime)
@@ -262,16 +304,14 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
                   ]),
                 ]),
                 member == _flashMember),
-            el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.owedCents(member))),
-            // Right of the fine, while the flash lasts: +1 or -1, what was
-            // pressed, fading in and out with it.
-            flash(
-                el('span',
-                    cls: 'felga-cell delta',
-                    text: member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime
-                        ? (_flashBy > 0 ? '+1' : '-1')
-                        : ''),
-                member == _flashMember),
+            // The fine, and right of it, while the flash lasts, +1 or -1 (what
+            // was pressed) fading in and out with it - outside the list, so
+            // the list stays in the middle.
+            el('span', cls: 'felga-cell num fine', attrs: {'data-row': 'o:${member.name}'}, children: [
+              textNode(formatEuro(FelgaLedger.owedCents(member))),
+              if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime)
+                flash(el('span', cls: 'felga-delta', text: _flashBy > 0 ? '+1' : '-1'), true),
+            ]),
           ],
         ]),
         _arrow(),
@@ -301,13 +341,20 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
           el('span', cls: 'felga-head', text: tr('Owed')),
           el('span', cls: 'felga-head', text: tr('Paid')),
           for (final member in ledger.byDebt) ...[
-            el('span', cls: 'felga-cell name', text: member.name),
+            el('span', cls: 'felga-cell name', text: member.name, attrs: {'data-row': 'p:${member.name}'}),
             moneyBox(tr('{name} paid', {'name': member.name}), (cents) {
               member.paidCents += cents;
               changed();
-            }),
-            el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.debtCents(member))),
-            el('span', cls: 'felga-cell num', text: formatEuro(member.paidCents)),
+            })
+              ..setAttribute('data-row', 'p:${member.name}'),
+            el('span',
+                cls: 'felga-cell num',
+                text: formatEuro(FelgaLedger.debtCents(member)),
+                attrs: {'data-row': 'p:${member.name}'}),
+            el('span',
+                cls: 'felga-cell num',
+                text: formatEuro(member.paidCents),
+                attrs: {'data-row': 'p:${member.name}'}),
           ],
         ]),
       ],
@@ -361,6 +408,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         ]),
       ],
     ]);
+    slideRows(before);
   };
 
   refresh();
