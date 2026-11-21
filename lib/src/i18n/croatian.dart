@@ -50,6 +50,8 @@ const Map<String, String> croatian = {
   'Total money in the club': 'Ukupna lova u klubu',
   'Money in the club now': 'Trenutna lova u klubu',
   'Club money': 'Lova kluba',
+  'Fine': 'Kazna',
+  'Felgas by date': 'Broj felgi po datumu',
   'Turn the sign': 'Promijeni predznak',
   'Decimal comma': 'Decimalni zarez',
   'Done': 'Gotovo',

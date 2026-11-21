@@ -248,7 +248,8 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         el('div', cls: 'felga-grid owes', children: [
           el('span'),
           el('span', cls: 'felga-head felgas', text: 'Felga'),
-          el('span', cls: 'felga-head', text: 'Kazna'),
+          el('span', cls: 'felga-head', text: tr('Fine')),
+          el('span'),
           for (final member in ledger.byPoints) ...[
             el('span', cls: 'felga-cell name', text: member.name),
             flash(
@@ -261,6 +262,15 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
                 ]),
                 member == _flashMember),
             el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.owedCents(member))),
+            // Right of the fine, while the flash lasts: +1 or -1, what was
+            // pressed, fading in and out with it.
+            flash(
+                el('span',
+                    cls: 'felga-cell delta',
+                    text: member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime
+                        ? (_flashBy > 0 ? '+1' : '-1')
+                        : ''),
+                member == _flashMember),
           ],
         ]),
         _arrow(),
@@ -318,7 +328,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     fill(historyPart, [
       if (ledger.history.isNotEmpty) ...[
         _arrow(),
-        el('h3', cls: 'felga-title', text: 'Broj felgi po datumu'),
+        el('h3', cls: 'felga-title', text: tr('Felgas by date')),
         el('div', cls: 'felga-grid history', children: [
           for (final day in ledger.history) ...[
             el('span', cls: 'felga-cell name', text: day.name),
