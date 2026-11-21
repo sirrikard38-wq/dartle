@@ -145,7 +145,9 @@ web.HTMLElement swipeTabs(
       peek: (step) => pageOf(index + step),
       follow: (step, fraction) =>
           mark.follow(exists(index + step) ? row.children.item(index + step) as web.HTMLElement? : null, fraction),
-      fixedHeight: fixedHeight);
+      fixedHeight: fixedHeight,
+      // Right on the first part: back to the game modes.
+      backPastStart: () => ctx.showPage(MenuPage.modes));
   return area;
 }
 

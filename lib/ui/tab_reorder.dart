@@ -119,21 +119,41 @@ class TabReorder {
     if (chip == null) return;
     event.preventDefault();
     var dx = x - _startX;
-    // Past half of a neighbour, the chip takes its place and the neighbour
-    // moves over; the chip stays under the finger.
+    // Past half of a neighbour the two change places, like magnets: the
+    // neighbour glides over to the place that was the chip's, and the chip
+    // stays under the finger. (`translate`, not `transform`: the jiggle has
+    // the transform.)
     final next = chip.nextElementSibling;
     if (dx > 0 && next != null && next.classList.contains('chip') && dx > (next as web.HTMLElement).offsetWidth / 2) {
+      final was = next.getBoundingClientRect().left;
       row.insertBefore(next, chip);
       _startX += next.offsetWidth + _gap;
       dx = x - _startX;
+      _glide(next, was - next.getBoundingClientRect().left);
     }
     final prev = chip.previousElementSibling;
     if (dx < 0 && prev != null && prev.classList.contains('chip') && -dx > (prev as web.HTMLElement).offsetWidth / 2) {
+      final was = prev.getBoundingClientRect().left;
       row.insertBefore(chip, prev);
       _startX -= prev.offsetWidth + _gap;
       dx = x - _startX;
+      _glide(prev, was - prev.getBoundingClientRect().left);
     }
-    chip.style.transform = 'translateX(${dx}px)';
+    chip.style
+      ..transition = 'none'
+      ..setProperty('translate', '${dx}px 0');
+  }
+
+  /// [chip] just moved in the row by [from] pixels: it glides there instead
+  /// of jumping.
+  void _glide(web.HTMLElement chip, double from) {
+    chip.style
+      ..transition = 'none'
+      ..setProperty('translate', '${from}px 0');
+    chip.getBoundingClientRect(); // so that the start is drawn
+    chip.style
+      ..transition = 'translate 200ms ease-out'
+      ..setProperty('translate', '0px 0');
   }
 
   void _up(web.PointerEvent event) {
@@ -143,7 +163,10 @@ class TabReorder {
     if (chip == null) return;
     _drag = null;
     chip.classList.remove('dragging');
-    chip.style.transform = '';
+    // Let go: it settles into its place, never over another.
+    chip.style
+      ..transition = 'translate 200ms ease-out'
+      ..setProperty('translate', '0px 0');
   }
 
   void _finish() {

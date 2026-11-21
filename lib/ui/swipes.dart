@@ -35,7 +35,8 @@ bool get _justSwiped => DateTime.now().difference(_landedAt) < const Duration(mi
 /// away ([peek]) coming along beside it as far as the finger has gone. Past the
 /// swipe length the page glides the rest of the way and [move] is called with
 /// +1 for the next page, -1 for the one before. Short of it, it slides back.
-/// The same swipe as the food categories of Virulja. [fixedHeight]: the pages
+/// The same swipe as the food categories of Virulja. A swipe to the right on
+/// the first page calls [backPastStart] (the way back). [fixedHeight]: the pages
 /// are exactly as tall as the room (Checkout tutorial), so the page beside is
 /// too; otherwise each page is as tall as what is in it (Checkout practice),
 /// and the room grows to the taller one while the swipe goes on.
@@ -47,6 +48,7 @@ void followSwipes(
   web.HTMLElement? Function(int step)? peek,
   void Function(int step, double fraction)? follow,
   bool fixedHeight = true,
+  void Function()? backPastStart,
 }) {
   double? startX;
   double startY = 0;
@@ -166,6 +168,13 @@ void followSwipes(
     if (from == null || !sideways) return;
     final across = event.changedTouches.item(0)!.clientX - from;
     final step = across < 0 ? 1 : -1;
+    // A swipe to the right on the first page: the way back ([backPastStart],
+    // to the game modes).
+    if (step == -1 && !canMove(step) && across >= _swipeLength * 1.5 && backPastStart != null) {
+      goBack();
+      backPastStart();
+      return;
+    }
     if (across.abs() < _swipeLength || !canMove(step)) {
       goBack();
       return;
@@ -218,7 +227,10 @@ class SwipeMark {
         ..className = 'chips marker-words'
         // Its exact width: rounded down (clientWidth) the last chip can drop
         // to a second line and the words no longer sit over the row's own.
-        ..style.width = '${row.getBoundingClientRect().width}px';
+        ..style.width = '${row.getBoundingClientRect().width}px'
+        // Its padding too (the row has some at the top): else the words stand
+        // a little higher than the row's own and look doubled.
+        ..style.padding = web.window.getComputedStyle(row).padding;
       mark = (web.document.createElement('span') as web.HTMLElement)
         ..className = 'chip-marker'
         ..append(words);
