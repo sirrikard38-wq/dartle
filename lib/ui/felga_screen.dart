@@ -141,15 +141,16 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
 
   // A money box: four digits wide (wider for a longer number), the grey €
   // after it, written with a dot for thousands and a comma for decimals while
-  // it is typed. It opens the phone-number keys, which have a minus (the
-  // number keys with a decimal point have none on Android): a minus typed
-  // anywhere turns the number below zero and back, a dot typed at the end is
-  // the decimal comma. The cursor always goes to the end. The number is
-  // confirmed ([onConfirm]) when the box is left or Enter is pressed.
+  // it is typed. The number keys open, and while the box is typed in a minus
+  // and a comma of its own stand over it (many phone keyboards have neither):
+  // the minus turns the number below zero and back. A minus or a dot typed on
+  // a keyboard that has them works too. The cursor always goes to the end.
+  // The number is confirmed ([onConfirm]) when the box is left or Enter is
+  // pressed.
   web.HTMLElement moneyBox(String label, void Function(int cents) onConfirm) {
     final input = el('input', cls: 'money-input', attrs: {
       'type': 'text',
-      'inputmode': 'tel',
+      'inputmode': 'decimal',
       'enterkeyhint': 'done',
       'autocomplete': 'off',
       'aria-label': label,
@@ -197,7 +198,23 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         input.blur();
       }
     });
-    return el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
+    // The minus and the comma over the box: pressed, they leave the typing in
+    // the box (nothing is confirmed, the keyboard stays up).
+    web.HTMLElement key(String label, String aria, String Function(String text) change) {
+      final b = button(label, cls: 'money-key', ariaLabel: aria, onPressed: (_) {
+        input.value = last = formatTypedEuro(change(input.value));
+        fit();
+        toEnd();
+      });
+      b.onMouseDown.listen((event) => event.preventDefault());
+      return b;
+    }
+
+    final keys = el('span', cls: 'money-keys', children: [
+      key('−', tr('Turn the sign'), (text) => text.startsWith('-') ? text.substring(1) : '-$text'),
+      key(',', tr('Decimal comma'), (text) => text.contains(',') ? text : '$text,'),
+    ]);
+    return el('label', cls: 'money', children: [keys, input, el('span', cls: 'euro', text: '€')]);
   }
 
   web.HTMLElement toggleButton() {
@@ -239,7 +256,13 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
           el('span', cls: 'felga-head', text: 'Kazna'),
           for (final member in ledger.byPoints) ...[
             el('span', cls: 'felga-cell name', text: member.name),
-            flash(el('span', cls: 'felga-cell num felgas', children: [el('span', text: '${member.points}')]),
+            flash(
+                el('span', cls: 'felga-cell num felgas', children: [
+                  el('span', children: [
+                    textNode('${member.points}'),
+                    if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime) _sparks(),
+                  ]),
+                ]),
                 member == _flashMember),
             el('span', cls: 'felga-cell num', text: formatEuro(FelgaLedger.owedCents(member))),
           ],
@@ -323,6 +346,11 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     historyPart,
   ]);
 }
+
+/// Fireworks: twelve sparks flying out of the flash, two rings of them.
+web.HTMLElement _sparks() => el('span', cls: 'felga-burst', attrs: {'aria-hidden': 'true'}, children: [
+      for (var i = 0; i < 12; i++) el('i', attrs: {'style': '--a: ${i * 30}deg; --d: ${i.isEven ? 30 : 22}px'}),
+    ]);
 
 /// A very long grey arrow across the screen (5 mm from each edge): the
 /// feathers on the left, the point on the right. It parts the sections.
