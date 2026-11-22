@@ -253,7 +253,8 @@ void _typed() {
   });
 }
 
-/// The darts in hand, 3, 2 or 1, for Learn and Missing (one choice for both).
+/// The darts in hand, 3, 2 or 1, for Learn and Miss (one choice for both, and
+/// Favorites; Practice or Choose too before its first dart).
 web.HTMLElement _dartsChips(ViewContext ctx, NumberParts session, String name) {
   web.HTMLButtonElement darts(int n) => button('$n',
       cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
@@ -262,11 +263,23 @@ web.HTMLElement _dartsChips(ViewContext ctx, NumberParts session, String name) {
       attrs: {'aria-pressed': '${session.learnDarts == n}'},
       onPressed: (kb) {
         ctx.keepFocus(kb ? '$name-darts-$n' : null);
-        session.learnDarts = n;
+        session.chooseDarts(n);
         ctx.rerender();
       });
   return el('div', cls: 'chips', children: [darts(3), darts(2), darts(1)]);
 }
+
+/// Learn's and Miss's number, where Practice's is and as big, and beside it
+/// on the right, at its height, "Darts in hand" over 3 2 1.
+web.HTMLElement _numberAndDarts(ViewContext ctx, NumberParts session, int target, String name) =>
+    el('div', cls: 'number-row', children: [
+      el('span'),
+      el('p', cls: 'target number-display tab-number', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
+      el('div', cls: 'darts-side', children: [
+        el('p', cls: 'label', text: tr('Darts in hand')),
+        _dartsChips(ctx, session, name),
+      ]),
+    ]);
 
 /// A number that cannot be checked out at all says so, with one of the
 /// insults, as Checkout input does.
@@ -286,9 +299,7 @@ List<web.HTMLElement> _learn(ViewContext ctx, NumberParts session) {
   return [
     el('div', cls: 'learn-top', children: [
       _numberSpacer(),
-      el('p', cls: 'target number-display tab-number', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
-      el('p', cls: 'label', text: tr('Darts in hand')),
-      _dartsChips(ctx, session, 'learn'),
+      _numberAndDarts(ctx, session, target, 'learn'),
       if (review != null) _reviewBox(ctx, session, review),
       if (ctx.game.hasNoCheckout(target))
         _impossible(target)
@@ -502,9 +513,7 @@ List<web.HTMLElement> _missing(ViewContext ctx, NumberParts session) {
   return [
     el('div', cls: 'learn-top missing-top', children: [
       _numberSpacer(),
-      el('p', cls: 'target number-display tab-number', text: '$target', attrs: {'aria-label': tr('Number {n}', {'n': target})}),
-      el('p', cls: 'label', text: tr('Darts in hand')),
-      _dartsChips(ctx, session, 'missing'),
+      _numberAndDarts(ctx, session, target, 'missing'),
       body,
     ]),
   ];
@@ -531,7 +540,10 @@ List<web.HTMLElement> _favorites(ViewContext ctx, NumberParts session) {
       if (ctx.game.tutorial.tutor.optimalRoutes(target, darts).any((r) => r.length == darts)) darts,
   }.toList()
     ..sort();
-  final (names, pages) = favoritePages(ctx, target, counts, swipe: false);
+  // The page of the darts in hand; another chosen is the darts in hand of
+  // every part.
+  final (names, pages) = favoritePages(ctx, target, counts,
+      swipe: false, selected: session.learnDarts, onSelect: session.chooseDarts);
   return [number, names, pages];
 }
 

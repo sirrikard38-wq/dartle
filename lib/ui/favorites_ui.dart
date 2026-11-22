@@ -206,7 +206,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
 /// A page with no favorites says so. With [swipe] false the pages do not
 /// slide under the finger: only a press on a name turns them (the tutorial).
 (web.HTMLElement, web.HTMLElement) favoritePages(ViewContext ctx, int target, List<int> counts,
-    {bool swipe = true}) {
+    {bool swipe = true, int? selected, void Function(int darts)? onSelect}) {
   final favorites = ctx.game.favorites;
   String name(int darts) => trn(darts, '{n} Dart', '{n} Darts');
 
@@ -239,6 +239,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
         onPressed: (_) {
           if (swipe) pages.scrollTo(web.ScrollToOptions(left: page.offsetLeft.toDouble(), behavior: 'smooth'));
           select(i);
+          onSelect?.call(darts);
         }));
   }
   // Swiping: the page that is mostly in view is the one named at the top.
@@ -246,7 +247,7 @@ void showFavoritesPopup(ViewContext ctx, int target) {
     final width = pages.clientWidth;
     if (width > 0) select((pages.scrollLeft / width).round().clamp(0, counts.length - 1));
   });
-  select(0);
+  select(math.max(0, counts.indexOf(selected ?? -1)));
   return (el('div', cls: 'fav-tabs', attrs: {'role': 'tablist'}, children: tabs), pages);
 }
 

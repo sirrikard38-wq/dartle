@@ -31,9 +31,13 @@ abstract interface class NumberParts {
   /// The number the parts are about.
   int get shownTarget;
 
-  /// Learn and Miss: the darts in hand.
+  /// Learn, Miss and Favorites: the darts in hand.
   int get learnDarts;
   set learnDarts(int value);
+
+  /// [darts] chosen in Learn, Miss or Favorites: the darts in hand of all
+  /// three, and the game's too (2 or 3 darts) while no dart is thrown yet.
+  void chooseDarts(int darts);
 
   /// The card for [shownTarget] with [learnDarts]; null when it has no checkout.
   TutorCard? get learnCard;
@@ -216,6 +220,13 @@ class TutorialSession implements NumberParts {
   void chooseOtherDarts() {
     if (!canChooseDarts) return;
     _setPractice(_generator.otherDarts(practice)!);
+  }
+
+  @override
+  void chooseDarts(int darts) {
+    learnDarts = darts;
+    final other = _generator.otherDarts(practice);
+    if (canChooseDarts && other != null && other.dartsLeft == darts) _setPractice(other);
   }
 
   /// Takes back the last dart, while the question is still being played.

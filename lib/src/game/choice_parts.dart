@@ -61,6 +61,15 @@ class ChoiceParts implements NumberParts {
   }
 
   @override
+  void chooseDarts(int darts) {
+    learnDarts = darts;
+    final challenge = _game.challenge;
+    if (challenge == null || challenge.dartsLeft == darts || (darts != 2 && darts != 3)) return;
+    // Before the first dart only: then the game plays it with these darts.
+    if (_game.canChooseDarts && _game.entered.isEmpty) _game.chooseOtherDarts();
+  }
+
+  @override
   TutorCard? get learnCard {
     final challenge = _game.challenge;
     if (_game.impossibleNumber != null || challenge == null || !challenge.hasCheckout) return null;

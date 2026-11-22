@@ -337,7 +337,11 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 /* Practice and Checkout input: on a number that can be played with two or
    three darts the boxes are one button that switches between them. */
 .dart-count-toggle { display: block; margin: 0 auto; padding: 0; border: 0; background: none; border-radius: 6px; }
-.dart-count-toggle:hover .tile { border-color: var(--fg); }
+/* A mouse over the boxes lights their edges - not on a phone, where a press
+   would leave it on, and never the crossed-out box (it stays burgundy). */
+@media (hover: hover) {
+  .dart-count-toggle:hover .tile:not(.used) { border-color: var(--fg); }
+}
 .dart-count-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
 .hint.darts-hint { margin-top: 0; }
 .tile {
@@ -1461,7 +1465,7 @@ body.money-pad-open { padding-bottom: 240px; }
 .screen.tutorial .tab-spacer { visibility: hidden; margin: 2px 0 4px; flex: none; }
 .screen.tutorial .tab-number-wrap { display: flex; flex-direction: column; align-items: center; }
 .screen.tutorial .tab-number,
-.screen.tutorial .learn-top > .target.tab-number,
+.screen.tutorial .learn-top .target.tab-number,
 .screen.tutorial .input-top .number-display {
   font-size: clamp(3rem, 9vh, 6.5rem); font-size: clamp(3rem, 9dvh, 6.5rem);
   line-height: 1; margin: 0 0 6px; flex: none;
@@ -1469,11 +1473,22 @@ body.money-pad-open { padding-bottom: 240px; }
 @media (max-height: 780px) {
   .screen.tutorial .tab-spacer { margin: 0 0 2px; }
   .screen.tutorial .tab-number,
-  .screen.tutorial .learn-top > .target.tab-number,
+  .screen.tutorial .learn-top .target.tab-number,
   .screen.tutorial .input-top .number-display {
     font-size: clamp(2.6rem, 7vh, 6.5rem); font-size: clamp(2.6rem, 7dvh, 6.5rem); margin-bottom: 2px;
   }
 }
+/* Learn and Miss: the number in the middle and, on its right at its height,
+   "Darts in hand" over 3 2 1; some room under them before the routes. */
+.number-row {
+  width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 6px;
+  flex: none; margin-bottom: 10px;
+}
+.number-row > .target.tab-number { margin-bottom: 0; }
+.darts-side { justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.darts-side > .label { margin: 0; font-size: 0.7rem; line-height: 1.15; text-align: center; }
+.learn-top .darts-side > .chips { margin: 0; gap: 4px; flex-wrap: nowrap; justify-content: center; }
+.learn-top .darts-side > .chips .chip { min-width: 30px; height: 30px; min-height: 30px; padding: 0 8px; font-size: 0.9rem; }
 /* The answer with one board: its favorite dart further out from the board,
    beside its top right, not on the numbers. */
 .practice-result .result-boards .board-figure:only-child .fav-btn { top: -6cqw; right: -11cqw; }

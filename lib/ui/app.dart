@@ -57,8 +57,6 @@ class DartleApp {
     });
     // The menu offers to install the app once the browser says it can.
     watchForInstall(render);
-    _toast = el('div', cls: 'toast', attrs: {'role': 'status', 'aria-live': 'polite'});
-    web.document.body!.appendChild(_toast);
     _toTop = ToTopDart();
     web.EventStreamProviders.keyDownEvent.forTarget(web.document).listen(_onKey);
     _listenForBack();
@@ -70,14 +68,15 @@ class DartleApp {
   final web.Element _root;
   final GameController _game;
   late final ViewContext _ctx;
-  late final web.HTMLElement _toast;
+  /// The message at the top of the screen showing (a new one takes its
+  /// place); the ones on a board or near the foot each have their own.
+  web.HTMLElement? _topToast;
   late final ToTopDart _toTop;
   final SoundService _sound = SoundService();
   GamePhase _lastPhase = GamePhase.menu;
   MenuPage _page = MenuPage.welcome;
   bool _started = false;
   String? _focusKey;
-  Timer? _toastTimer;
 
   // Typed-number buffer: "2" then "0" within the window means 20.
   String _digits = '';
@@ -347,25 +346,41 @@ class DartleApp {
     }
   }
 
+  /// A message: each is its own, so several boards made favorites one after
+  /// the other each keep theirs for its whole time (one does not cut the one
+  /// before short). Only a message at the top takes the place of the one
+  /// there.
   void _showToast(String message, {bool low = false, ({double x, double y, double width})? at}) {
-    _toast.textContent = message;
-    _toast.classList.toggle('low', low);
+    final toast = el('div',
+        cls: 'toast${low ? ' low' : ''}${at != null ? ' at-point' : ''}',
+        text: message,
+        attrs: {'role': 'status', 'aria-live': 'polite'});
     // On a point (the middle of a board): placed there, else where its class
-    // puts it.
-    _toast.classList.toggle('at-point', at != null);
-    // On a board it is no wider than the board, its letters smaller to fit
-    // (a small board in Learn or Missing).
-    _toast.style
-      ..left = at == null ? '' : '${at.x}px'
-      ..top = at == null ? '' : '${at.y}px'
-      ..maxWidth = at == null ? '' : '${at.width}px'
-      ..fontSize = at == null ? '' : 'min(0.9rem, ${(at.width / 12).toStringAsFixed(1)}px)'
-      ..padding = at == null ? '' : '0.6em 0.8em';
-    _toast.classList.add('show');
-    _toastTimer?.cancel();
-    // Added to / removed from favorites: half as long as other messages.
-    _toastTimer = Timer(Duration(milliseconds: low ? 900 : 1800), () {
-      _toast.classList.remove('show');
+    // puts it. On a board it is no wider than the board, its letters smaller
+    // to fit (a small board in Learn or Miss).
+    if (at != null) {
+      toast.style
+        ..left = '${at.x}px'
+        ..top = '${at.y}px'
+        ..maxWidth = '${at.width}px'
+        ..fontSize = 'min(0.9rem, ${(at.width / 12).toStringAsFixed(1)}px)'
+        ..padding = '0.6em 0.8em';
+    }
+    if (!low && at == null) {
+      _topToast?.remove();
+      _topToast = toast;
+    }
+    web.document.body!.appendChild(toast);
+    // Next frame, so that it fades in.
+    Timer(const Duration(milliseconds: 16), () => toast.classList.add('show'));
+    // Added to / removed from favorites: half as long as other messages; then
+    // it fades out (450 ms) and goes.
+    Timer(Duration(milliseconds: low ? 900 : 1800), () {
+      toast.classList.remove('show');
+      Timer(const Duration(milliseconds: 500), () {
+        toast.remove();
+        if (_topToast == toast) _topToast = null;
+      });
     });
   }
 

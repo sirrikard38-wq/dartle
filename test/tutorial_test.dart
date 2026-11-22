@@ -324,6 +324,22 @@ void main() {
       expect((newSession(3)..play(challenge(170, 3))).canChooseDarts, isFalse);
     });
 
+    test("the darts chosen in Learn, Miss or Favorites are Practice's too, before its first dart", () {
+      final session = newSession(3)..play(challenge(100, 2));
+      session.chooseDarts(3);
+      expect(session.learnDarts, 3);
+      expect(session.practiceDarts, 3, reason: 'no dart thrown yet');
+      session.chooseDarts(1);
+      expect(session.learnDarts, 1);
+      expect(session.practiceDarts, 3, reason: 'Practice has no one-dart way for 100');
+      session.chooseDarts(2);
+      expect(session.practiceDarts, 2);
+      session.throwPractice(d('T20'));
+      session.chooseDarts(3);
+      expect(session.learnDarts, 3);
+      expect(session.practiceDarts, 2, reason: 'a dart is thrown: Practice keeps its darts');
+    });
+
     test('Practice: "No checkout" is right on a number with none', () {
       final session = newSession(3)..play(Challenge.noCheckout(169));
       session.pressNoCheckout();
