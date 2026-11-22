@@ -159,13 +159,10 @@ class DartleApp {
     _root.textContent = '';
     if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
-    // Checkout calculator's Practice answer and Checkout choice's Choose answer
-    // have the links on the screen with them, at the foot of their own page.
-    final footerInPage = (_game.phase == GamePhase.menu &&
-            _page == MenuPage.tutorial &&
-            _game.tutorial.tab == TutorialTab.practice &&
-            _game.tutorial.practiceDone) ||
-        (_game.phase == GamePhase.result && _game.mode.isPractice && _ctx.choice.tab == TutorialTab.practice);
+    // Checkout calculator and Checkout choice have the links in their parts,
+    // at the foot of each (under the answer in Practice and Choose).
+    final footerInPage = (_game.phase == GamePhase.menu && _page == MenuPage.tutorial) ||
+        (_game.phase != GamePhase.menu && _game.mode.isPractice);
     if (!fullScreen && !footerInPage) _root.appendChild(buildFooter());
     _syncHistory();
 

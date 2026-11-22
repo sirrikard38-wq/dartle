@@ -127,7 +127,9 @@ List<web.HTMLElement> resultView(
   return [
     el('p',
         cls: 'headline ${result.isCorrect ? 'good' : 'bad'}',
-        text: '${result.isCorrect ? '✓ ' : '✗ '}$headline',
+        // The mark hangs to the left of the word, so the word is in the
+        // middle, over the number.
+        children: [el('span', cls: 'headline-mark', text: result.isCorrect ? '✓' : '✗'), web.Text(headline)],
         attrs: {'role': 'status'}),
     el('p', cls: 'target small', text: '${challenge.target}'),
 

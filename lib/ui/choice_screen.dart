@@ -85,7 +85,8 @@ List<web.HTMLElement> _choose(ViewContext ctx) {
           {'target': round.remaining}),
     }),
     // A number with two darts or three: a press on the boxes switches (a dart
-    // already thrown keeps its place).
+    // already thrown keeps its place). The line above them says so.
+    dartsHint(show: game.canChooseDarts),
     if (game.canChooseDarts)
       button('',
           cls: 'dart-count-toggle',

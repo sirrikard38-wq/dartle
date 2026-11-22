@@ -56,12 +56,15 @@ web.HTMLElement buildPartsScreen(ViewContext ctx, NumberParts parts,
       _saveOrder(shared.order);
       ctx.rerender();
     },
+    // The links of the foot (Install, Instagram, Email) stand at the foot of
+    // every part but the game (whose answer has them under it), so they are
+    // always in sight and slide in with the part.
     pageOf: (i) => el('div', cls: 'tutorial-page tab-${order[i].name}', children: switch (order[i]) {
-      TutorialTab.input => _input(ctx, parts),
-      TutorialTab.learn => _learn(ctx, parts),
+      TutorialTab.input => [..._input(ctx, parts), buildFooter()],
+      TutorialTab.learn => [..._learn(ctx, parts), buildFooter()],
       TutorialTab.practice => play(),
-      TutorialTab.favorites => _favorites(ctx, parts),
-      TutorialTab.missing => _missing(ctx, parts),
+      TutorialTab.favorites => [..._favorites(ctx, parts), buildFooter()],
+      TutorialTab.missing => [..._missing(ctx, parts), buildFooter()],
     }),
   )..classList.add('play-area');
   return el('main', cls: 'screen tutorial${cls.isEmpty ? '' : ' $cls'}', children: [area]);
@@ -176,6 +179,7 @@ List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
       onPressed: (kb) {
         ctx.keepFocus(kb ? 'input-digit-$n' : null);
         onDigit(n);
+        _typed();
         ctx.rerender();
       });
 
@@ -187,6 +191,7 @@ List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
       onPressed: (kb) {
         ctx.keepFocus(kb ? 'input-undo' : null);
         onDelete();
+        _typed();
         ctx.rerender();
       });
   undo.insertBefore(undoIcon(), undo.firstChild);
@@ -207,12 +212,12 @@ List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
 
   return [
     el('div', cls: 'input-top', children: [
-      el('p', cls: 'input-title', text: tr('Type a number to check out and learn.')),
+      el('p', cls: 'input-title', text: tr('Type a number to checkout and learn.')),
       // The number between the words and the keypad, a little above the
       // middle; what it says hangs under it.
       el('div', cls: 'input-number', children: [
         el('div', cls: 'number-wrap', children: [
-          el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}',
+          el('p', cls: 'target number-display${digits.isEmpty ? ' empty' : ''}${_takenNumber == digits ? ' taken' : ''}',
               text: digits.isEmpty ? '–' : digits,
               attrs: {'aria-label': digits.isEmpty ? tr('No number yet') : tr('Number {n}', {'n': digits})}),
           el('p', cls: 'hint', text: line, attrs: {'role': 'status'}),
@@ -226,6 +231,26 @@ List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
       undo, digit(0), el('span', cls: 'pad-spacer'),
     ]),
   ];
+}
+
+/// The digits whose number was taken: 1.5 s after the last key the frame
+/// round the number glows faintly white (it stays so until the next key).
+String? _takenNumber;
+Timer? _takeTimer;
+
+/// A key of Input was pressed: the frame goes dark and, if no other key comes
+/// within 1.5 s, glows for the number then shown (from 2 to 170).
+void _typed() {
+  _takenNumber = null;
+  _takeTimer?.cancel();
+  _takeTimer = Timer(const Duration(milliseconds: 1500), () {
+    final shown = web.document.querySelector('.tab-input .number-display:not(.empty)');
+    final number = int.tryParse(shown?.textContent ?? '');
+    if (shown == null || number == null) return;
+    if (number < CheckoutEngine.minCheckout || number > CheckoutEngine.maxCheckout) return;
+    _takenNumber = shown.textContent;
+    shown.classList.add('taken');
+  });
 }
 
 /// The darts in hand, 3, 2 or 1, for Learn and Missing (one choice for both).
@@ -561,7 +586,8 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
           {'target': challenge.target}),
     }),
     // A number with two darts or three: a press on the boxes switches,
-    // before the first dart.
+    // before the first dart. The line above them says so.
+    dartsHint(show: session.canChooseDarts),
     if (session.canChooseDarts)
       button('',
           cls: 'dart-count-toggle',
@@ -613,6 +639,14 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
     actions,
   ];
 }
+
+/// Over the boxes of Practice and Choose: "Press the darts to choose 2 or 3
+/// darts." for a number that can be played with two darts or three; for any
+/// other the line keeps its room unseen, so nothing under it moves.
+web.HTMLElement dartsHint({required bool show}) => el('p',
+    cls: 'hint darts-hint${show ? '' : ' unseen'}',
+    text: tr('Press the darts to choose 2 or 3 darts.'),
+    attrs: show ? const {} : const {'aria-hidden': 'true'});
 
 /// What to aim at, then two boards side by side: the route, and a miss into
 /// the next area with what it leaves (for a pair of hits, the other hit). Each

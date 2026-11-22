@@ -554,6 +554,10 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 
 /* ---------- Result ---------- */
 .headline { font-size: 1.5rem; font-weight: 700; margin: 12px 0 0; }
+/* The tick or cross hangs to the left of the verdict: the word itself stands
+   in the middle, over the number under it. */
+.headline { position: relative; width: fit-content; align-self: center; margin-left: auto; margin-right: auto; }
+.headline-mark { position: absolute; right: 100%; padding-right: 0.3em; }
 .message { margin: 8px 0; max-width: 34ch; }
 /* The two result boards: small and side by side. Under the number there is a
    normal gap (about 12px to the "20" label, 29px to the ring). */
@@ -991,6 +995,8 @@ summary { cursor: pointer; color: var(--muted); }
 .tutorial-page:has(> .board-view) > .tile-row,
 .tutorial-page:has(> .board-view) > .dart-count-toggle { margin: 4px 0; flex: none; }
 .tutorial-page:has(> .board-view) > .remaining { margin: 4px 0 0; flex: none; }
+.tutorial-page:has(> .board-view) > .darts-hint { margin: 0; font-size: 0.8rem; line-height: 1.2; flex: none; }
+.tutorial-page:has(> .board-view) > .darts-hint.unseen { visibility: hidden; }
 .tutorial-page:has(> .board-view) > .remaining strong {
   font-size: clamp(2.4rem, 6.5vh, 4.5rem); font-size: clamp(2.4rem, 6.5dvh, 4.5rem);
 }
@@ -1006,10 +1012,17 @@ summary { cursor: pointer; color: var(--muted); }
 .screen.tutorial .slide-clip { margin: 0 -16px; width: calc(100% + 32px); }
 .screen.tutorial .tutorial-page { padding-left: 16px; padding-right: 16px; }
 .tutorial-page:has(> .board-view) > .board-view { width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; }
+/* The board as big as it goes: its numbers come to a third of the way they
+   were from S, D and T (about 6px instead of 20px). The board's own empty
+   rim reaches under the buttons' column, which stays on top for the presses. */
+.tutorial-page:has(> .board-view) .board-wrap.sided { gap: 0; }
 .tutorial-page:has(> .board-view) .board-wrap.sided .dartboard {
-  width: min(100cqw - 2 * (var(--side-w) + var(--side-gap)) - 12px, 100cqh, 380px);
+  --pull: 8px;
+  width: min(100cqw - 2 * var(--side-w) + 2 * var(--pull) - 4px, 100cqh, 400px);
+  margin: 0 calc(-1 * var(--pull));
   min-width: 0;
 }
+.tutorial-page:has(> .board-view) .board-wrap.sided .mode-col { position: relative; z-index: 1; }
 /* Tutorial Practice: S, D and T a third smaller (28px), so the board gets
    their room; as far apart as before (52px from one to the next), not
    crowded together. */
@@ -1080,6 +1093,24 @@ summary { cursor: pointer; color: var(--muted); }
 .practice-result .result-boards .fav-icon { width: min(8.7cqw, 14px); height: min(16cqw, 26px); }
 /* Under the answer: the links of the foot, on the screen with it. */
 .tutorial-page:has(> .practice-result) > .app-footer { margin-top: 0; flex: none; }
+/* Every part: the links at its foot, always in sight (what is above them
+   scrolls), and a little lower than elsewhere. */
+.tutorial-page > .app-footer { margin-top: auto; flex: none; }
+.tutorial-page > .app-footer .footer-link { min-height: 36px; }
+.screen.tutorial .tab-favorites .fav-pages { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+.tutorial-page.tab-favorites { overflow: hidden; }
+/* Learn: "Only possibility" half a centimetre under the routes. */
+.screen.tutorial .tutor-card > .hint.only-one { margin-top: 0.5cm; }
+/* Input: a frame round the number, dark while it is typed; 1.5 s after the
+   last key it glows faintly white: the number is taken. */
+.tab-input .input-top .number-display {
+  min-width: 2.6ch; padding: 0 0.25em; border: 1px solid transparent; border-radius: 14px;
+  transition: border-color 500ms ease, box-shadow 500ms ease;
+}
+.tab-input .input-top .number-display.taken {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.14), inset 0 0 10px rgba(255, 255, 255, 0.06);
+}
 @media (max-height: 780px) {
   .practice-result > .target.small { font-size: 2rem; }
   .practice-result > .headline { font-size: 1.3rem; }
@@ -1404,3 +1435,6 @@ body.money-pad-open { padding-bottom: 240px; }
     font-size: clamp(2.6rem, 7vh, 6.5rem); font-size: clamp(2.6rem, 7dvh, 6.5rem); margin-bottom: 2px;
   }
 }
+/* The answer with one board: its favorite dart further out from the board,
+   beside its top right, not on the numbers. */
+.practice-result .result-boards .board-figure:only-child .fav-btn { top: -6cqw; right: -11cqw; }
