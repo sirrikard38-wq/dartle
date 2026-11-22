@@ -21,13 +21,28 @@ bool _adding = false;
 /// + or X was just pressed: the icon turns once, not on every redraw.
 bool _justToggled = false;
 
-/// The last -1 or +1 pressed: for [_flashTime] that button, the name and the
-/// felgas of that name flash white with black letters (soft, blurred edges),
-/// and fade back.
-FelgaMember? _flashMember;
-int _flashBy = 0;
-DateTime _flashAt = DateTime(2000);
+/// A -1 or +1 pressed: for [_flashTime] that button, the name and the felgas
+/// of that name flash white with black letters (soft, blurred edges), with
+/// fireworks, and fade back. Each press has its own: one pressed while
+/// another still shows does not cut it short.
+class _Flash {
+  _Flash(this.member, this.by);
+
+  final FelgaMember member;
+  final int by;
+  final DateTime at = DateTime.now();
+
+  Duration get age => DateTime.now().difference(at);
+}
+
+final List<_Flash> _flashes = [];
 const Duration _flashTime = Duration(milliseconds: 1500);
+
+/// The presses still showing, the oldest first.
+List<_Flash> _live() => _flashes..removeWhere((f) => f.age >= _flashTime);
+
+/// The latest press still showing that [where] picks; null for none.
+_Flash? _latest(bool Function(_Flash f) where) => _live().where(where).lastOrNull;
 
 FelgaLedger get _book {
   return _ledger ??= FelgaLedger.fromJson(() {
@@ -116,17 +131,16 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     if (focus) input.focus();
   }
 
-  // The flash of the last -1 / +1 goes on where it was if a part is filled
-  // again meanwhile.
-  T flash<T extends web.HTMLElement>(T element, bool on) {
-    final flashed = DateTime.now().difference(_flashAt);
-    if (on && flashed < _flashTime) {
+  // A flash goes on where it was if a part is filled again meanwhile.
+  T flash<T extends web.HTMLElement>(T element, _Flash? press) {
+    if (press != null) {
       element.classList.add('flash');
-      element.style.animationDelay = '-${flashed.inMilliseconds}ms';
+      element.style.animationDelay = '-${press.age.inMilliseconds}ms';
     }
     return element;
   }
 
+  // Felgas never go below 0: a -1 on 0 does nothing.
   web.HTMLElement step(FelgaMember member, int by) => flash(
       button(by > 0 ? '+1' : '-1',
           cls: 'felga-step',
@@ -134,13 +148,11 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
               ? tr('{name}: one point more', {'name': member.name})
               : tr('{name}: one point less', {'name': member.name}),
           onPressed: (_) {
-            ledger.step(member, by, DateTime.now());
-            _flashMember = member;
-            _flashBy = by;
-            _flashAt = DateTime.now();
+            if (!ledger.step(member, by, DateTime.now())) return;
+            _flashes.add(_Flash(member, by));
             changed();
           }),
-      member == _flashMember && by == _flashBy);
+      _latest((f) => f.member == member && f.by == by));
 
   // A money box: four digits wide (wider for a longer number), the grey €
   // after it, written with a dot for thousands and a comma for decimals while
@@ -286,31 +298,36 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         el('p', children: [textNode('${tr('Money in the club now')} '), el('strong', text: formatEuro(ledger.currentCents))]),
       ]),
     ]);
-    // Right under the money: the felgas and the fines, most first.
+    // Right under the money: the felgas and the fines, most first, each
+    // place numbered on the left (1. at the top). The numbers stay where they
+    // are; the rest of a row moves when the order changes.
     fill(owesPart, [
       if (anyone) ...[
         el('div', cls: 'felga-grid owes', children: [
           el('span'),
+          el('span'),
           el('span', cls: 'felga-head felgas', text: 'Felga'),
           el('span', cls: 'felga-head', text: tr('Fine')),
-          for (final member in ledger.byPoints) ...[
+          for (final (place, member) in ledger.byPoints.indexed) ...[
+            el('span', cls: 'felga-cell place', text: '${place + 1}.'),
             el('span', cls: 'felga-cell name', text: member.name, attrs: {'data-row': 'o:${member.name}'}),
             flash(
                 el('span', cls: 'felga-cell num felgas', attrs: {'data-row': 'o:${member.name}'}, children: [
                   el('span', children: [
                     textNode('${member.points}'),
-                    if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime)
-                      _sparks(inward: _flashBy < 0),
+                    // Every press still showing has its own fireworks.
+                    for (final press in _live())
+                      if (press.member == member) _sparks(inward: press.by < 0, age: press.age),
                   ]),
                 ]),
-                member == _flashMember),
+                _latest((f) => f.member == member)),
             // The fine, and right of it, while the flash lasts, +1 or -1 (what
             // was pressed) fading in and out with it - outside the list, so
             // the list stays in the middle.
             el('span', cls: 'felga-cell num fine', attrs: {'data-row': 'o:${member.name}'}, children: [
               textNode(formatEuro(FelgaLedger.owedCents(member))),
-              if (member == _flashMember && DateTime.now().difference(_flashAt) < _flashTime)
-                flash(el('span', cls: 'felga-delta', text: _flashBy > 0 ? '+1' : '-1'), true),
+              if (_latest((f) => f.member == member) case final press?)
+                flash(el('span', cls: 'felga-delta', text: press.by > 0 ? '+1' : '-1'), press),
             ]),
           ],
         ]),
@@ -324,7 +341,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         el('div', cls: 'felga-names', children: [
           for (final member in ledger.members) ...[
             step(member, -1),
-            flash(el('span', cls: 'felga-name', text: member.name), member == _flashMember),
+            flash(el('span', cls: 'felga-name', text: member.name), _latest((f) => f.member == member)),
             step(member, 1),
           ],
         ]),
@@ -370,24 +387,39 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         }),
         el('span', cls: 'felga-club-sum', text: formatEuro(ledger.clubCents)),
       ]),
-      // Reset, asked twice: everything back to 0, the history stays.
+      // Reset, asked twice: everything back to 0; what there was stays as a
+      // line "From ... to ...". One with the same days already there: add
+      // them up, or delete these for good?
       button(tr('Reset'), cls: 'felga-reset-all', focusKey: 'felga-reset', onPressed: (_) {
         _ask(tr('Are you sure you want to reset all the data?'), () {
           _ask(
               tr('Are you really 100% million billion percent sure you want to reset the data? '
                   'The history will stay.'), () {
-            ledger.reset(DateTime.now());
-            _flashAt = DateTime(2000); // no flash goes on over the zeros
-            changed();
+            void reset(FelgaResetKeep keep) {
+              ledger.reset(DateTime.now(), keep: keep);
+              _flashes.clear(); // no flash goes on over the zeros
+              changed();
+            }
+
+            final same = ledger.sameDaysAs(DateTime.now());
+            if (same == null) {
+              reset(FelgaResetKeep.record);
+              return;
+            }
+            _choose(tr('There is already a record from {from} to {to}. Add these to it, or delete them forever?',
+                {'from': same.from, 'to': same.to}), [
+              (tr('Add them up'), () => reset(FelgaResetKeep.merge)),
+              (tr('Delete forever'), () => reset(FelgaResetKeep.discard)),
+            ]);
           });
         });
       }),
     ]);
     // The history: each -1 / +1 since the last reset under the name and the
     // day, with that day's felgas of the name, the latest at the top; at the
-    // very foot, on the right, a line for each reset ("Up to 21.11.2026"),
-    // the latest first.
-    final days = ledger.currentDays, resets = ledger.resets;
+    // very foot, on the right, a button for each reset ("From 01.11.2026 to
+    // 21.11.2026"), the latest first.
+    final days = ledger.currentDays, resets = ledger.periods;
     fill(historyPart, [
       if (days.isNotEmpty || resets.isNotEmpty) ...[
         _arrow(),
@@ -403,7 +435,13 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
             ]),
           if (resets.isNotEmpty)
             el('div', cls: 'felga-resets', children: [
-              for (final reset in resets) _resetLine(reset, refresh),
+              for (final reset in resets)
+                _resetLine(reset, onDelete: () {
+                  ledger.deletePeriod(reset);
+                  _save(ledger);
+                  // The last line gone: the history goes too.
+                  if (ledger.periods.isEmpty && ledger.currentDays.isEmpty) refresh();
+                }),
             ]),
         ]),
       ],
@@ -513,45 +551,167 @@ class _MoneyPad {
 
 final _MoneyPad _pad = _MoneyPad();
 
-/// The resets whose totals are open in the history.
-final Set<FelgaDay> _openResets = {};
+/// The resets whose numbers are open in the history (by id).
+final Set<String> _openResets = {};
 
 /// A question in a popup with Yes and No; [yes] runs on Yes.
-void _ask(String question, void Function() yes) {
+void _ask(String question, void Function() yes) =>
+    _choose(question, [(tr('Yes'), yes), (tr('No'), () {})], secondLast: true);
+
+/// A question in a popup with its [answers] side by side, each running its
+/// own; the popup closes on any. [secondLast]: the last one is the quiet one.
+void _choose(String question, List<(String, void Function())> answers, {bool secondLast = false}) {
   showModal(title: tr('Reset'), showTitle: false, body: [
     modalLine(question),
     el('div', cls: 'felga-ask', children: [
-      button(tr('Yes'), cls: 'cta', onPressed: (_) {
-        closeModal();
-        yes();
-      }),
-      button(tr('No'), cls: 'cta secondary', onPressed: (_) => closeModal()),
+      for (final (i, (label, run)) in answers.indexed)
+        button(label, cls: secondLast && i == answers.length - 1 ? 'cta secondary' : 'cta', onPressed: (_) {
+          closeModal();
+          run();
+        }),
     ]),
   ]);
 }
 
-/// A reset in the history: "Up to 21.11.2026", just underlined text (it can
-/// be pressed): it opens (and closes) every name with their felgas from the
-/// reset before up to this one, the most first.
-web.HTMLElement _resetLine(FelgaDay reset, void Function() refresh) {
-  final open = _openResets.contains(reset);
-  final totals = reset.totals!.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-  return el('div', cls: 'felga-reset-line', children: [
-    button(tr('Up to {date}', {'date': reset.date}),
-        cls: 'felga-reset-link',
-        attrs: {'aria-expanded': '$open'},
-        onPressed: (_) {
-          if (!_openResets.remove(reset)) _openResets.add(reset);
-          refresh();
-        }),
-    if (open)
-      el('div', cls: 'felga-reset-totals', children: [
-        for (final MapEntry(key: name, value: felgas) in totals) ...[
-          el('span', cls: 'felga-cell name', text: name),
-          el('span', cls: 'felga-cell num felgas', text: '$felgas'),
+/// A reset in the history: a button "From 01.11.2026 to 21.11.2026" and an X
+/// right of it. The button opens (and closes) every name with their felgas,
+/// what they owed and what they paid, the most felgas first - it opens and
+/// closes in its place and nothing else on the page is drawn again, so
+/// nothing above it moves. The X asks, and the line goes in fireworks; the
+/// lines under it glide up into its place ([onDelete] takes it out of the
+/// book).
+web.HTMLElement _resetLine(FelgaPeriod reset, {required void Function() onDelete}) {
+  final totals = [...reset.totals]..sort((a, b) => b.felgas.compareTo(a.felgas));
+  web.HTMLElement numbers() => el('div', cls: 'felga-reset-totals', children: [
+        el('span'),
+        el('span', cls: 'felga-head felgas', text: 'Felga'),
+        el('span', cls: 'felga-head', text: tr('Owed')),
+        el('span', cls: 'felga-head', text: tr('Paid')),
+        for (final t in totals) ...[
+          el('span', cls: 'felga-cell name', text: t.name),
+          el('span', cls: 'felga-cell num felgas', text: '${t.felgas}'),
+          el('span', cls: 'felga-cell num', text: formatEuro(t.owedCents)),
+          el('span', cls: 'felga-cell num', text: formatEuro(t.paidCents)),
         ],
-      ]),
-  ]);
+      ]);
+
+  final line = el('div', cls: 'felga-reset-line', attrs: {'data-reset': reset.id});
+  web.HTMLElement? shown = _openResets.contains(reset.id) ? numbers() : null;
+  late final web.HTMLButtonElement open;
+  open = button(tr('From {from} to {to}', {'from': reset.from, 'to': reset.to}),
+      cls: 'felga-reset-link',
+      attrs: {'aria-expanded': '${shown != null}'},
+      onPressed: (_) {
+        final was = shown;
+        if (was == null) {
+          _openResets.add(reset.id);
+          final grown = numbers();
+          shown = grown;
+          line.append(grown);
+          _slideOpen(grown);
+        } else {
+          _openResets.remove(reset.id);
+          shown = null;
+          _slideShut(was);
+        }
+        open.setAttribute('aria-expanded', '${shown != null}');
+      });
+  final cross = button('', cls: 'felga-reset-x', ariaLabel: tr('Delete this record'), onPressed: (_) {
+    _ask(tr('Do you want to delete this record from planet Earth forever, really 100%?'), () {
+      _openResets.remove(reset.id);
+      _goInFireworks(line, onDelete);
+    });
+  })
+    ..append(svg('svg', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
+      svg('path', attrs: {'d': 'M6 6 L18 18 M18 6 L6 18'}),
+    ]));
+  line
+    ..append(el('div', cls: 'felga-reset-row', children: [open, cross]))
+    ..append(shown ?? el('span', attrs: {'hidden': ''}));
+  return line;
+}
+
+/// [box] (just put in) grows from nothing to its height.
+void _slideOpen(web.HTMLElement box) {
+  if (wantsLessMotion) return;
+  final height = box.scrollHeight;
+  box.style
+    ..overflow = 'hidden'
+    ..height = '0px'
+    ..opacity = '0';
+  box.getBoundingClientRect(); // so that the start is drawn
+  box.style
+    ..transition = 'height 260ms ease, opacity 260ms ease'
+    ..height = '${height}px'
+    ..opacity = '1';
+  Timer(const Duration(milliseconds: 280), () {
+    box.style
+      ..transition = ''
+      ..height = ''
+      ..overflow = '';
+  });
+}
+
+/// [box] shrinks to nothing and goes.
+void _slideShut(web.HTMLElement box) {
+  if (wantsLessMotion) {
+    box.remove();
+    return;
+  }
+  box.style
+    ..overflow = 'hidden'
+    ..height = '${box.getBoundingClientRect().height}px';
+  box.getBoundingClientRect();
+  box.style
+    ..transition = 'height 220ms ease, opacity 220ms ease'
+    ..height = '0px'
+    ..opacity = '0';
+  Timer(const Duration(milliseconds: 240), () => box.remove());
+}
+
+/// A deleted reset: fireworks round [line] as it fades out; then it goes
+/// ([gone] runs) and the lines under it glide up into its place over a
+/// second.
+void _goInFireworks(web.HTMLElement line, void Function() gone) {
+  final calm = wantsLessMotion;
+  line.classList.add('going');
+  if (!calm) {
+    // Over the line, but not in it: the sparks fly on after it is gone.
+    final at = line.getBoundingClientRect();
+    final sky = el('div', cls: 'felga-line-sky', attrs: {
+      'aria-hidden': 'true',
+      'style': 'left: ${at.left}px; top: ${at.top}px; width: ${at.width}px; height: ${at.height}px',
+    }, children: [
+      for (final x in const [12, 50, 88]) el('span', cls: 'felga-line-burst', attrs: {'style': 'left: $x%'}, children: [_sparks()]),
+    ]);
+    web.document.body!.append(sky);
+    Timer(const Duration(milliseconds: 1600), () => sky.remove());
+  }
+  Timer(Duration(milliseconds: calm ? 0 : 700), () {
+    final below = <web.HTMLElement>[];
+    var sibling = line.nextElementSibling;
+    while (sibling != null) {
+      below.add(sibling as web.HTMLElement);
+      sibling = sibling.nextElementSibling;
+    }
+    final tops = [for (final b in below) b.getBoundingClientRect().top];
+    line.remove();
+    gone();
+    if (calm) return;
+    for (var i = 0; i < below.length; i++) {
+      final dy = tops[i] - below[i].getBoundingClientRect().top;
+      below[i].style
+        ..transition = 'none'
+        ..transform = 'translateY(${dy}px)';
+    }
+    if (below.isEmpty) return;
+    below.first.getBoundingClientRect();
+    for (final b in below) {
+      b.style
+        ..transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)'
+        ..transform = '';
+    }
+  });
 }
 
 /// Fireworks: 36 sparks flying out of the flash, not in a perfect circle - a
@@ -559,8 +719,10 @@ web.HTMLElement _resetLine(FelgaDay reset, void Function() refresh) {
 /// to 1 cm (1 cm is 37.8 CSS pixels), their directions a little uneven too.
 /// For a -1 ([inward]) they run backwards: they appear out there, smoothly,
 /// and fly into the box.
-web.HTMLElement _sparks({bool inward = false}) =>
-    el('span', cls: 'felga-burst${inward ? ' inward' : ''}', attrs: {'aria-hidden': 'true'}, children: [
+web.HTMLElement _sparks({bool inward = false, Duration age = Duration.zero}) => el('span',
+        cls: 'felga-burst${inward ? ' inward' : ''}',
+        attrs: {'aria-hidden': 'true', 'style': 'animation-delay: -${age.inMilliseconds}ms'},
+        children: [
       for (var i = 0; i < 36; i++)
         el('i', attrs: {
           'style': '--a: ${i * 10 + const [0, 4, -3][i % 3]}deg; '

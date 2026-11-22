@@ -1269,7 +1269,9 @@ summary { cursor: pointer; color: var(--muted); }
   display: grid; align-items: center; justify-content: center; gap: 10px 30px;
   max-width: calc(100% - 10mm); margin-top: 16px;
 }
-.felga-grid.owes { grid-template-columns: auto minmax(4ch, auto) minmax(7ch, auto); }
+.felga-grid.owes { grid-template-columns: auto auto minmax(4ch, auto) minmax(7ch, auto); }
+/* The places, 1. at the top: they stay put while the rows change places. */
+.felga-cell.place { color: var(--muted); text-align: right; margin-right: -14px; }
 .felga-cell.fine { position: relative; }
 /* +1 or -1 right of the fine while the flash lasts (the column is always
    there, so nothing moves). */
@@ -1321,6 +1323,8 @@ body.money-pad-open { padding-bottom: 240px; }
 .money-input {
   box-sizing: content-box; font: inherit; padding: 0; border: 0; background: none; color: var(--fg);
   text-align: right; outline: none; min-width: 0; max-width: 40vw; font-variant-numeric: tabular-nums;
+  /* The number a few millimetres left of the cursor, so it is not under it. */
+  padding-right: 2mm; font-size: 1.05rem;
 }
 .money .euro { color: var(--muted); }
 /* -1 / +1 pressed (both alike): the button, the name and its felgas flash
@@ -1360,12 +1364,14 @@ body.money-pad-open { padding-bottom: 240px; }
   65% { opacity: 0.9; }
   100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
 }
-/* -1: the fireworks the other way - the sparks are there at once, out there,
-   with the flash, and glide smoothly into the box. */
+/* -1: the fireworks of +1 run backwards - out there the sparks start as tiny
+   as +1's are when they go out, and grow to full size as they fly into the
+   box. */
 @keyframes felga-spark-in {
-  0% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.7); }
-  8% { opacity: 1; transform: rotate(var(--a)) translateX(var(--d)) scale(0.8); }
-  70% { opacity: 0.9; }
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
+  8% { opacity: 1; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
+  35% { opacity: 0.9; }
+  92% { opacity: 1; }
   100% { opacity: 0; transform: rotate(var(--a)) translateX(6px) scale(1); }
 }
 .felga-burst.inward i { animation-name: felga-spark-in; animation-timing-function: ease-in-out; }
@@ -1403,12 +1409,28 @@ body.money-pad-open { padding-bottom: 240px; }
 .felga-history .felga-cell.name, .felga-reset-totals .felga-cell.name { overflow-wrap: normal; white-space: nowrap; }
 .felga-resets { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 18px; }
 .felga-reset-line { display: flex; flex-direction: column; align-items: flex-end; }
+/* A reset: a button "From ... to ..." and an X right of it. */
+.felga-reset-line { position: relative; }
+.felga-reset-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .felga-reset-link {
-  border: 0; background: none; padding: 4px 0; color: var(--fg); font: inherit; font-size: 0.95rem;
-  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: 18px; background: none; padding: 6px 14px;
+  color: var(--fg); font: inherit; font-size: 0.95rem; cursor: pointer; font-variant-numeric: tabular-nums;
 }
+.felga-reset-link[aria-expanded="true"] { border-color: var(--fg); }
+.felga-reset-x {
+  flex: none; width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.felga-reset-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.felga-reset-x:hover, .felga-reset-x:active { color: var(--fg); }
+/* Deleted: the line fades out among fireworks (they fly over it, from the
+   page itself, so they go on after it is gone). */
+.felga-reset-line.going { opacity: 0; transition: opacity 600ms ease; }
+.felga-line-sky { position: fixed; z-index: 40; pointer-events: none; }
+.felga-line-burst { position: absolute; top: 50%; width: 0; height: 0; }
 .felga-reset-totals {
-  display: grid; grid-template-columns: auto minmax(4ch, auto); gap: 6px 30px; margin: 6px 0 10px; align-items: center;
+  display: grid; grid-template-columns: auto minmax(4ch, auto) minmax(6ch, auto) minmax(6ch, auto);
+  gap: 6px 18px; margin: 8px 0 10px; align-items: center;
 }
 /* The title of the history, under its arrow, in capitals. */
 .felga-title { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; text-align: center; color: var(--fg); text-transform: uppercase; letter-spacing: 0.06em; }

@@ -12,40 +12,84 @@ class FelgaMember {
 }
 
 /// One line of the history: [name]'s felgas on [date] (-1 and +1 of that
-/// day added up) - or a reset on [date], with [totals]: every name's felgas
-/// since the reset before it, added up.
+/// day added up).
 class FelgaDay {
-  FelgaDay(this.name, this.date, this.count, {this.totals});
-
-  /// A reset on [date].
-  FelgaDay.reset(this.date, Map<String, int> this.totals)
-      : name = '',
-        count = 0;
+  FelgaDay(this.name, this.date, this.count);
 
   final String name;
 
   /// The day, written dd.mm.yyyy.
   final String date;
   int count;
-
-  /// For a reset: each name's felgas since the reset before, added up; null
-  /// for a day.
-  final Map<String, int>? totals;
-
-  bool get isReset => totals != null;
 }
+
+/// One name in a reset: their felgas, what they still owed and what they had
+/// paid when it was reset.
+class FelgaTotal {
+  FelgaTotal(this.name, {this.felgas = 0, this.owedCents = 0, this.paidCents = 0});
+
+  final String name;
+  int felgas;
+  int owedCents;
+  int paidCents;
+}
+
+/// A reset: from the first day with felgas to the day it was reset, every
+/// name with their felgas, what they owed and what they paid.
+class FelgaPeriod {
+  FelgaPeriod({required this.id, required this.from, required this.to, required this.totals});
+
+  /// Tells it apart from the others (two can have the same days).
+  final String id;
+
+  /// The days, written dd.mm.yyyy.
+  final String from;
+  final String to;
+  final List<FelgaTotal> totals;
+
+  bool sameDays(FelgaPeriod other) => from == other.from && to == other.to;
+
+  /// Adds [other]'s numbers to these, name by name (a name only in [other]
+  /// comes in at the end).
+  void addAll(FelgaPeriod other) {
+    for (final t in other.totals) {
+      final mine = totals.where((m) => m.name == t.name).firstOrNull;
+      if (mine == null) {
+        totals.add(FelgaTotal(t.name, felgas: t.felgas, owedCents: t.owedCents, paidCents: t.paidCents));
+      } else {
+        mine
+          ..felgas += t.felgas
+          ..owedCents += t.owedCents
+          ..paidCents += t.paidCents;
+      }
+    }
+  }
+}
+
+/// What a reset does with the numbers it takes away: keeps them as a new
+/// line ([record]), adds them to the line of the same days ([merge]), or
+/// throws them away for good ([discard]).
+enum FelgaResetKeep { record, merge, discard }
 
 /// [day] written as the history shows it: 21.11.2026.
 String felgaDate(DateTime day) =>
     '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}.${day.year}';
 
+/// 21.11.2026 back as a day; null when it is not one.
+DateTime? _readDate(String date) {
+  final parts = [for (final p in date.split('.')) int.tryParse(p)];
+  if (parts.length != 3 || parts.contains(null)) return null;
+  return DateTime(parts[2]!, parts[1]!, parts[0]!);
+}
+
 /// Felgalizacija: names with points, what each owes (a point is 0,50 €),
 /// what each has paid, and the club's money: everything paid, with what was
 /// added to it or spent from it.
 class FelgaLedger {
-  FelgaLedger({List<FelgaMember>? members, this.clubCents = 0, List<FelgaDay>? history})
+  FelgaLedger({List<FelgaMember>? members, this.clubCents = 0, List<FelgaDay>? history, List<FelgaPeriod>? periods})
       : members = members ?? [],
-        history = history ?? [];
+        history = history ?? [],
+        periods = periods ?? [];
 
   /// One point costs this many cents.
   static const int centsPerPoint = 50;
@@ -56,35 +100,63 @@ class FelgaLedger {
   /// spent, above zero added.
   int clubCents;
 
-  /// The history: one line for each name and day - every -1 and +1 of that
-  /// day added up in it - the latest -1 / +1 first.
+  /// The history since the last reset: one line for each name and day -
+  /// every -1 and +1 of that day added up in it - the latest -1 / +1 first.
   final List<FelgaDay> history;
 
-  /// The days since the last reset as they are shown: only those with felgas
-  /// (a day that came to 0 or below is not written), the latest first.
-  List<FelgaDay> get currentDays {
-    final lastReset = history.indexWhere((d) => d.isReset);
-    final since = lastReset < 0 ? history.length : lastReset;
-    return [for (final d in history.sublist(0, since)) if (!d.isReset && d.count > 0) d];
+  /// The resets, the latest first.
+  final List<FelgaPeriod> periods;
+
+  /// The days as they are shown: only those with felgas (a day that came to 0
+  /// is not written), the latest first.
+  List<FelgaDay> get currentDays => [for (final d in history) if (d.count > 0) d];
+
+  /// What a reset on [day] would keep: from the first day with felgas (or
+  /// [day], with none) to [day], each name with their felgas, what they still
+  /// owe and what they paid.
+  FelgaPeriod periodUpTo(DateTime day) {
+    DateTime? first;
+    for (final d in currentDays) {
+      final date = _readDate(d.date);
+      if (date != null && (first == null || date.isBefore(first))) first = date;
+    }
+    return FelgaPeriod(
+      id: '${DateTime.now().microsecondsSinceEpoch}-${periods.length}',
+      from: felgaDate(first ?? day),
+      to: felgaDate(day),
+      totals: [
+        for (final m in members) FelgaTotal(m.name, felgas: m.points, owedCents: debtCents(m), paidCents: m.paidCents),
+      ],
+    );
   }
 
-  /// The resets, the latest first.
-  List<FelgaDay> get resets => [for (final d in history) if (d.isReset) d];
+  /// The reset already kept with the same days as one on [day] would have;
+  /// null for none.
+  FelgaPeriod? sameDaysAs(DateTime day) {
+    final next = periodUpTo(day);
+    return periods.where(next.sameDays).firstOrNull;
+  }
 
   /// Reset: every name's felgas, what they paid and the club money go back
-  /// to 0 (the names stay). The days since the last reset leave the history;
-  /// in their place one line stays, the reset: its date and each name's
-  /// felgas of those days added up (since the reset before, not more).
-  void reset(DateTime day) {
-    final totals = <String, int>{for (final m in members) m.name: 0};
-    final lastReset = history.indexWhere((d) => d.isReset);
-    final since = lastReset < 0 ? history.length : lastReset;
-    for (final d in history.sublist(0, since)) {
-      if (d.count > 0) totals[d.name] = (totals[d.name] ?? 0) + d.count;
+  /// to 0 (the names stay) and the days leave the history. What there was is
+  /// kept as a line "From ... to ..." ([keep]: or added to the line of the
+  /// same days, or thrown away).
+  void reset(DateTime day, {FelgaResetKeep keep = FelgaResetKeep.record}) {
+    final period = periodUpTo(day);
+    switch (keep) {
+      case FelgaResetKeep.record:
+        periods.insert(0, period);
+      case FelgaResetKeep.merge:
+        final same = periods.where(period.sameDays).firstOrNull;
+        if (same == null) {
+          periods.insert(0, period);
+        } else {
+          same.addAll(period);
+        }
+      case FelgaResetKeep.discard:
+        break;
     }
-    history
-      ..removeRange(0, since)
-      ..insert(0, FelgaDay.reset(felgaDate(day), totals));
+    history.clear();
     for (final m in members) {
       m
         ..points = 0
@@ -93,20 +165,23 @@ class FelgaLedger {
     clubCents = 0;
   }
 
+  /// Takes [period] out of the history for good.
+  void deletePeriod(FelgaPeriod period) => periods.remove(period);
+
   /// [member] got [by] felgas (+1 or -1) on [day]: their points change, and
   /// so does their one line of that day in the history, which goes to the
-  /// top. The line keeps counting below 1 too (a -1 and then a +1 on a day
-  /// make 0), it is just not shown then.
-  void step(FelgaMember member, int by, DateTime day) {
+  /// top. Felgas never go below 0: a -1 then does nothing (false). The line
+  /// keeps counting below 1 (a -1 and then a +1 on a day make 0), it is just
+  /// not shown then.
+  bool step(FelgaMember member, int by, DateTime day) {
+    if (member.points + by < 0) return false;
     member.points += by;
     final date = felgaDate(day);
-    // Only since the last reset: a day line from before it stays as it was.
-    final lastReset = history.indexWhere((d) => d.isReset);
-    final since = lastReset < 0 ? history.length : lastReset;
-    final i = history.sublist(0, since).indexWhere((d) => d.name == member.name && d.date == date);
+    final i = history.indexWhere((d) => d.name == member.name && d.date == date);
     final line = i < 0 ? FelgaDay(member.name, date, 0) : history.removeAt(i);
     line.count += by;
     history.insert(0, line);
+    return true;
   }
 
   /// Adds [name] (trimmed); nothing for an empty one.
@@ -156,16 +231,59 @@ class FelgaLedger {
           for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents},
         ],
         'history': [
-          for (final d in history)
-            if (d.isReset) {'reset': d.date, 'totals': d.totals} else {'name': d.name, 'date': d.date, 'count': d.count},
+          for (final d in history) {'name': d.name, 'date': d.date, 'count': d.count},
+        ],
+        'periods': [
+          for (final p in periods)
+            {
+              'id': p.id,
+              'from': p.from,
+              'to': p.to,
+              'totals': [
+                for (final t in p.totals) {'name': t.name, 'felgas': t.felgas, 'owed': t.owedCents, 'paid': t.paidCents},
+              ],
+            },
         ],
       });
 
-  /// From [toJson]; an empty ledger for anything it cannot read.
+  /// From [toJson]; an empty ledger for anything it cannot read. Kept before
+  /// "From ... to ...", each reset was a line "Up to" a day among the days
+  /// (with the felgas only): it comes back as a reset from that day to it,
+  /// and the days after it in the list (from before it) are left out.
   static FelgaLedger fromJson(String? text) {
     if (text == null) return FelgaLedger();
     try {
       final data = jsonDecode(text) as Map<String, Object?>;
+      final days = <FelgaDay>[];
+      final periods = <FelgaPeriod>[];
+      var beforeReset = true;
+      final lines = (data['history'] as List<Object?>? ?? const []).cast<Map<String, Object?>>();
+      for (var i = 0; i < lines.length; i++) {
+        final d = lines[i];
+        if (d['reset'] case final String date) {
+          beforeReset = false;
+          periods.add(FelgaPeriod(id: 'old-$i', from: date, to: date, totals: [
+            for (final MapEntry(:key, :value) in (d['totals'] as Map<String, Object?>? ?? const {}).entries)
+              FelgaTotal(key, felgas: (value as num?)?.toInt() ?? 0),
+          ]));
+        } else if (beforeReset) {
+          days.add(FelgaDay(d['name'] as String, d['date'] as String, (d['count'] as num?)?.toInt() ?? 0));
+        }
+      }
+      for (final p in (data['periods'] as List<Object?>? ?? const []).cast<Map<String, Object?>>()) {
+        periods.add(FelgaPeriod(
+          id: p['id'] as String,
+          from: p['from'] as String,
+          to: p['to'] as String,
+          totals: [
+            for (final t in (p['totals'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
+              FelgaTotal(t['name'] as String,
+                  felgas: (t['felgas'] as num?)?.toInt() ?? 0,
+                  owedCents: (t['owed'] as num?)?.toInt() ?? 0,
+                  paidCents: (t['paid'] as num?)?.toInt() ?? 0),
+          ],
+        ));
+      }
       return FelgaLedger(
         // Before "Club money" it was what was spent: that much below zero.
         clubCents: (data['club'] as num?)?.toInt() ?? -((data['spent'] as num?)?.toInt() ?? 0),
@@ -174,16 +292,8 @@ class FelgaLedger {
             FelgaMember(m['name'] as String,
                 points: (m['points'] as num?)?.toInt() ?? 0, paidCents: (m['paid'] as num?)?.toInt() ?? 0),
         ],
-        history: [
-          for (final d in (data['history'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
-            if (d['reset'] case final String date)
-              FelgaDay.reset(date, {
-                for (final MapEntry(:key, :value) in (d['totals'] as Map<String, Object?>? ?? const {}).entries)
-                  key: (value as num?)?.toInt() ?? 0,
-              })
-            else
-              FelgaDay(d['name'] as String, d['date'] as String, (d['count'] as num?)?.toInt() ?? 0),
-        ],
+        history: days,
+        periods: periods,
       );
     } on Object {
       return FelgaLedger();

@@ -100,7 +100,7 @@ void main() {
     expect(back.currentDays.map((d) => '${d.name} ${d.date} ${d.count}').join(', '), lines());
   });
 
-  test('reset: everything back to 0; the days since the last reset become one line with their totals', () {
+  test('reset: everything back to 0; what there was is kept "From the first day to the reset"', () {
     final ledger = FelgaLedger()
       ..add('Riko')
       ..add('Miha')
@@ -112,31 +112,73 @@ void main() {
       ..step(riko, 1, monday)
       ..step(miha, 1, monday)
       ..step(riko, 1, tuesday)
-      ..step(miha, -1, tuesday); // below 0 that day: not counted
+      ..step(miha, -1, tuesday);
     riko.paidCents = 100;
     ledger.clubCents = -300;
+    expect(ledger.sameDaysAs(tuesday), isNull);
     ledger.reset(tuesday);
     expect([for (final m in ledger.members) m.points], [0, 0, 0]);
     expect([for (final m in ledger.members) m.paidCents], [0, 0, 0]);
     expect(ledger.clubCents, 0);
     expect(ledger.members.map((m) => m.name), ['Riko', 'Miha', 'Sin'], reason: 'the names stay');
-    expect(ledger.currentDays, isEmpty, reason: 'the days of before are gone');
-    final mark = ledger.resets.single;
-    expect(mark.date, '24.11.2026');
-    expect(mark.totals, {'Riko': 3, 'Miha': 1, 'Sin': 0});
+    expect(ledger.history, isEmpty, reason: 'the days are gone');
+    String totals(FelgaPeriod p) => p.totals.map((t) => '${t.name} ${t.felgas} ${t.owedCents} ${t.paidCents}').join(', ');
+    final kept = ledger.periods.single;
+    expect('${kept.from} - ${kept.to}', '23.11.2026 - 24.11.2026');
+    expect(totals(kept), 'Riko 3 50 100, Miha 0 0 0, Sin 0 0 0', reason: 'felgas, still owed, paid');
     // After the reset a day starts a new line, even the same day.
     ledger.step(riko, 1, tuesday);
     expect(ledger.currentDays.single.count, 1);
-    expect(ledger.currentDays.single.name, 'Riko');
-    // A second reset counts only since the first one; the latest is first.
+    // The next reset: from its first day; the latest first.
     ledger.reset(DateTime(2026, 11, 30));
-    expect(ledger.resets.map((r) => r.date), ['30.11.2026', '24.11.2026']);
-    expect(ledger.resets.first.totals, {'Riko': 1, 'Miha': 0, 'Sin': 0});
-    expect(ledger.currentDays, isEmpty);
+    expect(ledger.periods.map((p) => '${p.from} - ${p.to}'), ['24.11.2026 - 30.11.2026', '23.11.2026 - 24.11.2026']);
     final back = FelgaLedger.fromJson(ledger.toJson());
-    expect(back.resets.first.totals, {'Riko': 1, 'Miha': 0, 'Sin': 0});
-    expect(back.resets.last.totals, {'Riko': 3, 'Miha': 1, 'Sin': 0});
+    expect(back.periods.map(totals), ledger.periods.map(totals));
+    expect(back.periods.map((p) => p.id), ledger.periods.map((p) => p.id));
     expect(sin.points, 0);
+    // Taken away for good.
+    ledger.deletePeriod(ledger.periods.first);
+    expect(ledger.periods.single, same(kept));
+  });
+
+  test('a reset with the same days as one kept: added to it, or thrown away', () {
+    final ledger = FelgaLedger()..add('Riko');
+    final riko = ledger.members.single;
+    final monday = DateTime(2026, 11, 23);
+    ledger
+      ..step(riko, 1, monday)
+      ..reset(monday)
+      ..step(riko, 1, monday);
+    expect(ledger.sameDaysAs(monday), same(ledger.periods.single));
+    ledger.reset(monday, keep: FelgaResetKeep.merge);
+    expect(ledger.periods.single.totals.single.felgas, 2);
+    expect(ledger.periods.single.totals.single.owedCents, 100);
+    ledger
+      ..step(riko, 1, monday)
+      ..reset(monday, keep: FelgaResetKeep.discard);
+    expect(ledger.periods.single.totals.single.felgas, 2);
+    expect(riko.points, 0);
+  });
+
+  test('felgas never go below 0', () {
+    final ledger = FelgaLedger()..add('Riko');
+    final riko = ledger.members.single;
+    expect(ledger.step(riko, -1, DateTime(2026, 11, 23)), isFalse);
+    expect(riko.points, 0);
+    expect(ledger.history, isEmpty);
+    expect(ledger.step(riko, 1, DateTime(2026, 11, 23)), isTrue);
+    expect(riko.points, 1);
+  });
+
+  test('kept before "From ... to ...": a reset "Up to" a day comes back from that day to it', () {
+    final ledger = FelgaLedger.fromJson('{"members": [{"name": "Riko", "points": 1}], "history": ['
+        '{"name": "Riko", "date": "25.11.2026", "count": 1}, '
+        '{"reset": "24.11.2026", "totals": {"Riko": 3}}, '
+        '{"name": "Riko", "date": "20.11.2026", "count": 2}]}');
+    expect(ledger.currentDays.map((d) => d.date), ['25.11.2026']);
+    final kept = ledger.periods.single;
+    expect('${kept.from} - ${kept.to}', '24.11.2026 - 24.11.2026');
+    expect(kept.totals.single.felgas, 3);
   });
 
   test('it is kept and read back', () {

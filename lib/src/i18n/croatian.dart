@@ -57,7 +57,14 @@ const Map<String, String> croatian = {
   'Are you sure you want to reset all the data?': 'Jesi li siguran da želiš resetirati sve podatke?',
   'Are you really 100% million billion percent sure you want to reset the data? The history will stay.':
       'Jesi li sigurno 100% miliona biliona posto siguran da želiš resetirati podatke? Povijesni podaci će i dalje ostati',
-  'Up to {date}': 'Do {date}',
+  'From {from} to {to}': 'Od {from} do {to}',
+  'Delete this record': 'Obriši ovaj zapis',
+  'Do you want to delete this record from planet Earth forever, really 100%?':
+      'Želiš li zauvijek izbrisati ovaj zapis s planeta Zemlje, zauvijek, baš 100%?',
+  'There is already a record from {from} to {to}. Add these to it, or delete them forever?':
+      'Već postoji zapis od {from} do {to}. Zbrojiti ove podatke s njim ili ih zauvijek izbrisati?',
+  'Add them up': 'Zbroji',
+  'Delete forever': 'Izbriši zauvijek',
   'Fine': 'Kazna',
   'Felgas by date': 'Broj felgi po datumu',
   'Turn the sign': 'Promijeni predznak',
