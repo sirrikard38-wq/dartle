@@ -22,8 +22,6 @@ String? _ledgerId;
 /// The name box is open (after +, until X).
 bool _adding = false;
 
-/// + or X was just pressed: the icon turns once, not on every redraw.
-bool _justToggled = false;
 
 /// A -1 or +1 pressed: for [_flashTime] that button, the name and the felgas
 /// of that name flash white with black letters (soft, blurred edges), with
@@ -233,27 +231,23 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     return el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
   }
 
-  web.HTMLElement toggleButton() {
-    final turn = _justToggled;
-    _justToggled = false;
-    return button('',
-        cls: 'felga-toggle${_adding ? ' open' : ''}${turn ? ' turning' : ''}',
+  // The + under the names: pressed, it turns into an X (over a second) and
+  // the box for a new name comes under it; the X takes the box away.
+  web.HTMLElement toggleButton() => _turningPlus(
+        cls: 'felga-toggle',
         focusKey: 'felga-toggle',
-        ariaLabel: _adding ? tr('Stop adding names') : tr('Add a name'),
-        onPressed: (_) {
-          _adding = !_adding;
-          _justToggled = true;
-          fill(togglePart, [toggleButton()]);
-          if (_adding) {
+        open: _adding,
+        openLabel: tr('Stop adding names'),
+        closedLabel: tr('Add a name'),
+        onToggle: (open) {
+          _adding = open;
+          if (open) {
             openNameBox(focus: true);
           } else {
             fill(newNamePart, []);
           }
-        })
-      ..append(svg('svg', cls: 'felga-plus', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
-        svg('path', attrs: {'d': 'M12 3 V21 M3 12 H21'}),
-      ]));
-  }
+        },
+      );
 
   // Where each row of the two sorted lists is, before a change...
   Map<String, double> rowTops() {
@@ -299,13 +293,14 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   refresh = () {
     final before = rowTops();
     final anyone = ledger.members.isNotEmpty;
+    // The two sums one under the other: the words end under each other, the
+    // amounts too (the € under the €), a little apart; the two in the middle.
     fill(moneyPart, [
       el('div', cls: 'felga-money', children: [
-        el('p', children: [
-          textNode('${tr('Owed to the club')} '),
-          el('strong', text: formatEuro(ledger.owedTotalCents)),
-        ]),
-        el('p', children: [textNode('${tr('Money in the club now')} '), el('strong', text: formatEuro(ledger.currentCents))]),
+        el('span', cls: 'felga-money-words', text: tr('Owed to the club')),
+        el('strong', text: formatEuro(ledger.owedTotalCents)),
+        el('span', cls: 'felga-money-words', text: tr('Money in the club now')),
+        el('strong', text: formatEuro(ledger.currentCents)),
       ]),
     ]);
     // Right under the money: the felgas and the fines, most first, each
@@ -462,11 +457,12 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   refresh();
   if (_adding) openNameBox(focus: false);
   return el('main', cls: 'screen felga', children: [
+    _lockPart(_open.password),
     moneyPart,
     owesPart,
     namesPart,
-    newNamePart,
     togglePart,
+    newNamePart,
     paidPart,
     clubPart,
     historyPart,
@@ -561,13 +557,15 @@ class _MoneyPad {
 
 final _MoneyPad _pad = _MoneyPad();
 
-/// One Felgalizacija on this device: its own book, and the name its maker gave
-/// it (none for the first one there was).
+/// One Felgalizacija on this device: its own book, the name its maker gave it
+/// (none for the first one there was) and its password, which others join it
+/// with.
 class FelgaEntry {
-  FelgaEntry(this.id, this.name);
+  FelgaEntry(this.id, this.name, this.password);
 
   final String id;
   final String name;
+  final String password;
 
   /// Where its book is kept: the first one where it always was.
   String get storageKey => id == _firstId ? _key : 'dartle.felga.$id';
@@ -581,28 +579,52 @@ const String _listKey = 'dartle.felgas.v1';
 /// Which one is open (for this visit, so a reload opens it again).
 const String _openKey = 'dartle.felga-open';
 
+/// The signs a password is made of: letters, digits and a few others, none
+/// that can be taken for another (no 0 and O, 1, l and I).
+const String _passwordSigns = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!#%&*+=?@';
+
+/// A new password: 10 signs drawn at random.
+String _newPassword() {
+  final random = math.Random.secure();
+  return [for (var i = 0; i < 10; i++) _passwordSigns[random.nextInt(_passwordSigns.length)]].join();
+}
+
 /// The Felgalizacije on this device, in the order they were made; the first
-/// one (no name) is always there.
+/// one (no name) is always there. One kept before passwords gets one now.
 List<FelgaEntry> felgaList() {
+  var list = <FelgaEntry>[];
+  var changed = false;
   try {
     final saved = web.window.localStorage.getItem(_listKey);
     if (saved != null) {
-      final list = [
+      list = [
         for (final e in (jsonDecode(saved) as List<Object?>).cast<Map<String, Object?>>())
-          FelgaEntry(e['id'] as String, e['name'] as String? ?? ''),
+          FelgaEntry(e['id'] as String, e['name'] as String? ?? '', e['password'] as String? ?? ''),
       ];
-      if (list.isNotEmpty) return list;
     }
   } on Object {
-    // The first one alone.
+    list = [];
   }
-  return [FelgaEntry(_firstId, '')];
+  if (list.isEmpty) {
+    list = [FelgaEntry(_firstId, '', _newPassword())];
+    changed = true;
+  }
+  list = [
+    for (final e in list)
+      if (e.password.isEmpty) FelgaEntry(e.id, e.name, _newPassword()) else e,
+  ];
+  if (changed || list.any((e) => !_savedPasswords.contains(e.password))) _saveList(list);
+  return list;
 }
 
+/// The passwords as last saved (so the list is saved only when one is new).
+Set<String> _savedPasswords = {};
+
 void _saveList(List<FelgaEntry> list) {
+  _savedPasswords = {for (final e in list) e.password};
   try {
-    web.window.localStorage
-        .setItem(_listKey, jsonEncode([for (final e in list) {'id': e.id, 'name': e.name}]));
+    web.window.localStorage.setItem(
+        _listKey, jsonEncode([for (final e in list) {'id': e.id, 'name': e.name, 'password': e.password}]));
   } on Object {
     // Kept for this visit only.
   }
@@ -630,15 +652,48 @@ void openFelga(ViewContext ctx, FelgaEntry entry) {
   _ledgerId = null;
   _flashes.clear();
   _openResets.clear();
+  _adding = false;
   ctx.showPage(MenuPage.felga);
+}
+
+/// The menu's + is open (an X): the boxes under it are there.
+bool _menuAdding = false;
+
+/// A + that turns into an X (over a second) when pressed, and back.
+web.HTMLButtonElement _turningPlus({
+  required String cls,
+  required String focusKey,
+  required bool open,
+  required String openLabel,
+  required String closedLabel,
+  required void Function(bool open) onToggle,
+}) {
+  late final web.HTMLButtonElement plus;
+  plus = button('',
+      cls: '$cls turning-plus${open ? ' open' : ''}',
+      focusKey: focusKey,
+      ariaLabel: open ? openLabel : closedLabel,
+      attrs: {'aria-expanded': '$open'},
+      onPressed: (_) {
+        final now = !plus.classList.contains('open');
+        plus.classList.toggle('open', now);
+        plus
+          ..setAttribute('aria-expanded', '$now')
+          ..setAttribute('aria-label', now ? openLabel : closedLabel);
+        onToggle(now);
+      })
+    ..append(svg('svg', cls: 'felga-plus', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
+      svg('path', attrs: {'d': 'M12 3 V21 M3 12 H21'}),
+    ]));
+  return plus;
 }
 
 /// The menu's buttons for Felgalizacija: one for each (the word, and under it
 /// the name its maker gave it, the two in the middle one under the other),
-/// then a + that makes another. The + asks first: a password (one made by
-/// someone else), or a new one? For a new one a button comes in above the +
-/// with the word, and under it a line with the cursor on it and the keyboard
-/// up: the name is just typed, Enter (or leaving it) makes it.
+/// then a +. Pressed, the + turns into an X and under it come the word with a
+/// line under it, the cursor on it and the keyboard up - the name of a new
+/// one is just typed, Enter makes it - and "Do you have a password to join?"
+/// with a box for it. The X takes them away.
 List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
   final list = felgaList();
   web.HTMLElement lines(String name, [web.HTMLElement? under]) => el('span', cls: 'felga-btn-lines', children: [
@@ -646,72 +701,79 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
         if (under != null) under else if (name.isNotEmpty) el('span', cls: 'felga-btn-name', text: name),
       ]);
 
-  late final web.HTMLButtonElement plus;
+  final panel = el('div', cls: 'felga-join');
 
-  // The box under the word: a line, the cursor on it, the keyboard up. [done]
-  // gets what was typed (empty: nothing).
-  void ask({required bool password, required void Function(String typed) done}) {
-    final input = el('input', cls: 'felga-name-input', attrs: {
-      'type': password ? 'password' : 'text',
+  void fillPanel({required bool focus}) {
+    final name = el('input', cls: 'felga-name-input', attrs: {
+      'type': 'text',
       'maxlength': '30',
       'autocomplete': 'off',
       'enterkeyhint': 'done',
-      'aria-label': password ? tr('Password') : tr('Name of the Felgalizacija'),
+      'aria-label': tr('Name of the Felgalizacija'),
     }) as web.HTMLInputElement;
-    final box = el('div', cls: 'menu-btn felga-btn naming', children: [lines('', input)]);
-    void fit() => input.style.width = '${math.max(8, input.value.length + 2)}ch';
+    void fit() => name.style.width = '${math.max(8, name.value.length + 2)}ch';
     fit();
-    var finished = false;
-    void finish() {
-      if (finished) return;
-      finished = true;
-      final typed = input.value.trim();
-      box.remove();
-      done(typed);
-    }
-
-    input.onInput.listen((_) => fit());
-    input.onBlur.listen((_) => finish());
-    input.onKeyDown.listen((event) {
-      if (event.key == 'Enter') {
-        event.preventDefault();
-        finish();
-      } else if (event.key == 'Escape') {
-        input.value = '';
-        finish();
-      }
+    name.onInput.listen((_) => fit());
+    name.onKeyDown.listen((event) {
+      if (event.key != 'Enter') return;
+      event.preventDefault();
+      final typed = name.value.trim();
+      if (typed.isEmpty) return;
+      _saveList([...felgaList(), FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', typed, _newPassword())]);
+      _menuAdding = false;
+      ctx.rerender();
     });
-    plus.parentElement?.insertBefore(box, plus);
+
+    final password = el('input', cls: 'felga-pass-input', attrs: {
+      'type': 'text',
+      'maxlength': '10',
+      'autocomplete': 'off',
+      'autocapitalize': 'off',
+      'autocorrect': 'off',
+      'spellcheck': 'false',
+      'enterkeyhint': 'go',
+      'placeholder': tr('password'),
+      'aria-label': tr('Password'),
+    }) as web.HTMLInputElement;
+    password.onKeyDown.listen((event) {
+      if (event.key != 'Enter') return;
+      event.preventDefault();
+      final typed = password.value.trim();
+      if (typed.isEmpty) return;
+      final mine = felgaList().where((e) => e.password == typed).firstOrNull;
+      if (mine != null) {
+        _menuAdding = false;
+        openFelga(ctx, mine);
+        return;
+      }
+      ctx.toast(tr('No Felgalizacija has this password.'));
+    });
+
+    panel
+      ..textContent = ''
+      ..append(el('div', cls: 'felga-naming', children: [lines('', name)]))
+      ..append(el('p', cls: 'felga-join-question', text: tr('Do you have a password to join?')))
+      ..append(password);
     // At once, still in the press: so the phone's keyboard comes up.
-    input.focus();
+    if (focus) name.focus();
   }
 
-  plus = button('', cls: 'menu-plus', focusKey: 'felga-add', ariaLabel: tr('Add a Felgalizacija'), onPressed: (_) {
-    _choose(tr('Do you have a password, or are you making a new Felgalizacija?'), [
-      (
-        tr('I have a password'),
-        () => ask(
-            password: true,
-            done: (typed) {
-              if (typed.isEmpty) return;
-              ctx.toast(tr('No Felgalizacija has this password.'));
-            })
-      ),
-      (
-        tr('New Felgalizacija'),
-        () => ask(
-            password: false,
-            done: (typed) {
-              if (typed.isEmpty) return;
-              _saveList([...felgaList(), FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', typed)]);
-              ctx.rerender();
-            })
-      ),
-    ]);
-  })
-    ..append(svg('svg', cls: 'felga-plus', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
-      svg('path', attrs: {'d': 'M12 3 V21 M3 12 H21'}),
-    ]));
+  final plus = _turningPlus(
+    cls: 'menu-plus',
+    focusKey: 'felga-add',
+    open: _menuAdding,
+    openLabel: tr('Close'),
+    closedLabel: tr('Add a Felgalizacija'),
+    onToggle: (open) {
+      _menuAdding = open;
+      if (open) {
+        fillPanel(focus: true);
+      } else {
+        panel.textContent = '';
+      }
+    },
+  );
+  if (_menuAdding) fillPanel(focus: false);
 
   return [
     for (final entry in list)
@@ -719,10 +781,87 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
           cls: 'menu-btn felga-btn',
           focusKey: 'felga-${entry.id}',
           ariaLabel: entry.name.isEmpty ? 'Felgalizacija' : 'Felgalizacija ${entry.name}',
-          onPressed: (_) => openFelga(ctx, entry))
+          onPressed: (_) {
+            _menuAdding = false;
+            openFelga(ctx, entry);
+          })
         ..append(lines(entry.name)),
     plus,
+    panel,
   ];
+}
+
+/// At the top of a Felgalizacija: an arrow and a lock. Pressed, the arrow
+/// flies into the lock and the password shows under it; pressed, the password
+/// is copied ("Copied" shows for 1.5 s and fades away). It is hidden again once
+/// it is scrolled out of sight, or the page is left.
+web.HTMLElement _lockPart(String password) {
+  final part = el('div', cls: 'felga-lock-part');
+  StreamSubscription<web.Event>? watch;
+  void hide() {
+    watch?.cancel();
+    watch = null;
+    part.classList
+      ..remove('open')
+      ..remove('hit');
+  }
+
+  late final web.HTMLButtonElement shown;
+  final lock = button('', cls: 'felga-lock', ariaLabel: tr('Show the password'), onPressed: (_) {
+    if (part.classList.contains('hit')) return;
+    part.classList.add('hit');
+    Timer(Duration(milliseconds: wantsLessMotion ? 0 : 750), () {
+      if (!part.classList.contains('hit')) return;
+      part.classList.add('open');
+      watch = web.EventStreamProviders.scrollEvent.forTarget(web.window).listen((_) {
+        if (!part.isConnected) {
+          hide();
+          return;
+        }
+        final at = shown.getBoundingClientRect();
+        if (at.bottom < 0 || at.top > web.window.innerHeight) hide();
+      });
+    });
+  })
+    ..append(svg('svg', attrs: {'viewBox': '0 0 64 26', 'aria-hidden': 'true'}, children: [
+      svg('g', cls: 'lock-arrow', children: [
+        svg('path', attrs: {'d': 'M2 15 H27 M22 10.5 L27.5 15 L22 19.5 M2 11 L6 15 L2 19 M6 11 L10 15 L6 19'}),
+      ]),
+      svg('g', cls: 'lock-body', children: [
+        svg('path', attrs: {'d': 'M45 12 V8.5 a6 6 0 0 1 12 0 V12'}),
+        svg('rect', attrs: {'x': '41', 'y': '12', 'width': '20', 'height': '12', 'rx': '2.5'}),
+        svg('path', attrs: {'d': 'M51 16.5 V19.5'}),
+      ]),
+    ]));
+
+  shown = button(password, cls: 'felga-password', ariaLabel: tr('Copy the password'), onPressed: (_) {
+    _copy(password);
+    final note = el('span', cls: 'felga-copied', text: tr('Copied'), attrs: {'role': 'status'});
+    part.append(note);
+    Timer(const Duration(milliseconds: 1500), () => note.remove());
+  });
+  return part
+    ..append(lock)
+    ..append(shown);
+}
+
+/// Puts [text] on the clipboard.
+void _copy(String text) {
+  try {
+    web.window.navigator.clipboard.writeText(text);
+    return;
+  } on Object {
+    // An older way, below.
+  }
+  final area = el('textarea', attrs: {'readonly': ''}) as web.HTMLTextAreaElement;
+  area
+    ..value = text
+    ..style.position = 'fixed'
+    ..style.opacity = '0';
+  web.document.body!.append(area);
+  area.select();
+  web.document.execCommand('copy');
+  area.remove();
 }
 
 /// The resets whose numbers are open in the history (by id).
