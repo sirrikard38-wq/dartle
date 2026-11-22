@@ -12,7 +12,40 @@ import 'game_controller.dart';
 import 'number_input.dart';
 
 /// The parts of Checkout tutorial, in the order they stand on the screen.
+/// In Checkout choice the same parts stand there, its game ("Choose") in
+/// Practice's place.
 enum TutorialTab { input, practice, learn, favorites, missing }
+
+/// What the parts Checkout calculator and Checkout choice share (Input,
+/// Favorites, Learn and Miss, all about one number) need of the mode.
+abstract interface class NumberParts {
+  /// The part showing.
+  TutorialTab get tab;
+  set tab(TutorialTab value);
+
+  /// Input: the digits typed (empty for none), and its keys.
+  String get typedDigits;
+  void typeDigit(int digit);
+  void deleteDigit();
+
+  /// The number the parts are about.
+  int get shownTarget;
+
+  /// Learn and Miss: the darts in hand.
+  int get learnDarts;
+  set learnDarts(int value);
+
+  /// The card for [shownTarget] with [learnDarts]; null when it has no checkout.
+  TutorCard? get learnCard;
+
+  /// What Learn says of the checkout played (in Practice, or Choose): null
+  /// until it is played out. Its number, its darts, and where they were
+  /// pressed on the board.
+  PracticeReview? get practiceReview;
+  int get practiceTarget;
+  int get practiceDarts;
+  List<BoardPoint?> get marks;
+}
 
 /// Checkout tutorial, all about one number: Input (a keypad to type it),
 /// Practice (it played out exactly as in Checkout calculator, judged the same
@@ -20,7 +53,7 @@ enum TutorialTab { input, practice, learn, favorites, missing }
 /// darts in hand: the route and a miss on boards) and Favorites (its favorite
 /// routes), Missing (a single missed into its neighbours). Next checkout deals a new number, as the calculator does, and it
 /// is in Input too.
-class TutorialSession {
+class TutorialSession implements NumberParts {
   TutorialSession(
     this.tutor, {
     required ChallengeGenerator generator,
@@ -42,6 +75,7 @@ class TutorialSession {
   /// Input's keypad: the digits typed and when.
   final NumberInput input;
 
+  @override
   TutorialTab tab = TutorialTab.practice;
 
   /// The order the parts stand in on the screen, left to right.
@@ -55,9 +89,11 @@ class TutorialSession {
   List<TutorialTab> order = List.of(defaultOrder);
 
   /// Input: the digits typed (empty for none).
+  @override
   String get typedDigits => input.digits;
 
   /// Learn: the darts in hand.
+  @override
   int learnDarts = 3;
 
   /// This long after the last key, the next digit starts a new number instead
@@ -69,6 +105,7 @@ class TutorialSession {
   /// played out.
   late Challenge practice;
   final List<DartThrow> thrown = [];
+  @override
   final List<BoardPoint?> marks = [];
   AttemptResult? result;
 
@@ -77,18 +114,21 @@ class TutorialSession {
 
   /// The number Practice plays, Learn shows its card for and Favorites its
   /// favorites: the last one typed from 2 to 170, or dealt.
+  @override
   int get shownTarget => practice.target;
 
   /// Types a digit of the number (three at the most, no leading zero). After a
   /// dealt number, or [freshAfter] since the last key, it starts a new number.
   /// A number from 2 to 170 is at once the one Practice, Learn and Favorites
   /// show.
+  @override
   void typeDigit(int digit) {
     input.type(digit);
     _showTyped();
   }
 
   /// Takes the last digit away (UNDO); the number left is the one shown.
+  @override
   void deleteDigit() {
     input.delete();
     _showTyped();
@@ -105,6 +145,7 @@ class TutorialSession {
   }
 
   /// The card for the number shown, or null when it has no checkout.
+  @override
   TutorCard? get learnCard =>
       practice.hasCheckout ? tutor.card(practice.target, learnDarts) : null;
 
@@ -132,9 +173,11 @@ class TutorialSession {
     result = null;
   }
 
+  @override
   int get practiceTarget => practice.target;
 
   /// How many darts the question is played with.
+  @override
   int get practiceDarts => practice.dartsLeft;
 
   /// What is left of the practice number after the darts thrown.
@@ -198,6 +241,7 @@ class TutorialSession {
 
   /// What Learn says about the Practice checkout: optimal, good or wrong, and
   /// why. Null until it is played out, and for a right "No checkout".
+  @override
   PracticeReview? get practiceReview {
     final judged = result;
     if (judged == null || judged.isNoCheckoutAnswer) return null;

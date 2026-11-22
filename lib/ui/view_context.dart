@@ -31,9 +31,10 @@ class ViewContext {
   /// "single". It stays selected across darts until changed.
   Multiplier? pickedMultiplier;
 
-  /// Checkout practice: the page showing, 0 Input, 1 Play, 2 Learn. It stays
-  /// from one number to the next; a new game starts on Play.
-  int choiceTab = 1;
+  /// Checkout choice's parts (the part showing, the darts in hand of Learn and
+  /// Miss). The part stays from one number to the next; a new game starts on
+  /// Choose.
+  late final ChoiceParts choice = ChoiceParts(game, marks);
 
   /// Where each entered dart landed on the board, aligned with
   /// `game.entered`. An entry is null when the dart was not entered by

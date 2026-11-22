@@ -12,6 +12,8 @@ import 'tiles.dart';
 import 'view_context.dart';
 
 web.HTMLElement buildResultScreen(ViewContext ctx) {
+  // Checkout choice shows its answer in its own part, Choose.
+  if (ctx.game.mode.isPractice) return buildChoiceScreen(ctx);
   final result = ctx.game.lastResult!;
   return el('main', cls: 'screen result', children: [
     el('div', cls: 'play-area', children: [

@@ -29,6 +29,7 @@ export 'src/domain/site_routes.dart';
 export 'src/domain/tile_feedback.dart';
 export 'src/favorites/favorites.dart';
 export 'src/game/app_factory.dart';
+export 'src/game/choice_parts.dart';
 export 'src/game/game_controller.dart';
 export 'src/game/game_mode.dart';
 export 'src/felga/felga_ledger.dart';

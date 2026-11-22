@@ -20,10 +20,10 @@ const Map<String, String> croatian = {
   'Continue': 'Nastavi',
   'Checkout calculator by PK Normal': 'Checkout kalkulator, autor PK Normal',
   'Checkout calculator': 'Checkout kalkulator',
-  'Checkout practice': 'Checkout vježba',
+  'Checkout choice': 'Checkout izbor',
+  'Choose': 'Odaberi',
   'Learn what to aim at, and why.': 'Nauči što gađati i zašto.',
   'Learn': 'Učenje',
-  'Play': 'Igra',
   'Added to favorites!': 'Dodano u favorite!',
   'Removed from favorites!': 'Maknuto iz favorita!',
   'No favorites with {n} dart yet.|No favorites with {n} darts yet.':
@@ -69,6 +69,7 @@ const Map<String, String> croatian = {
   'Every optimal route starts at the bull, so there is no neighbour to miss into.':
       'Svaka optimalna ruta počinje na bullu, pa nema susjeda u kojeg bi promašio.',
   'Your darts in Practice': 'Tvoje strelice u Vježbi',
+  'Your darts in Choose': 'Tvoje strelice u dijelu Odaberi',
   'Good, but not optimal.': 'Dobro, ali nije optimalno.',
   'Wrong.': 'Krivo.',
   'The optimal routes are below.': 'Optimalne rute su ispod.',
@@ -147,12 +148,6 @@ const Map<String, String> croatian = {
   'Your checkout, {n} dart left|Your checkout, {n} darts left':
       'Tvoj checkout, ostala {n} strelica|Tvoj checkout, ostale {n} strelice|Tvoj checkout, ostalo {n} strelica',
   'Replay - no clock, no points.': 'Ponavljanje - bez sata i bodova.',
-  'Replay - the same number again.': 'Ponavljanje - isti broj opet.',
-  'Only possible checkout.': 'Jedini mogući checkout.',
-  'The lit areas are the optimal darts.': 'Osvijetljena područja su optimalne strelice.',
-  'Started on {target}. The lit areas are the optimal darts.':
-      'Počelo je na {target}. Osvijetljena područja su optimalne strelice.',
-  'Press the darts to choose 2 or 3 darts.': 'Pritisni strelice za izbor 2 ili 3 strelice.',
   'Play {target} with {n} darts': 'Igraj {target} s {n} strelice',
   'left': 'ostalo',
   'over': 'preko',

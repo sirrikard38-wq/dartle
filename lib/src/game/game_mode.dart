@@ -5,7 +5,7 @@ enum GameMode {
     'Fill the boxes with the optimal checkout for the darts you have left.',
   ),
   choice(
-    'Checkout practice',
+    'Checkout choice',
     'Choose your own optimal route.',
   );
 
@@ -14,7 +14,7 @@ enum GameMode {
   final String label;
   final String blurb;
 
-  /// Checkout practice: you choose your own darts, the best ones are lit up,
+  /// Checkout choice: you choose your own darts, the best ones are lit up,
   /// and there is no clock and no score.
   bool get isPractice => this != GameMode.calculator;
 

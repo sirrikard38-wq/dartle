@@ -121,7 +121,10 @@ class DartleApp {
     if (!_started) return; // nothing to draw until saved data has loaded
     // Screen readers read the page in the language that is on.
     web.document.documentElement?.setAttribute('lang', I18n.current.code.toLowerCase());
-    final screenKey = '${_game.phase.name}-${_page.name}';
+    // Checkout choice is one screen while a number is played and with its
+    // answer (in its part Choose).
+    final screenKey =
+        _game.phase != GamePhase.menu && _game.mode.isPractice ? 'choice' : '${_game.phase.name}-${_page.name}';
     // The welcome screen is full-screen: no header, no footer.
     final fullScreen = _game.phase == GamePhase.menu && _page == MenuPage.welcome;
     // The welcome screen plays its intro once. Drawing it again while it is on
@@ -156,12 +159,13 @@ class DartleApp {
     _root.textContent = '';
     if (!fullScreen) _root.appendChild(_buildHeader());
     _root.appendChild(screen);
-    // Checkout calculator's Practice answer has the links on the screen with
-    // it, at the foot of its own page.
-    final footerInPage = _game.phase == GamePhase.menu &&
-        _page == MenuPage.tutorial &&
-        _game.tutorial.tab == TutorialTab.practice &&
-        _game.tutorial.practiceDone;
+    // Checkout calculator's Practice answer and Checkout choice's Choose answer
+    // have the links on the screen with them, at the foot of their own page.
+    final footerInPage = (_game.phase == GamePhase.menu &&
+            _page == MenuPage.tutorial &&
+            _game.tutorial.tab == TutorialTab.practice &&
+            _game.tutorial.practiceDone) ||
+        (_game.phase == GamePhase.result && _game.mode.isPractice && _ctx.choice.tab == TutorialTab.practice);
     if (!fullScreen && !footerInPage) _root.appendChild(buildFooter());
     _syncHistory();
 

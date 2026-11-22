@@ -6,7 +6,7 @@ import 'view_context.dart';
 
 /// After Start: Checkout calculator (the learning part: Input, Favorites,
 /// Practice, Learn, Miss - it was Checkout tutorial) first, then Checkout
-/// practice. The timed, scored game is no longer offered (its code and the
+/// choice (the same parts, Choose in Practice's place). The timed, scored game is no longer offered (its code and the
 /// leaderboard stay).
 web.HTMLElement buildModesScreen(ViewContext ctx) {
   final game = ctx.game;
@@ -17,7 +17,7 @@ web.HTMLElement buildModesScreen(ViewContext ctx) {
         focusKey: 'mode-${mode.name}',
         ariaLabel: '${tr(mode.label)}: ${tr(mode.blurb)}',
         onPressed: (_) {
-          ctx.choiceTab = 1; // a new game starts on Play
+          ctx.choice.tab = TutorialTab.practice; // a new game starts on Choose
           game.startGame(null, mode);
         });
     b.appendChild(el('strong', text: tr(mode.label)));

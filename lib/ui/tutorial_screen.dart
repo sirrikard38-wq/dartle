@@ -16,45 +16,55 @@ import 'tab_reorder.dart';
 import 'tiles.dart';
 import 'view_context.dart';
 
-/// Checkout tutorial: Input (type a number), Practice (play it out as in
-/// Checkout calculator), Learn (the optimal routes and their misses into
-/// single), Favorites (its favorite routes) and Missing (a single missed into
-/// its neighbours), all for one number. A
-/// swipe to the side goes from one to the next.
+/// Checkout calculator: Input (type a number), Practice (play it out as the
+/// timed game did), Learn (the optimal routes and their misses into single),
+/// Favorites (its favorite routes) and Miss (a single missed into its
+/// neighbours), all for one number.
 web.HTMLElement buildTutorialScreen(ViewContext ctx) {
   final session = ctx.game.tutorial;
-  _loadOrder(session);
-  // In the order of [TutorialTab]: Input, Practice, Learn, Favorites, Missing.
+  return buildPartsScreen(ctx, session, playLabel: tr('Practice'), play: () => _practice(ctx, session));
+}
+
+/// The parts of Checkout calculator and Checkout choice, which look the same:
+/// Input, Favorites, the game ([playLabel], drawn by [play]: Practice or
+/// Choose), Learn and Miss, in the order the player put them in (one order for
+/// both). A swipe to the side goes from one to the next. [cls] goes on the
+/// screen.
+web.HTMLElement buildPartsScreen(ViewContext ctx, NumberParts parts,
+    {required String playLabel, required List<web.HTMLElement> Function() play, String cls = ''}) {
+  final shared = ctx.game.tutorial;
+  _loadOrder(shared);
+  final order = shared.order;
   final area = swipeTabs(
     ctx,
     name: 'tutorial',
     labels: [
-      for (final which in session.order)
+      for (final which in order)
         switch (which) {
           TutorialTab.input => tr('Input'),
-          TutorialTab.practice => tr('Practice'),
+          TutorialTab.practice => playLabel,
           TutorialTab.learn => tr('Learn'),
           TutorialTab.favorites => tr('Favorites'),
           TutorialTab.missing => tr('Miss'),
         },
     ],
-    index: session.order.indexOf(session.tab),
-    choose: (i) => session.tab = session.order[i],
+    index: order.indexOf(parts.tab),
+    choose: (i) => parts.tab = order[i],
     // A long press on a part: they jiggle and can be moved; the order is kept.
-    onReorder: (order) {
-      session.order = [for (final i in order) session.order[i]];
-      _saveOrder(session.order);
+    onReorder: (moved) {
+      shared.order = [for (final i in moved) order[i]];
+      _saveOrder(shared.order);
       ctx.rerender();
     },
-    pageOf: (i) => el('div', cls: 'tutorial-page tab-${session.order[i].name}', children: switch (session.order[i]) {
-      TutorialTab.input => _input(ctx, session),
-      TutorialTab.learn => _learn(ctx, session),
-      TutorialTab.practice => _practice(ctx, session),
-      TutorialTab.favorites => _favorites(ctx, session),
-      TutorialTab.missing => _missing(ctx, session),
+    pageOf: (i) => el('div', cls: 'tutorial-page tab-${order[i].name}', children: switch (order[i]) {
+      TutorialTab.input => _input(ctx, parts),
+      TutorialTab.learn => _learn(ctx, parts),
+      TutorialTab.practice => play(),
+      TutorialTab.favorites => _favorites(ctx, parts),
+      TutorialTab.missing => _missing(ctx, parts),
     }),
   )..classList.add('play-area');
-  return el('main', cls: 'screen tutorial', children: [area]);
+  return el('main', cls: 'screen tutorial${cls.isEmpty ? '' : ' $cls'}', children: [area]);
 }
 
 /// Where the order of the tutorial's parts is kept (this device only).
@@ -89,8 +99,7 @@ void _saveOrder(List<TutorialTab> order) {
 /// on a chip glides its white fill over and brings the page in, a swipe moves
 /// the page with the finger and the fill with it, as in Virulja's food
 /// categories. [choose] takes the page to show next; [pageOf] draws a page.
-/// The tutorial (Practice, Learn) and Checkout practice and input (Play,
-/// Learn) have them.
+/// Checkout calculator's and Checkout choice's parts have them.
 web.HTMLElement swipeTabs(
   ViewContext ctx, {
   required String name,
@@ -154,10 +163,10 @@ web.HTMLElement swipeTabs(
 /// Input: the number, what it says, and the keypad. A number from 2 to 170 is
 /// at once the one Practice, Learn and Favorites show. Three seconds after the
 /// last key (or after Next checkout) the next digit starts a new number.
-List<web.HTMLElement> _input(ViewContext ctx, TutorialSession session) =>
+List<web.HTMLElement> _input(ViewContext ctx, NumberParts session) =>
     inputPage(ctx, session.typedDigits, onDigit: session.typeDigit, onDelete: session.deleteDigit);
 
-/// The Input page of Checkout tutorial and Checkout practice: the words, the
+/// The Input page of Checkout calculator and Checkout choice: the words, the
 /// [digits] typed with what they say, and the keypad ([onDigit], [onDelete]).
 List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
     {required void Function(int digit) onDigit, required void Function() onDelete}) {
@@ -220,7 +229,7 @@ List<web.HTMLElement> inputPage(ViewContext ctx, String digits,
 }
 
 /// The darts in hand, 3, 2 or 1, for Learn and Missing (one choice for both).
-web.HTMLElement _dartsChips(ViewContext ctx, TutorialSession session, String name) {
+web.HTMLElement _dartsChips(ViewContext ctx, NumberParts session, String name) {
   web.HTMLButtonElement darts(int n) => button('$n',
       cls: 'chip${session.learnDarts == n ? ' selected' : ''}',
       focusKey: '$name-darts-$n',
@@ -244,7 +253,7 @@ web.HTMLElement _impossible(int target) => el('div', cls: 'tutor-card', children
 /// Learn: the number (typed in Input, or the Practice question), the darts in
 /// hand, what the Practice checkout was worth, then the optimal routes, each
 /// beside what its first dart leaves when it misses into single.
-List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
+List<web.HTMLElement> _learn(ViewContext ctx, NumberParts session) {
   final target = session.shownTarget;
   final card = session.learnCard;
   final review = session.learnDarts == session.practiceDarts ? session.practiceReview : null;
@@ -266,7 +275,7 @@ List<web.HTMLElement> _learn(ViewContext ctx, TutorialSession session) {
 
 /// Above the routes in Learn: the Practice checkout on its board, and why it
 /// is optimal, good or wrong.
-web.HTMLElement _reviewBox(ViewContext ctx, TutorialSession session, PracticeReview review) {
+web.HTMLElement _reviewBox(ViewContext ctx, NumberParts session, PracticeReview review) {
   final target = session.practiceTarget;
   final darts = review.route.darts;
   final lines = <String>[];
@@ -309,7 +318,7 @@ web.HTMLElement _reviewBox(ViewContext ctx, TutorialSession session, PracticeRev
     ReviewKind.wrong => TileState.absent,
   };
   return el('div', cls: 'learn-review ${review.kind.name}', children: [
-    el('p', cls: 'label', text: tr('Your darts in Practice')),
+    el('p', cls: 'label', text: session is TutorialSession ? tr('Your darts in Practice') : tr('Your darts in Choose')),
     if (darts.isNotEmpty)
       el('figure', cls: 'board-figure', children: [
         buildDartboard(
@@ -420,10 +429,10 @@ web.HTMLElement _outcomeCell(ViewContext ctx, TutorCard card, DartOutcome miss) 
 /// middle, the singles beside its number to the left and right, and under it
 /// the single of the same number (for a treble or a double) - each with what
 /// it leaves and any checkout there is. The darts in hand as in Learn.
-List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
+List<web.HTMLElement> _missing(ViewContext ctx, NumberParts session) {
   final target = session.shownTarget;
   final card = session.learnCard;
-  final tutor = session.tutor;
+  final tutor = ctx.game.tutorial.tutor;
   web.HTMLElement body;
   if (ctx.game.hasNoCheckout(target)) {
     body = _impossible(target);
@@ -480,7 +489,7 @@ List<web.HTMLElement> _missing(ViewContext ctx, TutorialSession session) {
 /// Practice question), as the Favorites popup shows
 /// them: a page for 2 darts and one for 3 (and 1 when there is one), swiped
 /// left and right or chosen at the top.
-List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
+List<web.HTMLElement> _favorites(ViewContext ctx, NumberParts session) {
   final target = session.shownTarget;
   final number = el('div', cls: 'tab-number-wrap', children: [
     _numberSpacer(),
@@ -494,7 +503,7 @@ List<web.HTMLElement> _favorites(ViewContext ctx, TutorialSession session) {
     for (final darts in [2, 3])
       // Only real routes of that many darts: with three in hand, a number
       // with a two-dart checkout still plays two (no empty 3 Darts page).
-      if (session.tutor.optimalRoutes(target, darts).any((r) => r.length == darts)) darts,
+      if (ctx.game.tutorial.tutor.optimalRoutes(target, darts).any((r) => r.length == darts)) darts,
   }.toList()
     ..sort();
   final (names, pages) = favoritePages(ctx, target, counts, swipe: false);

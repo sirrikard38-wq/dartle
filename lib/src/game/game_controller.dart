@@ -389,18 +389,19 @@ class GameController {
     _nextChallenge();
   }
 
-  /// Checkout practice's Input: types a digit ([NumberInput.type]). A number
-  /// from 2 to 170 is at once the one Play plays, with the darts it would be
-  /// dealt with; one with no checkout says so in Play, with an insult.
+  /// Checkout choice's Input: types a digit ([NumberInput.type]). A number
+  /// from 2 to 170 is at once the one Choose plays, with the darts it would be
+  /// dealt with (also from the answer of the last one); one with no checkout
+  /// says so in Choose, with an insult.
   void typeDigit(int digit) {
-    if (_mode != GameMode.choice || _phase != GamePhase.playing) return;
+    if (_mode != GameMode.choice || _phase == GamePhase.menu) return;
     numberInput.type(digit);
     _playTyped();
   }
 
-  /// Checkout practice's Input: takes the last digit away (UNDO).
+  /// Checkout choice's Input: takes the last digit away (UNDO).
   void deleteDigit() {
-    if (_mode != GameMode.choice || _phase != GamePhase.playing) return;
+    if (_mode != GameMode.choice || _phase == GamePhase.menu) return;
     numberInput.delete();
     _playTyped();
   }
@@ -415,6 +416,9 @@ class GameController {
     if (challenge == null) {
       _impossibleNumber = number;
       _insult = Phrases.randomInsult(_random);
+      // From the answer of the last number too: Choose now says so.
+      _result = null;
+      _phase = GamePhase.playing;
       _notify();
       return;
     }
@@ -529,22 +533,28 @@ class GameController {
   /// on after [isSessionOver]).
   void replaySession() => startGame(_difficulty, _mode);
 
-  /// Continues: the next number (also from a typed number with no checkout).
-  /// Not once the session is over.
+  /// Continues: the next number (also from a typed number with no checkout,
+  /// and in Checkout choice at any time). Not once the session is over.
   void nextCheckout() {
-    if (_phase != GamePhase.result && _impossibleNumber == null) return;
+    if (_phase != GamePhase.result && _impossibleNumber == null && !_choosing) return;
     if (_sessionOver) return;
     _replay = false;
     _nextChallenge();
   }
 
-  /// Plays the number just finished again from the start. A replay has no
-  /// clock, no points and is not saved; Next checkout then carries on normally.
+  /// Plays the number just finished again from the start (in Checkout choice
+  /// also the one being played). A replay has no clock, no points and is not
+  /// saved; Next checkout then carries on normally.
   void replayCheckout() {
-    if (_phase != GamePhase.result || _challenge == null || _sessionOver) return;
+    if ((_phase != GamePhase.result && !_choosing) || _challenge == null || _sessionOver) return;
+    // A typed number with no checkout has nothing to play again.
+    if (_impossibleNumber != null) return;
     _replay = true;
     _begin(_challenge!);
   }
+
+  /// Checkout choice, a number being played: Replay and Next are always there.
+  bool get _choosing => _mode == GameMode.choice && _phase == GamePhase.playing;
 
   /// Leaving mid-checkout records nothing.
   void quitToMenu() {

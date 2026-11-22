@@ -724,6 +724,64 @@ void main() {
       typeNumber(85);
       expect(game.challenge!.target, dealt);
     });
+
+    test('a number typed while the answer shows is played at once (or says it has no checkout)', () async {
+      game.startGame(null, GameMode.choice);
+      final other = game.challenge!.target == 57 ? 58 : 57;
+      await followAdvice();
+      expect(game.phase, GamePhase.result);
+      typeNumber(other);
+      expect(game.phase, GamePhase.playing);
+      expect(game.challenge!.target, other);
+      await followAdvice();
+      game.nextCheckout(); // a dealt number: the next digit starts a new one
+      await followAdvice();
+      typeNumber(169);
+      expect(game.impossibleNumber, 169);
+      expect(game.phase, GamePhase.playing);
+      expect(game.lastResult, isNull, reason: 'the answer of the last number is gone');
+      game.replayCheckout();
+      expect(game.impossibleNumber, 169, reason: 'nothing to play again');
+    });
+
+    test('Replay and Next work while a number is played, in Checkout choice only', () {
+      game.startGame(null, GameMode.choice);
+      typeNumber(85);
+      game.selectDart(game.choiceHints.first);
+      game.replayCheckout();
+      expect(game.phase, GamePhase.playing);
+      expect(game.entered, isEmpty);
+      expect(game.challenge!.target, 85);
+      game.nextCheckout();
+      expect(game.entered, isEmpty);
+      expect(game.numberInput.digits, '${game.challenge!.target}');
+      dealUntil((c) => c.hasCheckout);
+      final dealt = game.challenge;
+      game.nextCheckout();
+      game.replayCheckout();
+      expect(identical(game.challenge, dealt), isTrue, reason: 'the calculator plays its number out first');
+    });
+
+    test('its parts are about the number played, as in Checkout calculator', () async {
+      final parts = ChoiceParts(game, []);
+      game.startGame(null, GameMode.choice);
+      typeNumber(85);
+      expect(parts.shownTarget, 85);
+      expect(parts.learnDarts, game.challenge!.dartsLeft);
+      parts.learnDarts = 1;
+      expect(parts.learnDarts, 1);
+      expect(parts.learnCard!.darts, 1);
+      expect(parts.practiceReview, isNull, reason: 'not played out yet');
+      await followAdvice();
+      expect(parts.practiceReview!.kind, ReviewKind.optimal);
+      expect(parts.practiceTarget, 85);
+      game.nextCheckout();
+      expect(parts.learnDarts, game.challenge!.dartsLeft, reason: 'a new number starts with its own darts');
+      expect(parts.practiceReview, isNull);
+      typeNumber(169);
+      expect(parts.shownTarget, 169);
+      expect(parts.learnCard, isNull);
+    });
   });
 
   test('every mode but the calculator is excluded from statistics and the leaderboard', () async {
