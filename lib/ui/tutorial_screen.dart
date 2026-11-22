@@ -269,8 +269,8 @@ web.HTMLElement _dartsChips(ViewContext ctx, NumberParts session, String name) {
   return el('div', cls: 'chips', children: [darts(3), darts(2), darts(1)]);
 }
 
-/// Learn's and Miss's number, where Practice's is and as big, and beside it
-/// on the right, at its height, "Darts in hand" over 3 2 1.
+/// Learn's and Miss's number, where Practice's is and as big, and under it
+/// "Darts in hand" over 3 2 1, with room under them before the routes.
 web.HTMLElement _numberAndDarts(ViewContext ctx, NumberParts session, int target, String name) =>
     el('div', cls: 'number-row', children: [
       el('span'),
