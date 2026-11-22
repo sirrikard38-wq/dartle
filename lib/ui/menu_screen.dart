@@ -2,9 +2,11 @@ import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 import 'dom.dart';
+import 'felga_screen.dart';
 import 'view_context.dart';
 
-/// Main menu: Start, Favorites, Felgalizacija, Leaderboard.
+/// Main menu: Start, Favorites, each Felgalizacija and a + for another (the
+/// Leaderboard is no longer offered; its page stays).
 web.HTMLElement buildMenuScreen(ViewContext ctx) {
   final game = ctx.game;
 
@@ -20,15 +22,8 @@ web.HTMLElement buildMenuScreen(ViewContext ctx) {
             cls: 'menu-btn',
             focusKey: 'favorites',
             onPressed: (_) => ctx.showPage(MenuPage.favorites)),
-        // The club's own page: names, points and money.
-        button('Felgalizacija',
-            cls: 'menu-btn',
-            focusKey: 'felga',
-            onPressed: (_) => ctx.showPage(MenuPage.felga)),
-        button(tr('Leaderboard'),
-            cls: 'menu-btn',
-            focusKey: 'leaderboard',
-            onPressed: (_) => ctx.showPage(MenuPage.leaderboard)),
+        // The clubs' own pages: names, points and money.
+        ...buildFelgaButtons(ctx),
       ]),
     ]),
   ]);

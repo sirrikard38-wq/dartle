@@ -303,6 +303,23 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .menu-btn:hover { background: #1a1a1a; }
 .menu-btn.primary { background: var(--white); color: var(--ink); font-weight: 700; }
 .menu-btn.primary:hover { background: var(--offwhite); }
+/* A Felgalizacija: the word, and under it the name its maker gave it, the
+   two in the middle one under the other. */
+.menu-btn.felga-btn { height: auto; min-height: 60px; padding: 8px 12px; display: flex; align-items: center; justify-content: center; }
+.felga-btn-lines { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.felga-btn-name { text-transform: none; letter-spacing: 0.02em; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+/* Naming a new one: a line where the name will be, the cursor on it. */
+.felga-name-input {
+  font: inherit; font-size: 1.05rem; font-weight: 700; text-align: center; letter-spacing: 0.02em;
+  color: var(--fg); caret-color: var(--fg); background: none; border: 0; border-bottom: 2px solid var(--fg);
+  border-radius: 0; padding: 2px 4px; outline: none; max-width: 100%;
+}
+/* The + for another Felgalizacija, where the Leaderboard was. */
+.menu-plus {
+  justify-self: center; width: 52px; height: 52px; padding: 0; border: 0; background: none; color: var(--fg);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.menu-plus svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 
 /* ---------- Target + tiles ---------- */
 .target {
