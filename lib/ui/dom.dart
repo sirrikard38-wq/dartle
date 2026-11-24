@@ -70,6 +70,36 @@ web.HTMLButtonElement button(
   return b;
 }
 
+web.CanvasRenderingContext2D? _pen;
+
+double _px(String css) => double.tryParse(css.replaceAll('px', '')) ?? 0;
+
+/// [input] as wide as the letters typed in it - measured, not counted (a W is
+/// far wider than an i) - [minCh] characters at the least, with [extraPx] room
+/// for the cursor. With [room] (the width it may take), letters that would not
+/// fit get smaller (to 11px at the least), so the whole of it is always seen.
+void fitToText(web.HTMLInputElement input, {required int minCh, double extraPx = 14, double Function()? room}) {
+  input.style.fontSize = '';
+  if (!input.isConnected) {
+    input.style.width = '${minCh}ch';
+    return;
+  }
+  final s = web.window.getComputedStyle(input);
+  final pen = _pen ??=
+      (web.document.createElement('canvas') as web.HTMLCanvasElement).getContext('2d')! as web.CanvasRenderingContext2D;
+  pen.font = '${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}';
+  final text = input.value;
+  final fontPx = _px(s.fontSize);
+  var width = pen.measureText(text).width + _px(s.letterSpacing) * text.length + _px(s.paddingLeft) + _px(s.paddingRight) + extraPx;
+  final most = room?.call();
+  if (most != null && most > 0 && width > most) {
+    final smaller = fontPx * most / width;
+    input.style.fontSize = '${smaller < 11 ? 11 : smaller}px';
+    width = most;
+  }
+  input.style.width = 'max(${minCh}ch, ${width}px)';
+}
+
 /// A menu button pressed: it goes down a few mm with a very light fill and
 /// back up, quickly (140 ms), and only then does [go] run - the press is seen
 /// in full before the next screen, and none of it is left for the menu when

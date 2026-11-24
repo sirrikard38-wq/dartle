@@ -112,7 +112,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       'enterkeyhint': 'done',
       'aria-label': tr('Name'),
     }) as web.HTMLInputElement;
-    void fit() => input.style.width = '${math.max(10, input.value.length + 1)}ch';
+    void fit() => fitToText(input, minCh: 10, room: () => web.window.innerWidth - 130.0);
     fit();
     void confirm() {
       if (input.value.trim().isNotEmpty) {
@@ -832,7 +832,10 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
       'enterkeyhint': 'done',
       'aria-label': tr('Name of the Felgalizacija'),
     }) as web.HTMLInputElement;
-    void fit() => name.style.width = '${math.max(8, name.value.length + 2)}ch';
+    // The line under the name grows with every letter, and the whole name is
+    // always seen (smaller letters for one too long for the button).
+    void fit() => fitToText(name,
+        minCh: 8, room: () => ((name.closest('.felga-naming') as web.HTMLElement?)?.clientWidth ?? 0) - 28.0);
     fit();
     name.onInput.listen((_) => fit());
     name.onKeyDown.listen((event) {
@@ -878,6 +881,7 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
     panel
       ..textContent = ''
       ..append(inner);
+    fit();
     if (slide) _slideOpen(inner);
     // At once, still in the press: so the phone's keyboard comes up.
     if (focus) name.focus();
