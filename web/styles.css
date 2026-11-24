@@ -1754,3 +1754,11 @@ body.money-pad-open { padding-bottom: 240px; }
 .felga-settings { padding: 4px 0 0; }
 .felga-pass-row { justify-content: center; }
 .felga-top .felga-copied { left: 50%; right: auto; transform: translateX(-50%); }
+
+/* The name of a Felgalizacija is written as it was typed (small letters
+   too) - on its button, while it is typed and when it is changed - still as
+   big and as spaced as the word over it, not bold. (Shown in capitals, its
+   letters were wider than the line measured for them.) */
+.felga-btn-name,
+.felga-naming .felga-name-input,
+.felga-rename .felga-name-input { text-transform: none; }
