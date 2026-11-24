@@ -368,7 +368,12 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
           ],
         ]),
     ]);
-    fill(togglePart, [toggleButton()]);
+    // No members yet: "Add a member" over the + (pressed, it is the +).
+    final toggle = toggleButton();
+    fill(togglePart, [
+      if (!anyone) button(tr('Add a member'), cls: 'felga-add-words', onPressed: (_) => toggle.click()),
+      toggle,
+    ]);
     // What each paid, whoever owes the most first: a number in the box is
     // added to Paid (or taken off, below zero), and the box is empty again.
     fill(paidPart, [
