@@ -1114,9 +1114,9 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .text-link.extra-title.learn-link { text-transform: uppercase; letter-spacing: 0.06em; }
 /* The favorite dart, with "Favorite" under it: it grows with its board (cqw: the board's
-   width) and sits over the board's top left corner, clear of the board and its numbers. */
+   width) and sits over the board's top right corner, clear of the board and its numbers. */
 .practice-result .result-boards .board-figure { container-type: inline-size; }
-.practice-result .result-boards .fav-btn { width: auto; height: auto; padding: 1cqw; top: auto; bottom: calc(100% - 6cqw); left: 0; right: auto; }
+.practice-result .result-boards .fav-btn { width: auto; height: auto; padding: 1cqw; top: auto; bottom: calc(100% - 6cqw); left: auto; right: 0; }
 .practice-result .result-boards .fav-icon { width: min(8.7cqw, 14px); height: min(16cqw, 26px); }
 /* Under the answer: the links of the foot, on the screen with it. */
 .tutorial-page:has(> .practice-result) > .app-footer { margin-top: 0; flex: none; }
@@ -1550,9 +1550,9 @@ body.money-pad-open { padding-bottom: 240px; }
 .learn-top .darts-side > .chips { margin: 0; }
 .learn-top .darts-side > .chips .chip { min-width: 38px; height: 38px; padding: 0 10px; }
 /* The answer with one board: its favorite dart (with "Favorite" under it) out
-   over the board's top left corner (where it is always empty, however big the
+   over the board's top right corner (where it is always empty, however big the
    board), never on the board or its numbers. */
-.practice-result .result-boards .board-figure:only-child .fav-btn { top: auto; bottom: calc(100% - 6cqw); left: 0; right: auto; }
+.practice-result .result-boards .board-figure:only-child .fav-btn { top: auto; bottom: calc(100% - 6cqw); left: auto; right: 0; }
 /* Welcome: "by PK Normal" ends right under the end of DARTLE (DARTLE's last
    0.2em is its letter spacing). */
 .welcome .intro .i2 { text-align: right; padding-right: calc(0.2 * clamp(3rem, 16vw, 5.5rem)); }
@@ -1563,6 +1563,9 @@ body.money-pad-open { padding-bottom: 240px; }
 .screen.tutorial .practice-result > .headline {
   margin: 2px auto 4px; height: calc(0.9rem * 1.35); line-height: calc(0.9rem * 1.35); font-size: 1.2rem; flex: none;
 }
+/* The long verdict ("Good, but not in the given number of darts") smaller, so
+   it stays on its one line - never over the number, its tick on the screen. */
+.screen.tutorial .practice-result > .headline.long { font-size: min(1.2rem, 3.6vw); white-space: nowrap; }
 .screen.tutorial .practice-result > .target.small {
   font-size: clamp(3rem, 9vh, 6.5rem); font-size: clamp(3rem, 9dvh, 6.5rem);
   line-height: 1; margin: 0 0 6px; flex: none;
