@@ -1683,3 +1683,10 @@ body.money-pad-open { padding-bottom: 240px; }
 /* Miss: the question over the boards, under the darts in hand. */
 .miss-question { margin: 0 0 12px; text-align: center; color: var(--fg); font-size: 0.95rem; line-height: 1.3; flex: none; }
 .learn-top .number-row:has(+ .miss-question) { margin-bottom: 14px; }
+
+/* No Felgalizacija yet: these words over the + in its place. */
+.felga-add-words {
+  justify-self: center; margin-top: 6px; padding: 4px 8px; border: 0; background: none; color: var(--fg);
+  font: inherit; font-size: 1.05rem; letter-spacing: 0.04em; cursor: pointer;
+}
+.menu-list > .felga-add-words + .menu-plus { margin-top: -10px; }

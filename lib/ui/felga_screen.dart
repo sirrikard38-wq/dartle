@@ -81,6 +81,8 @@ void _save(FelgaLedger ledger) {
 /// its place, and the box for a new name stays as it is - so the phone's
 /// keyboard stays up and the page does not jump.
 web.HTMLElement buildFelgaScreen(ViewContext ctx) {
+  // None left to show: the menu.
+  if (felgaList().isEmpty) Timer.run(() => ctx.showPage(MenuPage.home));
   final ledger = _book;
 
   web.HTMLElement part() => el('div', cls: 'felga-part');
@@ -694,13 +696,16 @@ String _newPassword() {
   return [for (var i = 0; i < 10; i++) _passwordSigns[random.nextInt(_passwordSigns.length)]].join();
 }
 
-/// The Felgalizacije on this device, in the order they were made; the first
-/// one (no name) is always there. One kept before passwords gets one now.
+/// The Felgalizacije on this device, in the order they were made - none until
+/// one is made (or joined). The book kept before there was a list becomes the
+/// first one (no name); one kept before passwords gets one now.
 List<FelgaEntry> felgaList() {
   var list = <FelgaEntry>[];
   var changed = false;
+  var listed = false;
   try {
     final saved = web.window.localStorage.getItem(_listKey);
+    listed = saved != null;
     if (saved != null) {
       list = [
         for (final e in (jsonDecode(saved) as List<Object?>).cast<Map<String, Object?>>())
@@ -710,7 +715,7 @@ List<FelgaEntry> felgaList() {
   } on Object {
     list = [];
   }
-  if (list.isEmpty) {
+  if (!listed && _hasOldBook()) {
     list = [FelgaEntry(_firstId, '', _newPassword())];
     changed = true;
   }
@@ -720,6 +725,15 @@ List<FelgaEntry> felgaList() {
   ];
   if (changed || list.any((e) => !_savedPasswords.contains(e.password))) _saveList(list);
   return list;
+}
+
+/// A book kept before there was a list of Felgalizacije.
+bool _hasOldBook() {
+  try {
+    return web.window.localStorage.getItem(_key) != null;
+  } on Object {
+    return false;
+  }
 }
 
 /// The passwords as last saved (so the list is saved only when one is new).
@@ -743,7 +757,9 @@ FelgaEntry get _open {
     id = null;
   }
   final list = felgaList();
-  return list.where((e) => e.id == id).firstOrNull ?? list.first;
+  // None at all (the last one deleted, the page opened again): an empty one
+  // that is in no list - the screen goes to the menu at once.
+  return list.where((e) => e.id == id).firstOrNull ?? list.firstOrNull ?? FelgaEntry(_firstId, '', '');
 }
 
 /// Opens [entry]'s page.
@@ -794,8 +810,8 @@ web.HTMLButtonElement _turningPlus({
 }
 
 /// The menu's buttons for Felgalizacija: one for each (the word, and under it
-/// the name its maker gave it, the two in the middle one under the other),
-/// then a +. Pressed, the + turns into an X and under it come the word with a
+/// the name its maker gave it, the two in the middle one under the other) -
+/// with none yet, "Add new Felgalizacija" instead - then a +. Pressed, the + turns into an X and under it come the word with a
 /// line under it, the cursor on it and the keyboard up - the name of a new
 /// one is just typed, Enter makes it - and "Do you have a password to join?"
 /// with a box for it. The X takes them away.
@@ -902,6 +918,8 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
 
   return [
     for (final entry in list) felgaButton(entry),
+    // None yet: no Felgalizacija button, only these words over the +.
+    if (list.isEmpty) button(tr('Add new Felgalizacija'), cls: 'felga-add-words', onPressed: (_) => plus.click()),
     plus,
     panel,
   ];

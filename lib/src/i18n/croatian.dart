@@ -18,6 +18,7 @@ const Map<String, String> croatian = {
   'Enter your name to continue': 'Upiši ime za nastavak',
   'Continue': 'Nastavi',
   'by PK Normal': 'autor PK Normal',
+  'Add new Felgalizacija': 'Dodaj novu Felgalizaciju',
   'What happens if you miss into a neighbouring number?': 'Što se dogodi ako promašiš u susjedni broj?',
   'Money in the club': 'Lova u klubu',
   'Payments': 'Uplate',
