@@ -98,6 +98,8 @@ const Map<String, String> croatian = {
   'No Felgalizacija has this password.': 'Nijedna Felgalizacija nema tu šifru.',
   'The Felgalizacija could not be reached: try again.': 'Felgalizacija se ne može dohvatiti: pokušaj ponovo.',
   'Are you one of the members of the Felgalizacija?': 'Jesi li ti jedan od članova Felgalizacije?',
+  'You are no longer a member of the Felgalizacija.': 'Više nisi član Felgalizacije.',
+  'You are no longer a member of the Felgalizacija {name}.': 'Više nisi član Felgalizacije {name}.',
   'Fine': 'Kazna',
   'Felgas by date': 'Broj felgi po datumu',
   'Turn the sign': 'Promijeni predznak',

@@ -151,6 +151,11 @@ Future<void> _syncOpen() async {
     final after = await syncFelga(remote, entry.password, before);
     final nowEntry = felgaList().where((e) => e.id == entry.id).firstOrNull;
     if (nowEntry == null) return; // deleted meanwhile
+    if (felgaTakenOut(before.book, after.book, await remote.me())) {
+      _drop(nowEntry);
+      _gone?.call(nowEntry);
+      return;
+    }
     final now = _copyOf(nowEntry);
     final book = now.book == before.book
         ? after.book
@@ -170,6 +175,56 @@ Future<void> _syncOpen() async {
       _syncAgain = false;
       _syncSoon(Duration.zero);
     }
+  }
+}
+
+/// The open page, told that its Felgalizacija left this phone (its name
+/// was taken out on another one).
+void Function(FelgaEntry entry)? _gone;
+
+/// [entry] off this phone: its place in the list, its book, its online
+/// bookkeeping (online it stays for the others).
+void _drop(FelgaEntry entry) {
+  _saveList([for (final e in felgaList()) if (e.id != entry.id) e]);
+  _write(entry.storageKey, null);
+  _write(_syncKey(entry.id), null);
+  if (_ledgerId == entry.id) {
+    _ledger = null;
+    _ledgerId = null;
+  }
+}
+
+/// "You are no longer a member of the Felgalizacija ...".
+String _takenOutText(FelgaEntry entry) => entry.name.isEmpty
+    ? tr('You are no longer a member of the Felgalizacija.')
+    : tr('You are no longer a member of the Felgalizacija {name}.', {'name': entry.name});
+
+DateTime _lastMenuCheck = DateTime.fromMillisecondsSinceEpoch(0);
+
+/// From the menu: each Felgalizacija on this phone that is online looked at;
+/// one this phone's name was taken out of (on another phone) leaves the
+/// phone, with a message, and the menu is drawn without it ([stillShown]).
+Future<void> _checkTakenOut(ViewContext ctx, bool Function() stillShown) async {
+  final now = DateTime.now();
+  if (now.difference(_lastMenuCheck) < const Duration(seconds: 10)) return;
+  _lastMenuCheck = now;
+  final remote = felgaRemote();
+  if (remote == null) return;
+  final online = [for (final e in felgaList()) if (_copyOf(e).rev > 0) e];
+  if (online.isEmpty) return; // never online: no need to sign in
+  try {
+    final me = await remote.me();
+    var dropped = false;
+    for (final entry in online) {
+      final there = await remote.fetch(entry.password);
+      if (there == null || !felgaTakenOut(_copyOf(entry).book, there.book, me)) continue;
+      _drop(entry);
+      ctx.toast(_takenOutText(entry));
+      dropped = true;
+    }
+    if (dropped && stillShown()) ctx.rerender();
+  } on Object {
+    // No connection: looked at the next time.
   }
 }
 
@@ -707,6 +762,16 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     }
   }
 
+  // Taken out on another phone: gone from this one, back to the menu.
+  _gone = (entry) {
+    try {
+      web.window.sessionStorage.removeItem(_openKey);
+    } on Object {
+      // The menu shows anyway.
+    }
+    ctx.toast(_takenOutText(entry));
+    if (screen.isConnected) ctx.showPage(MenuPage.home);
+  };
   _cameIn = ({required bool book, required bool name}) {
     if (!screen.isConnected) return;
     drawLater |= book;
@@ -1157,6 +1222,8 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
     },
   );
   if (_menuAdding) fillPanel(focus: false);
+  // One this phone was taken out of (on another phone) leaves the menu.
+  _checkTakenOut(ctx, () => plus.isConnected);
 
   // Goes down and up (quickly) before its Felgalizacija opens.
   web.HTMLButtonElement felgaButton(FelgaEntry entry) {

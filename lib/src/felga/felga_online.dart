@@ -95,6 +95,13 @@ class FelgaCopy {
   }
 }
 
+/// This phone ([me]) had a name in the book [before] and has none in [now]:
+/// it was taken out (on another phone), so the Felgalizacija leaves this one.
+/// A phone that never had a name in it (or took its own out here, so it is
+/// already gone from [before]) is not.
+bool felgaTakenOut(String before, String now, String me) =>
+    FelgaLedger.fromJson(before).memberOf(me) != null && FelgaLedger.fromJson(now).memberOf(me) == null;
+
 /// Brings [mine] and the one online together: what is new online comes in,
 /// what is new here goes up (put on top of the newest one, never over it).
 /// A new one goes online as it is. Throws when the online place cannot be

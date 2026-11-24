@@ -146,6 +146,29 @@ void main() {
       await b.sync();
       expect(b.copy.name, 'Klub 2');
     });
+
+    test('a phone whose name is taken out on another one is told so', () async {
+      b.change((l) => l.members[2].uid = 'phone-b');
+      await b.sync();
+      await a.sync();
+      final before = b.copy.book;
+      a.change((l) => l.remove(l.members[2])); // a throws Mihovil out
+      await a.sync();
+      await b.sync();
+      expect(felgaTakenOut(before, b.copy.book, 'phone-b'), isTrue);
+      // Nobody else is: a phone with no name in it, or a name still there.
+      expect(felgaTakenOut(before, b.copy.book, 'phone-x'), isFalse);
+      expect(felgaTakenOut(before, before, 'phone-b'), isFalse);
+    });
+
+    test('taking out your own name here is not being taken out', () async {
+      b.change((l) => l.members[2].uid = 'phone-b');
+      await b.sync();
+      b.change((l) => l.remove(l.members[2]));
+      final before = b.copy.book; // already without it
+      await b.sync();
+      expect(felgaTakenOut(before, b.copy.book, 'phone-b'), isFalse);
+    });
   });
 
   test('takeFrom keeps the same member objects for the same names', () {
