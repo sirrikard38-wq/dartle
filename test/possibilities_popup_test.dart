@@ -15,14 +15,17 @@ void main() {
   final css = File('web/styles.css').readAsStringSync();
 
   group('result screen', () {
-    test('a number with one optimal route says "Only possibility"', () {
+    test('only a number with one way out at all says "Only possibility"', () {
       final engine = CheckoutEngine();
       final optimal = OptimalRouteService(engine);
-      for (final one in [40, 50, 16, 170, 100]) {
-        expect(optimal.optimalRoutes(one), hasLength(1), reason: '$one');
+      for (final (n, darts) in [(40, 1), (50, 1), (16, 1), (170, 3), (167, 3), (110, 2)]) {
+        expect(optimal.onlyPossibility(n, darts), isTrue, reason: '$n');
       }
-      expect(optimal.optimalRoutes(132).length, greaterThan(1));
-      expect(screen, contains('result.optimalRoutes.length == 1'));
+      // 130: one optimal route (T20 T20 D5), but T20 S20 Bull and more check it out too.
+      expect(optimal.optimalRoutesIn(130, 3), hasLength(1));
+      expect(optimal.onlyPossibility(130, 3), isFalse);
+      expect(optimal.onlyPossibility(100, 2), isFalse); // T20 D20, Bull Bull
+      expect(screen, contains('result.onlyPossibility'));
       expect(screen, contains("text: tr('Only possibility')"));
     });
 

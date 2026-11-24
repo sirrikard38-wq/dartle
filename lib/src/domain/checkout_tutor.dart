@@ -168,6 +168,10 @@ class CheckoutTutor {
   /// own first ("Also optimal" lists them).
   List<CheckoutRoute> optimalRoutes(int target, int darts) => _optimal.optimalRoutesIn(target, darts);
 
+  /// Just one way at all to check out [target] with [darts] darts in hand
+  /// ("Only possibility").
+  bool onlyPossibility(int target, int darts) => _optimal.onlyPossibility(target, darts);
+
   /// True when [route] is one of the optimal routes of [target] with [darts]
   /// darts in hand.
   bool isOptimalIn(int target, int darts, CheckoutRoute route) => _optimal.isOptimalIn(target, darts, route);

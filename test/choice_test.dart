@@ -79,8 +79,8 @@ void main() {
         expect(advisor.optimalDarts(58), {d('S18'), d('S20'), d('S8')});
       });
 
-      test('100 lights T20; 150 T20, T19 and T18 of the route (S20 and S18 both leave no checkout)', () {
-        expect(advisor.optimalDarts(100), {d('T20')});
+      test('100 lights T20 and Bull (only two ways out: both optimal); 150 T20, T19 and T18 of the route (S20 and S18 both leave no checkout)', () {
+        expect(advisor.optimalDarts(100), {d('T20'), d('Bull')});
         expect(advisor.optimalDarts(150), {d('T20'), d('T19'), d('T18')});
       });
 

@@ -31,7 +31,7 @@ const Map<String, String> croatian = {
   'Change the name': 'Promijeni ime',
   'New name of the Felgalizacija': 'Novo ime Felgalizacije',
   'Add new Felgalizacija': 'Dodaj novu Felgalizaciju',
-  'What happens if you miss into a neighbouring number?': 'Što se dogodi ako promašiš u susjedni broj?',
+  'What if you miss into a neighbouring number?': 'Što ako promašiš u susjedni broj?',
   'Money in the club': 'Lova u klubu',
   'Payments': 'Uplate',
   'History': 'Povijest',

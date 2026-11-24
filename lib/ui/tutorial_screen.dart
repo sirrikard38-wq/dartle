@@ -428,7 +428,7 @@ web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   ]);
   return el('div', cls: 'tutor-card', children: [
     grid,
-    if (all.length == 1) el('p', cls: 'hint only-one', text: tr('Only possibility')),
+    if (tutor.onlyPossibility(target, card.darts)) el('p', cls: 'hint only-one', text: tr('Only possibility')),
   ]);
 }
 
@@ -517,7 +517,7 @@ List<web.HTMLElement> _missing(ViewContext ctx, NumberParts session) {
     el('div', cls: 'learn-top missing-top', children: [
       _numberSpacer(),
       _numberAndDarts(ctx, session, target, 'missing'),
-      if (asks) el('p', cls: 'miss-question', text: tr('What happens if you miss into a neighbouring number?')),
+      if (asks) el('p', cls: 'miss-question', text: tr('What if you miss into a neighbouring number?')),
       body,
     ]),
   ];
@@ -710,7 +710,7 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
     ],
     if (boards.isNotEmpty) el('div', cls: 'result-boards tutor-boards', children: boards),
     // As on the result screen: "Also optimal" opens every optimal route, or
-    // the one route there is says so.
+    // the one way there is at all says so.
     if (route != null)
       if (all.length > 1)
         button(tr('Also optimal'),
@@ -718,7 +718,7 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
             focusKey: 'tutor-all',
             ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': target}),
             onPressed: (_) => showAllOptimal(ctx, target, all))
-      else
+      else if (ctx.game.tutorial.tutor.onlyPossibility(target, card.darts))
         el('p', cls: 'hint only-one', text: tr('Only possibility')),
     if (card.whyNot case final other?) ...[
       el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),

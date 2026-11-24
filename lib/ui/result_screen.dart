@@ -106,8 +106,9 @@ List<web.HTMLElement> resultView(
                 label: tr('Also optimal: {route}', {'route': route.notation})),
         ]);
 
-  // A number with just one optimal route has nothing to list: it says so.
-  final onlyPossibility = result.optimalRoutes.length == 1
+  // A number with just one way out at all says so (one optimal route of many
+  // does not: 130 is also T20 S20 Bull).
+  final onlyPossibility = result.onlyPossibility
       ? el('p', cls: 'hint only-one', text: tr('Only possibility'))
       : null;
 

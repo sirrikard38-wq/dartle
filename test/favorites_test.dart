@@ -114,7 +114,7 @@ void main() {
   test('every number lists each favorite once (100 was T20 D20 twice)', () async {
     final game = createGameController(InMemoryStorageService());
     await game.init();
-    expect(game.favorites.routesFor(100).map((x) => x.notation), ['T20 D20']);
+    expect(game.favorites.routesFor(130).map((x) => x.notation), ['T20 T20 D5']);
     for (var n = 2; n <= 170; n++) {
       final keys = game.favorites.routesFor(n).map(Favorites.keyOf).toList();
       expect(keys.toSet(), hasLength(keys.length), reason: '$n: $keys');

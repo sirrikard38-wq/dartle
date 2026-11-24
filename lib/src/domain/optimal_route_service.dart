@@ -92,8 +92,37 @@ class OptimalRouteService {
         }
       }
     }
+    // A number with only a few ways out: every one of them is optimal (164:
+    // T20 T18 Bull and T19 T19 Bull).
+    for (final route in fewRoutesIn(target, darts) ?? const <CheckoutRoute>[]) {
+      if (!routes.any(route.isEquivalentTo)) routes.add(route);
+    }
     return routes;
   }
+
+  /// A number with this many ways to check it out (or fewer), with the darts
+  /// in hand, has every one of them optimal.
+  static const int fewRoutes = 5;
+
+  final Map<(int, int), List<CheckoutRoute>?> _fewCache = {};
+
+  /// Every way to check out [target] with [darts] darts in hand - the same
+  /// darts in another order counted once - when there are at most
+  /// [fewRoutes] of them; null when there are more.
+  List<CheckoutRoute>? fewRoutesIn(int target, int darts) => _fewCache.putIfAbsent((target, darts), () {
+        final out = <CheckoutRoute>[];
+        for (final route in _engine.legalRoutes(target)) {
+          if (route.length > darts || out.any(route.isEquivalentTo)) continue;
+          out.add(route);
+          if (out.length > fewRoutes) return null;
+        }
+        return List.unmodifiable(out);
+      });
+
+  /// There is just one way at all to check out [target] with [darts] darts in
+  /// hand ("Only possibility") - not just one optimal way (130 with three
+  /// darts is T20 T20 D5, but T20 S20 Bull checks it out too).
+  bool onlyPossibility(int target, int darts) => fewRoutesIn(target, darts)?.length == 1;
 
   /// The darts to aim at on [target] with [darts] darts in hand, all equally
   /// good: the table's target, the first dart of each of its routes (61 with
@@ -114,6 +143,10 @@ class OptimalRouteService {
       for (final route in routes) route.darts.first,
       ...CheckoutTable.alternatives(row),
       ..._asGood(target, darts, row),
+      // Only a few ways out, all optimal: each of their darts to set up with
+      // (any order), or the one double.
+      for (final route in fewRoutesIn(target, darts) ?? const <CheckoutRoute>[])
+        ...(route.length == 1 ? route.darts : route.setupDarts),
     };
     // On a number two darts can check out, a target counts only when a
     // two-dart route starts with it.
