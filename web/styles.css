@@ -1212,6 +1212,10 @@ summary { cursor: pointer; color: var(--muted); }
 /* Missing: under a treble or double route, its own single. */
 .same-number { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .route-grid .same-number .grid-head { font-size: 0.8rem; margin: 0 0 2px; }
+/* Three columns: each title fits its own (Croatian "PROMAŠAJ LIJEVO" on a
+   narrow phone too) - smaller, the letters closer, a word broken only if it
+   alone cannot fit. */
+.route-grid.three > .grid-head { font-size: min(0.95rem, 3.6vw); letter-spacing: min(0.15em, 0.25vw); overflow-wrap: break-word; }
 /* Three to a row: the boxes are narrow, so their little marks are smaller. */
 .route-grid.three .tile .mark { font-size: 0.5rem; right: 1px; }
 .route-grid.three .board-figure .hint { font-size: 0.7rem; }
@@ -1229,7 +1233,9 @@ summary { cursor: pointer; color: var(--muted); }
 /* Five tabs on one line: Input, Practice, Learn, Favorites, Missing. */
 .screen.tutorial .tutorial-tabs,
 .screen.tutorial .tutorial-tabs > .chip-marker > .marker-words { flex-wrap: nowrap; gap: 4px; }
-.screen.tutorial .tutorial-tabs .chip { padding: 0 9px; font-size: 0.85rem; min-height: 36px; }
+/* On a narrow phone (and in Croatian, whose words are longer) the tabs get
+   a little less room each, so all five always fit on the screen. */
+.screen.tutorial .tutorial-tabs .chip { padding: 0 clamp(4px, calc((100vw - 290px) / 8), 9px); font-size: min(0.85rem, 4.1vw); min-height: 36px; }
 
 /* ---------- Felgalizacija ---------- */
 .screen.felga { position: relative; align-items: center; padding: 0 0 28px; }
@@ -1299,7 +1305,7 @@ summary { cursor: pointer; color: var(--muted); }
   display: grid; grid-template-columns: auto auto auto; justify-content: center; align-items: center;
   gap: 10px 18px; max-width: calc(100% - 10mm); margin-top: 4px;
 }
-.felga-name { font-size: 1.15rem; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+.felga-name { font-size: min(1.15rem, 4.9vw); font-weight: 700; text-align: center; overflow-wrap: break-word; }
 .felga-step {
   width: 46px; height: 36px; border: 1px solid var(--line-strong); border-radius: 18px;
   background: none; color: var(--fg); font-weight: 700; font-size: 0.95rem;
@@ -1334,8 +1340,10 @@ summary { cursor: pointer; color: var(--muted); }
   max-width: calc(100% - 10mm); margin-top: 16px;
 }
 .felga-grid.owes { grid-template-columns: auto auto minmax(4ch, auto) minmax(7ch, auto); }
+/* On a narrower phone the columns come closer, so a long name keeps its words. */
+.felga-grid.owes { column-gap: clamp(10px, calc((100vw - 300px) / 3), 30px); }
 /* The places, 1. at the top: they stay put while the rows change places. */
-.felga-cell.place { color: var(--muted); text-align: right; margin-right: -14px; }
+.felga-cell.place { color: var(--muted); text-align: right; margin-right: calc(16px - clamp(10px, calc((100vw - 300px) / 3), 30px)); }
 .felga-cell.fine { position: relative; }
 /* +1 or -1 right of the fine while the flash lasts (the column is always
    there, so nothing moves). */
@@ -1356,10 +1364,17 @@ summary { cursor: pointer; color: var(--muted); }
   8%, 70% { opacity: 1; }
   100% { opacity: 0; }
 }
-.felga-grid.paid { grid-template-columns: auto auto minmax(6ch, auto) minmax(6ch, auto); gap: 14px 18px; margin-top: 0; }
-.felga-grid.paid .felga-cell.name { max-width: 7em; }
+.felga-grid.paid { grid-template-columns: auto auto minmax(min-content, auto) minmax(min-content, auto); gap: 14px 18px; margin-top: 0; }
+/* A column is never narrower than what is in it (6 digits wide at least). */
+.felga-grid.paid .felga-cell.num { min-width: 6ch; }
+/* A long name breaks between its words; a word only when it alone is too long. */
+.felga-grid.paid .felga-cell.name { max-width: min(8.2em, 27vw); overflow-wrap: break-word; }
+/* On a narrow phone the columns come closer, so the whole table fits. */
+.felga-grid.paid { column-gap: clamp(6px, calc((100vw - 300px) / 3), 18px); }
+@media (max-width: 359px) { .felga-grid.paid { font-size: 0.88em; } }
 .felga-cell { font-variant-numeric: tabular-nums; }
-.felga-cell.name { font-weight: 700; overflow-wrap: anywhere; }
+/* A long name breaks between its words; a word only when it alone is too long. */
+.felga-cell.name { font-weight: 700; overflow-wrap: break-word; min-width: 0; }
 .felga-cell.num { text-align: right; }
 .felga-head { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; text-align: right; }
 /* A money box: four digits wide (wider for a longer number), a grey € after. */
@@ -1452,7 +1467,7 @@ body.money-pad-open { padding-bottom: 240px; }
   animation: felga-glow 1.5s ease-out both; animation-delay: inherit;
 }
 /* The history under Club money: name, day, that day's felgas. */
-.felga-grid.history { grid-template-columns: auto minmax(3ch, auto) minmax(6ch, auto); margin-top: 0; }
+.felga-grid.history { grid-template-columns: minmax(0, auto) minmax(3ch, auto) minmax(6ch, auto); margin-top: 0; }
 .felga-cell.date { color: var(--muted); }
 /* Reset, under Club money. */
 .felga-reset-all {
@@ -1473,9 +1488,11 @@ body.money-pad-open { padding-bottom: 240px; }
   display: flex; flex-direction: column; align-items: stretch; width: max-content; max-width: calc(100% - 10mm);
 }
 .felga-history .felga-grid { width: max-content; max-width: 100%; margin-left: auto; margin-right: auto; }
-.felga-history .felga-cell.name, .felga-reset-totals .felga-cell.name { overflow-wrap: normal; white-space: nowrap; }
+/* Names on one line - a long one breaks (between words) only where the
+   screen has no room for it, so nothing ever goes off the screen. */
+.felga-history .felga-cell.name, .felga-reset-totals .felga-cell.name { overflow-wrap: anywhere; white-space: normal; }
 .felga-resets { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 18px; }
-.felga-reset-line { display: flex; flex-direction: column; align-items: flex-end; }
+.felga-reset-line { display: flex; flex-direction: column; align-items: flex-end; max-width: 100%; }
 /* A reset: a button "From ... to ..." and an X right of it. */
 .felga-reset-line { position: relative; }
 .felga-reset-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
@@ -1496,7 +1513,7 @@ body.money-pad-open { padding-bottom: 240px; }
 .felga-line-sky { position: fixed; z-index: 40; pointer-events: none; }
 .felga-line-burst { position: absolute; top: 50%; width: 0; height: 0; }
 .felga-reset-totals {
-  display: grid; grid-template-columns: auto minmax(4ch, auto) minmax(6ch, auto) minmax(6ch, auto);
+  display: grid; grid-template-columns: minmax(0, auto) minmax(4ch, auto) minmax(6ch, auto) minmax(6ch, auto); max-width: 100%;
   gap: 6px 18px; margin: 8px 0 10px; align-items: center;
 }
 /* The title of the history, under its arrow, in capitals. */
@@ -1645,6 +1662,9 @@ body.money-pad-open { padding-bottom: 240px; }
 /* The names: an empty column left and the x column right (seen only while
    the + is open), the same width, so the names stay in the middle. */
 .felga-names { grid-template-columns: 30px auto auto auto 30px; }
+/* On a narrower phone -1, the name and +1 come closer: the name keeps its
+   room and breaks only between its words. */
+.felga-names { column-gap: clamp(6px, calc((100vw - 300px) / 6), 18px); }
 .felga-remove {
   width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--muted);
   display: flex; align-items: center; justify-content: center; cursor: pointer;
