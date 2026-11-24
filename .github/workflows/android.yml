@@ -63,9 +63,11 @@ jobs:
         working-directory: android-app
         run: npx cap sync android
 
+      # Once more if it fails: now and then a download of Gradle's own parts
+      # breaks off (the code was fine and the next build passed).
       - name: Build the APK
         working-directory: android-app/android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace || ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Publish it as the android-latest release
         env:

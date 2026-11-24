@@ -470,6 +470,8 @@ List<web.HTMLElement> _missing(ViewContext ctx, NumberParts session) {
   final card = session.learnCard;
   final tutor = ctx.game.tutorial.tutor;
   web.HTMLElement body;
+  // Over the boards (only when there are boards): what they answer.
+  var asks = false;
   if (ctx.game.hasNoCheckout(target)) {
     body = _impossible(target);
   } else if (card == null || card.route == null) {
@@ -508,12 +510,14 @@ List<web.HTMLElement> _missing(ViewContext ctx, NumberParts session) {
                 ],
       ]);
       body = grid;
+      asks = true;
     }
   }
   return [
     el('div', cls: 'learn-top missing-top', children: [
       _numberSpacer(),
       _numberAndDarts(ctx, session, target, 'missing'),
+      if (asks) el('p', cls: 'miss-question', text: tr('What happens if you miss into a neighbouring number?')),
       body,
     ]),
   ];

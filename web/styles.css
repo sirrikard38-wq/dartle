@@ -1679,3 +1679,7 @@ body.money-pad-open { padding-bottom: 240px; }
 .felga-days { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 30px; }
 .felga-history > .felga-days:first-child, .felga-history > .felga-resets:first-child { margin-top: 0; }
 .felga-history-label { margin: 0 0 2px; color: var(--muted); text-align: right; font-size: 0.85rem; letter-spacing: 0.06em; }
+
+/* Miss: the question over the boards, under the darts in hand. */
+.miss-question { margin: 0 0 12px; text-align: center; color: var(--fg); font-size: 0.95rem; line-height: 1.3; flex: none; }
+.learn-top .number-row:has(+ .miss-question) { margin-bottom: 14px; }
