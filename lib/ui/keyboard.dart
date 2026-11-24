@@ -111,6 +111,9 @@ web.HTMLElement buildInputPanel({
         marks: marks,
         lit: lit,
         animateLastMark: true,
+        // The numbers just outside the double ring: the board 3 mm bigger
+        // in radius, its numbers still clear of S, D and T.
+        numbersAt: playNumberRadius,
         onDart: (dart, point, kb) => onDart(dart, point, kb),
       ),
       if (ringButtons) modeColumn(right: true),

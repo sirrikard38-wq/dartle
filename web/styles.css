@@ -1568,7 +1568,11 @@ body.money-pad-open { padding-bottom: 240px; }
    reach out of its row. */
 .screen.tutorial .tutorial-page:has(> .board-view) > .board-view { padding-left: 2px; padding-right: 2px; }
 .screen.tutorial .tutorial-page:has(> .board-view) .board-wrap.sided .dartboard {
-  --size: min((100cqw - 2 * var(--side-w) - 12px) * 400 / 366, 100cqh * 400 / 368, 440px);
+  /* 3 mm more in radius than before (the board is 288 of the 400 across);
+     its numbers (now just outside the double ring) 4px from S, D and T and
+     in the row's height at the most. */
+  --size: min((100cqw - 2 * var(--side-w) - 12px) * 400 / 366 + 6mm * 400 / 288,
+    (100cqw - 2 * var(--side-w) - 8px) * 400 / 336, 100cqh * 400 / 338, 480px);
   width: var(--size); height: var(--size); flex: none;
   margin: calc((100cqh - var(--size)) / 2) calc((100cqw - 2 * var(--side-w) - var(--size)) / 2);
 }

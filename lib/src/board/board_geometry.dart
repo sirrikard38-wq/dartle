@@ -39,6 +39,10 @@ const double bullRadius = _mmBull * _scale;
 const double outerBullRadius = _mmOuterBull * _scale;
 const double numberRadius = 171;
 
+/// Where the numbers stand on the board that is played on: closer, just
+/// outside the double ring (its outer edge is at 144).
+const double playNumberRadius = 156;
+
 /// The angle one number's wedge spans.
 const double wedgeAngle = 2 * math.pi / 20;
 

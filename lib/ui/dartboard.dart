@@ -42,6 +42,8 @@ String _sectorPath(double r0, double r1, double a0, double a1) =>
 /// * [linesOnly] draws no filled areas at all - just the white lines that
 ///   divide them - so only the [marks] stand out (used to compare boards).
 /// * [marks] are drawn as translucent circles - where darts landed.
+/// * [numbersAt]: how far out the numbers stand (the board to play on has them
+///   closer, so the board itself can be bigger).
 /// * With [lit], those darts' areas are lit up in light grey and every other
 ///   area fades back, so only the best choices stand out. A number with a lit
 ///   dart is worth that lit dart wherever it is pressed (T20 lit: any press on
@@ -56,6 +58,7 @@ web.Element buildDartboard({
   bool byArea = false,
   Set<DartThrow>? lit,
   String? label,
+  double numbersAt = _numberRadius,
 }) {
   final interactive = (mode != null || byArea) && onDart != null;
   bool isOn(Multiplier m) => byArea || mode == null || mode == m;
@@ -156,7 +159,7 @@ web.Element buildDartboard({
 
   // Numbers around the outside, straight on the page (no disc behind them).
   for (var slot = 0; slot < boardOrder.length; slot++) {
-    final at = _polar(_numberRadius, slot * _wedge);
+    final at = _polar(numbersAt, slot * _wedge);
     root.appendChild(svg('text', cls: 'num', text: '${boardOrder[slot]}', attrs: {
       'x': at.x.toStringAsFixed(2),
       'y': at.y.toStringAsFixed(2),
