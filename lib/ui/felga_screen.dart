@@ -885,27 +885,33 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
   );
   if (_menuAdding) fillPanel(focus: false);
 
+  // Goes down and up (quickly) before its Felgalizacija opens.
+  web.HTMLButtonElement felgaButton(FelgaEntry entry) {
+    late final web.HTMLButtonElement pressed;
+    pressed = button('',
+        cls: 'menu-btn felga-btn',
+        focusKey: 'felga-${entry.id}',
+        ariaLabel: entry.name.isEmpty ? 'Felgalizacija' : 'Felgalizacija ${entry.name}',
+        onPressed: (_) => pressThen(pressed, () {
+              _menuAdding = false;
+              openFelga(ctx, entry);
+            }))
+      ..append(lines(entry.name));
+    return pressed;
+  }
+
   return [
-    for (final entry in list)
-      button('',
-          cls: 'menu-btn felga-btn',
-          focusKey: 'felga-${entry.id}',
-          ariaLabel: entry.name.isEmpty ? 'Felgalizacija' : 'Felgalizacija ${entry.name}',
-          onPressed: (_) {
-            _menuAdding = false;
-            openFelga(ctx, entry);
-          })
-        ..append(lines(entry.name)),
+    for (final entry in list) felgaButton(entry),
     plus,
     panel,
   ];
 }
 
-/// At the top, on the right: Money in the club and Owed to the club ([money]:
-/// the words end under each other, the amounts too, the € under the €), and
-/// under them "password" in small grey letters with a +. Either pressed, the
-/// + turns into an X and the password glides open under them (white, as
-/// small); pressed - or held for a second - it is copied ("Copied" shows for
+/// At the top: on the left "password" in small grey letters with a +; on the
+/// right Money in the club and Owed to the club ([money]: the words end under
+/// each other, the amounts too, the € under the €). Either of the first two
+/// pressed, the + turns into an X and the password glides open under them
+/// (white, as small); pressed - or held for a second - it is copied ("Copied" shows for
 /// 1.5 s). The X takes it away at once.
 web.HTMLElement _topPart(web.HTMLElement money, String password) {
   final box = el('div', cls: 'felga-pass-box');
@@ -955,8 +961,11 @@ web.HTMLElement _topPart(web.HTMLElement money, String password) {
   );
   final word = button(tr('password'), cls: 'felga-pass-word', onPressed: (_) => plus.click());
   return el('div', cls: 'felga-top', children: [
-    el('div', cls: 'felga-money', children: [money, word, plus]),
-    box,
+    el('div', cls: 'felga-pass', children: [
+      el('div', cls: 'felga-pass-line', children: [word, plus]),
+      box,
+    ]),
+    el('div', cls: 'felga-money', children: [money]),
   ]);
 }
 

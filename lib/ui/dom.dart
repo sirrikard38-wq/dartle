@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:web/web.dart' as web;
 
 /// Tiny DOM builder so view code reads declaratively.
@@ -66,6 +68,23 @@ web.HTMLButtonElement button(
     onPressed(event.detail == 0);
   });
   return b;
+}
+
+/// A menu button pressed: it goes down a few mm with a very light fill and
+/// back up, quickly (140 ms), and only then does [go] run - the press is seen
+/// in full before the next screen, and none of it is left for the menu when
+/// it comes back. A second press meanwhile does nothing.
+void pressThen(web.HTMLElement pressed, void Function() go) {
+  if (pressed.classList.contains('pressed')) return;
+  if (web.window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    go();
+    return;
+  }
+  pressed.classList.add('pressed');
+  Timer(const Duration(milliseconds: 140), () {
+    pressed.classList.remove('pressed');
+    go();
+  });
 }
 
 /// A running score with a real minus when negative: "12", "−10", "0".

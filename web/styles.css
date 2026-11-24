@@ -1605,12 +1605,16 @@ body.money-pad-open { padding-bottom: 240px; }
 .name-input:focus { border-color: var(--line-strong); }
 
 /* The menu's buttons: no glow left on one (a phone keeps a "hover" where a
-   finger was); pressed, a very light fill and a push down of a few mm, both
-   gone as soon as it is let go. */
+   finger was). Pressed, it goes down a few mm with a very light fill and back
+   up - quickly, 140 ms - and only then does its screen open (pressThen). */
 .menu-btn:hover { background: transparent; }
 @media (hover: hover) { .menu-btn:hover { background: #121212; } }
-.menu-btn { transition: transform 180ms ease-out, background-color 180ms ease-out; }
-.menu-btn:active { transform: translateY(6px); background: rgba(255, 255, 255, 0.06); transition-duration: 60ms; }
+.menu-btn.pressed { animation: menu-press 140ms ease-out; }
+@keyframes menu-press {
+  0% { transform: translateY(0); background: transparent; }
+  45% { transform: translateY(6px); background: rgba(255, 255, 255, 0.06); }
+  100% { transform: translateY(0); background: transparent; }
+}
 
 /* The + turns into an X: a quarter turn and a half (45 degrees), and back. */
 .turning-plus.open svg { transform: rotate(45deg); }
@@ -1618,7 +1622,11 @@ body.money-pad-open { padding-bottom: 240px; }
 /* The top of a Felgalizacija, on the right: Money in the club, Owed to the
    club, and "password" with a + - the words end under each other, the
    amounts too (€ under €, the + under them). */
-.felga-top { align-self: stretch; display: flex; flex-direction: column; align-items: flex-end; margin: 12px 5mm 0; position: relative; }
+/* The password on the left and the money on the right, side by side at the
+   very top. */
+.felga-top { align-self: stretch; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 8px 5mm 0; position: relative; }
+.felga-pass { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.felga-pass-line { display: flex; align-items: center; gap: 4px; }
 .felga-money-rows { display: contents; }
 .felga-top .felga-money { margin: 0; justify-content: end; align-items: center; column-gap: 12px; row-gap: 4px; }
 .felga-pass-word {
@@ -1626,18 +1634,18 @@ body.money-pad-open { padding-bottom: 240px; }
   font: inherit; font-size: 0.75rem; letter-spacing: 0.06em; cursor: pointer;
 }
 .felga-pass-plus {
-  justify-self: end; width: 22px; height: 22px; padding: 2px; margin-right: -3px; border: 0; background: none;
+  width: 22px; height: 22px; padding: 2px; border: 0; background: none;
   color: var(--fg); cursor: pointer;
 }
 .felga-pass-plus svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
-.felga-pass-box { position: relative; display: flex; flex-direction: column; align-items: flex-end; }
-.felga-pass-row { display: flex; justify-content: flex-end; }
+.felga-pass-box { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
+.felga-pass-row { display: flex; justify-content: flex-start; }
 .felga-top .felga-password {
   display: block; margin: 2px 0 0; padding: 2px 0; border: 0; border-radius: 0; background: none; color: var(--white);
   font-family: inherit; font-size: 0.75rem; letter-spacing: 0.06em; cursor: pointer;
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
-.felga-top .felga-copied { left: auto; right: 0; transform: none; }
+.felga-top .felga-copied { left: 0; right: auto; transform: none; }
 
 /* The names: an empty column left and the x column right (seen only while
    the + is open), the same width, so the names stay in the middle. */
