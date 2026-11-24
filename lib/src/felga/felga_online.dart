@@ -1,23 +1,61 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import '../online/firebase.dart';
 import '../storage/storage_service.dart';
 import 'felga_ledger.dart';
 
-/// Where a Felgalizacija is kept online: its password, hashed (SHA-256), so
-/// the place says nothing of the password and only who knows the password
-/// finds it. Nobody can list the places (see firebase/database.rules.json).
+/// Online, a Felgalizacija lives at its own address (64 random hex digits,
+/// [newFelgaAddress]) that only its members' phones know. Its password is a
+/// key to it: at the place of the password ([felgaKey]: its SHA-256, so the
+/// place says nothing of the password) lies a note with the address. A new
+/// password gets a new note and the old one is closed, so the old password
+/// leads nowhere - and the members, who know the address, stay in. Nobody can
+/// list the places (see firebase/database.rules.json).
+///
+/// (A Felgalizacija that went online before addresses lies at the place of
+/// its password itself; the first phone with this version moves it.)
 String felgaKey(String password) => sha256Hex(utf8.encode('dartle-felga:$password'));
 
-/// A Felgalizacija as it is online: its name, its book ([FelgaLedger.toJson])
-/// and how many times it was written ([rev]: each write is the one before + 1,
-/// so a phone that writes over a newer one is refused).
+/// A new address: 64 random hex digits.
+String newFelgaAddress([math.Random? random]) {
+  final r = random ?? math.Random.secure();
+  return [for (var i = 0; i < 64; i++) r.nextInt(16).toRadixString(16)].join();
+}
+
+/// What is online at a place: a Felgalizacija (its name, its book
+/// [FelgaLedger.toJson]) or a password's note ([pointsTo], or [closed]); and
+/// how many times it was written ([rev]: each write is the one before + 1, so
+/// a phone that writes over a newer one is refused).
 class RemoteFelga {
   const RemoteFelga(this.name, this.book, this.rev);
+
+  /// The note of a password that leads to [address].
+  RemoteFelga.note(this.name, String address, this.rev) : book = jsonEncode({'at': address});
+
+  /// The note of a password that leads nowhere any more.
+  const RemoteFelga.closed(this.name, this.rev) : book = '{"closed":true}';
 
   final String name;
   final String book;
   final int rev;
+
+  Map<String, Object?>? get _json {
+    try {
+      final json = jsonDecode(book);
+      return json is Map<String, Object?> ? json : null;
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The address this note leads to; null for a Felgalizacija (or a closed note).
+  String? get pointsTo => _json?['at'] as String?;
+
+  /// A note that leads nowhere any more (its password was changed).
+  bool get closed => _json?['closed'] == true;
+
+  bool get isNote => pointsTo != null || closed;
 }
 
 /// The place online the Felgalizacije are shared through.
@@ -25,35 +63,42 @@ abstract interface class FelgaRemote {
   /// This device's account (signing in the first time).
   Future<String> me();
 
-  /// The Felgalizacija with [password]; null when there is none.
-  Future<RemoteFelga?> fetch(String password);
+  /// What is at [key]; null when there is nothing.
+  Future<RemoteFelga?> fetch(String key);
 
-  /// Writes [next] (its [RemoteFelga.rev] one more than what is there, 1 for a
-  /// new one). False when it is refused: another phone was quicker (or the
-  /// online place is not set up for it).
-  Future<bool> push(String password, RemoteFelga next);
+  /// Writes [next] at [key] (its [RemoteFelga.rev] one more than what is
+  /// there, 1 for a new one). False when it is refused: another phone was
+  /// quicker (or the online place is not set up for it).
+  Future<bool> push(String key, RemoteFelga next);
 }
 
 /// What one phone has of a Felgalizacija: its name and book now, and what
 /// they were when it last matched the one online ([rev], [baseName],
-/// [baseBook]; rev 0: never online yet).
+/// [baseBook]; rev 0: never online yet), and its address ([at]; null: not
+/// online yet, or still at the place of its password).
 class FelgaCopy {
-  const FelgaCopy({required this.name, required this.book, this.rev = 0, this.baseName, this.baseBook});
+  const FelgaCopy({required this.name, required this.book, this.rev = 0, this.baseName, this.baseBook, this.at});
 
   final String name;
   final String book;
   final int rev;
   final String? baseName;
   final String? baseBook;
+  final String? at;
 
   /// Something changed here that is not online yet.
   bool get changed => rev == 0 || name != baseName || book != baseBook;
 
-  FelgaCopy withNow({String? name, String? book}) =>
-      FelgaCopy(name: name ?? this.name, book: book ?? this.book, rev: rev, baseName: baseName, baseBook: baseBook);
+  FelgaCopy withNow({String? name, String? book}) => FelgaCopy(
+      name: name ?? this.name, book: book ?? this.book, rev: rev, baseName: baseName, baseBook: baseBook, at: at);
+
+  /// The same, at [address]; [rev] -1 makes the next look take in what is
+  /// there (on top of what changed here since [baseBook]).
+  FelgaCopy movedTo(String address, {int? rev}) => FelgaCopy(
+      name: name, book: book, rev: rev ?? this.rev, baseName: baseName, baseBook: baseBook, at: address);
 
   /// This phone's book and name written online as [rev].
-  FelgaCopy sentAs(int rev) => FelgaCopy(name: name, book: book, rev: rev, baseName: name, baseBook: book);
+  FelgaCopy sentAs(int rev) => FelgaCopy(name: name, book: book, rev: rev, baseName: name, baseBook: book, at: at);
 
   /// [theirs] taken in: what changed here since the last match put on top of it.
   FelgaCopy on(RemoteFelga theirs) {
@@ -73,11 +118,12 @@ class FelgaCopy {
       rev: theirs.rev,
       baseName: theirs.name,
       baseBook: theirs.book,
+      at: at,
     );
   }
 
   /// What is kept on the phone besides the name and book.
-  String metaJson() => jsonEncode({'rev': rev, 'baseName': baseName, 'baseBook': baseBook});
+  String metaJson() => jsonEncode({'rev': rev, 'baseName': baseName, 'baseBook': baseBook, if (at != null) 'at': at});
 
   static FelgaCopy fromMeta({required String name, required String book, String? meta}) {
     try {
@@ -88,6 +134,7 @@ class FelgaCopy {
         rev: (json['rev'] as num?)?.toInt() ?? 0,
         baseName: json['baseName'] as String?,
         baseBook: json['baseBook'] as String?,
+        at: json['at'] as String?,
       );
     } on Object {
       return FelgaCopy(name: name, book: book);
@@ -102,25 +149,79 @@ class FelgaCopy {
 bool felgaTakenOut(String before, String now, String me) =>
     FelgaLedger.fromJson(before).memberOf(me) != null && FelgaLedger.fromJson(now).memberOf(me) == null;
 
-/// Brings [mine] and the one online together: what is new online comes in,
-/// what is new here goes up (put on top of the newest one, never over it).
-/// A new one goes online as it is. Throws when the online place cannot be
-/// reached; the answer is what this phone should keep.
-Future<FelgaCopy> syncFelga(FelgaRemote remote, String password, FelgaCopy mine) async {
+/// Brings [mine] and the one online at [key] together: what is new online
+/// comes in, what is new here goes up (put on top of the newest one, never
+/// over it). A new one goes online as it is. Throws when the online place
+/// cannot be reached; the answer is what this phone should keep.
+Future<FelgaCopy> syncFelga(FelgaRemote remote, String key, FelgaCopy mine) async {
   var copy = mine;
   for (var attempt = 0; attempt < 3; attempt++) {
-    final theirs = await remote.fetch(password);
+    final theirs = await remote.fetch(key);
     if (theirs == null) {
-      if (await remote.push(password, RemoteFelga(copy.name, copy.book, 1))) return copy.sentAs(1);
+      if (await remote.push(key, RemoteFelga(copy.name, copy.book, 1))) return copy.sentAs(1);
       return copy; // refused with nothing there: not set up online
     }
+    if (theirs.isNote) return copy; // not a Felgalizacija: never written over
     if (theirs.rev != copy.rev) copy = copy.on(theirs);
     if (!copy.changed) return copy;
     final next = theirs.rev + 1;
-    if (await remote.push(password, RemoteFelga(copy.name, copy.book, next))) return copy.sentAs(next);
+    if (await remote.push(key, RemoteFelga(copy.name, copy.book, next))) return copy.sentAs(next);
     // Another phone was quicker: once more on top of what it wrote.
   }
   return copy;
+}
+
+/// Where [password] leads: the Felgalizacija and its address; null when it
+/// leads nowhere (none has it, or it was changed). One from before addresses
+/// is at the place of the password itself.
+Future<({String at, RemoteFelga felga})?> findFelga(FelgaRemote remote, String password) async {
+  final key = felgaKey(password);
+  final there = await remote.fetch(key);
+  if (there == null || there.closed) return null;
+  final at = there.pointsTo;
+  final felga = at == null ? there : await remote.fetch(at);
+  if (felga == null || felga.isNote) return null;
+  // Its password now is another: this one leads nowhere.
+  final now = FelgaLedger.fromJson(felga.book).password;
+  if (now != null && now != password) return null;
+  return (at: at ?? key, felga: felga);
+}
+
+/// Puts [mine] online: a new one at a new address ([address]), with a note
+/// at the place of [password] that leads to it; one from before addresses
+/// moved there the same way (what is at the old place taken in first). One
+/// already at an address is just brought together with what is there.
+Future<FelgaCopy> putOnline(FelgaRemote remote, String password, FelgaCopy mine, {String? address}) async {
+  final at = mine.at;
+  if (at != null) return syncFelga(remote, at, mine);
+  final key = felgaKey(password);
+  var copy = mine;
+  if (copy.rev != 0) {
+    // At the place of its password: moved on by another phone, or here to move.
+    final there = await remote.fetch(key);
+    if (there != null && there.pointsTo != null) return syncFelga(remote, there.pointsTo!, copy.movedTo(there.pointsTo!, rev: -1));
+    copy = await syncFelga(remote, key, copy);
+  }
+  final to = address ?? newFelgaAddress();
+  if (!await remote.push(to, RemoteFelga(copy.name, copy.book, 1))) return mine;
+  copy = copy.movedTo(to).sentAs(1);
+  final before = await remote.fetch(key);
+  await remote.push(key, RemoteFelga.note(copy.name, to, (before?.rev ?? 0) + 1));
+  return copy;
+}
+
+/// [password] of the Felgalizacija at [at] becomes [next]: a note for [next]
+/// that leads there, and the note of [password] closed. False (nothing
+/// changed) when it cannot be done.
+Future<bool> movePassword(FelgaRemote remote, String at, String name, String password, String next) async {
+  if (!await remote.push(felgaKey(next), RemoteFelga.note(name, at, 1))) return false;
+  final key = felgaKey(password);
+  for (var attempt = 0; attempt < 3; attempt++) {
+    final old = await remote.fetch(key);
+    if (old == null || old.pointsTo != at) return true; // nothing of it to close
+    if (await remote.push(key, RemoteFelga.closed(name, old.rev + 1))) return true;
+  }
+  return true;
 }
 
 /// The Felgalizacije in the Firebase Realtime Database, under `/felga/<key>`,
@@ -144,16 +245,16 @@ class FirebaseFelgaRemote implements FelgaRemote {
 
   Future<({String id, String token})> _signedIn() => _session.signedIn().timeout(timeout);
 
-  Uri _url(String password, String token) =>
-      Uri.parse('${_config.databaseUrl}/$path/${felgaKey(password)}.json').replace(queryParameters: {'auth': token});
+  Uri _url(String key, String token) =>
+      Uri.parse('${_config.databaseUrl}/$path/$key.json').replace(queryParameters: {'auth': token});
 
   @override
   Future<String> me() async => (await _signedIn()).id;
 
   @override
-  Future<RemoteFelga?> fetch(String password) async {
+  Future<RemoteFelga?> fetch(String key) async {
     final session = await _signedIn();
-    final reply = await _http.send('GET', _url(password, session.token)).timeout(timeout);
+    final reply = await _http.send('GET', _url(key, session.token)).timeout(timeout);
     if (!reply.ok) throw OnlineException('Felgalizacija answered ${reply.status}');
     final json = jsonDecode(reply.body);
     if (json == null) return null;
@@ -166,10 +267,10 @@ class FirebaseFelgaRemote implements FelgaRemote {
   }
 
   @override
-  Future<bool> push(String password, RemoteFelga next) async {
+  Future<bool> push(String key, RemoteFelga next) async {
     final session = await _signedIn();
     final reply = await _http
-        .send('PUT', _url(password, session.token),
+        .send('PUT', _url(key, session.token),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'name': next.name, 'book': next.book, 'rev': next.rev}))
         .timeout(timeout);
@@ -188,24 +289,24 @@ class StorageFelgaRemote implements FelgaRemote {
   final StorageService _storage;
   final String uid;
 
-  static String keyOf(String password) => 'dartle.felga-test-online.${felgaKey(password)}';
+  static String storageKeyOf(String key) => 'dartle.felga-test-online.$key';
 
   @override
   Future<String> me() async => uid;
 
   @override
-  Future<RemoteFelga?> fetch(String password) async {
-    final raw = await _storage.read(keyOf(password));
+  Future<RemoteFelga?> fetch(String key) async {
+    final raw = await _storage.read(storageKeyOf(key));
     if (raw == null) return null;
     final json = jsonDecode(raw) as Map<String, Object?>;
     return RemoteFelga(json['name'] as String, json['book'] as String, (json['rev'] as num).toInt());
   }
 
   @override
-  Future<bool> push(String password, RemoteFelga next) async {
-    final now = await fetch(password);
+  Future<bool> push(String key, RemoteFelga next) async {
+    final now = await fetch(key);
     if (next.rev != (now?.rev ?? 0) + 1) return false;
-    await _storage.write(keyOf(password), jsonEncode({'name': next.name, 'book': next.book, 'rev': next.rev}));
+    await _storage.write(storageKeyOf(key), jsonEncode({'name': next.name, 'book': next.book, 'rev': next.rev}));
     return true;
   }
 }

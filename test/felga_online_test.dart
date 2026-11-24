@@ -171,6 +171,68 @@ void main() {
     });
   });
 
+  group('addresses and passwords', () {
+    late StorageFelgaRemote online;
+    FelgaCopy fresh(String password) {
+      final l = FelgaLedger()
+        ..add('Riko', uid: 'phone-a')
+        ..add('Tin')
+        ..password = password;
+      return FelgaCopy(name: 'Klub', book: l.toJson());
+    }
+
+    setUp(() => online = StorageFelgaRemote(InMemoryStorageService(), uid: 'x'));
+
+    test('a new one goes to its own address; its password leads there', () async {
+      final copy = await putOnline(online, 'P1', fresh('P1'), address: 'A' * 64);
+      expect(copy.at, 'A' * 64);
+      expect(copy.rev, 1);
+      final note = (await online.fetch(felgaKey('P1')))!;
+      expect(note.pointsTo, 'A' * 64);
+      final found = (await findFelga(online, 'P1'))!;
+      expect(found.at, 'A' * 64);
+      expect(FelgaLedger.fromJson(found.felga.book).members.map((m) => m.name), ['Riko', 'Tin']);
+      expect(await findFelga(online, 'other'), isNull);
+    });
+
+    test('a new password: the old one leads nowhere, the address stays', () async {
+      var copy = await putOnline(online, 'P1', fresh('P1'), address: 'A' * 64);
+      expect(await movePassword(online, 'A' * 64, 'Klub', 'P1', 'P2'), isTrue);
+      final book = FelgaLedger.fromJson(copy.book)..password = 'P2';
+      copy = await syncFelga(online, copy.at!, copy.withNow(book: book.toJson()));
+      expect(await findFelga(online, 'P1'), isNull);
+      expect((await online.fetch(felgaKey('P1')))!.closed, isTrue);
+      expect((await findFelga(online, 'P2'))!.at, 'A' * 64);
+      // A member's phone, still with P1, keeps going at the address and learns P2.
+      final other = await syncFelga(online, 'A' * 64, copy.movedTo('A' * 64, rev: 0));
+      expect(FelgaLedger.fromJson(other.book).password, 'P2');
+    });
+
+    test('one from before addresses is moved, and its password still leads to it', () async {
+      // As it was put online before: the book at the place of the password.
+      final old = fresh('P1');
+      final legacy = await syncFelga(online, felgaKey('P1'), old);
+      expect(legacy.rev, 1);
+      expect(legacy.at, isNull);
+      final moved = await putOnline(online, 'P1', legacy, address: 'B' * 64);
+      expect(moved.at, 'B' * 64);
+      expect((await online.fetch(felgaKey('P1')))!.pointsTo, 'B' * 64);
+      expect((await findFelga(online, 'P1'))!.at, 'B' * 64);
+      // Another phone still at the old place follows the note, its change kept.
+      final otherBook = FelgaLedger.fromJson(legacy.book)..members[1].points = 4;
+      final other = await putOnline(online, 'P1', legacy.withNow(book: otherBook.toJson()));
+      expect(other.at, 'B' * 64);
+      expect(FelgaLedger.fromJson((await online.fetch('B' * 64))!.book).members[1].points, 4);
+    });
+
+    test('a password that was changed does not find it even at an old place', () async {
+      final legacy = await syncFelga(online, felgaKey('P1'), fresh('P1'));
+      final book = FelgaLedger.fromJson(legacy.book)..password = 'P2';
+      await syncFelga(online, felgaKey('P1'), legacy.withNow(book: book.toJson()));
+      expect(await findFelga(online, 'P1'), isNull);
+    });
+  });
+
   test('takeFrom keeps the same member objects for the same names', () {
     final here = FelgaLedger()
       ..add('Riko')
@@ -192,7 +254,7 @@ void main() {
     final storage = InMemoryStorageService();
     final remote = FirebaseFelgaRemote(config: config, http: http, session: FirebaseSession(config, http, storage));
     expect(await remote.fetch('pw'), isNull);
-    expect(http.lastUrl!.path, '/felga/${felgaKey('pw')}.json');
+    expect(http.lastUrl!.path, '/felga/pw.json');
     expect(http.lastUrl!.queryParameters['auth'], 'tok');
     expect(await remote.push('pw', const RemoteFelga('N', '{}', 1)), isTrue);
     expect(jsonDecode(http.lastBody!), {'name': 'N', 'book': '{}', 'rev': 1});

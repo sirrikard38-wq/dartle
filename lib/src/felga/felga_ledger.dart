@@ -99,6 +99,7 @@ class FelgaLedger {
     List<FelgaMember>? members,
     this.leftCents = 0,
     this.priceCents = defaultPriceCents,
+    this.password,
     List<FelgaDay>? history,
     List<FelgaPeriod>? periods,
   })  : members = members ?? [],
@@ -107,6 +108,10 @@ class FelgaLedger {
 
   /// What a felga costs until another cost is set.
   static const int defaultPriceCents = 50;
+
+  /// The password to join it now (online every member's phone learns a new
+  /// one from it); null before it was kept here.
+  String? password;
 
   /// What a felga costs now ("cost").
   int priceCents;
@@ -285,6 +290,7 @@ class FelgaLedger {
       ..addAll(other.periods);
     leftCents = other.leftCents;
     priceCents = other.priceCents;
+    password = other.password;
   }
 
   /// Two phones changed the same Felgalizacija: [theirs] is what is online
@@ -344,6 +350,7 @@ class FelgaLedger {
     }
 
     if (mine.priceCents != base.priceCents) out.priceCents = mine.priceCents;
+    if (mine.password != base.password) out.password = mine.password;
     out.leftCents += mine.leftCents - base.leftCents;
 
     final baseIds = {for (final p in base.periods) p.id: jsonEncode(_periodJson(p))};
@@ -397,6 +404,7 @@ class FelgaLedger {
   String toJson() => jsonEncode({
         'left': leftCents,
         'price': priceCents,
+        if (password != null) 'pass': password,
         'members': [
           for (final m in members)
             {
@@ -464,6 +472,7 @@ class FelgaLedger {
         // "Club money" (kept as 'club' or 'spent') is no more: left out.
         leftCents: (data['left'] as num?)?.toInt() ?? 0,
         priceCents: (data['price'] as num?)?.toInt() ?? defaultPriceCents,
+        password: data['pass'] as String?,
         members: [
           for (final m in (data['members'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
             FelgaMember(m['name'] as String,

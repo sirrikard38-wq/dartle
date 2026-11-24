@@ -103,12 +103,14 @@ void _write(String key, String? value) {
 FelgaCopy _copyOf(FelgaEntry entry) => FelgaCopy.fromMeta(
     name: entry.name, book: _read(entry.storageKey) ?? FelgaLedger().toJson(), meta: _read(_syncKey(entry.id)));
 
-/// Keeps [copy] as what this phone has of [entry] (its name in the list).
+/// Keeps [copy] as what this phone has of [entry] (its name, and the password
+/// in its book - changed on another phone - in the list).
 void _keepCopy(FelgaEntry entry, FelgaCopy copy) {
   _write(entry.storageKey, copy.book);
   _write(_syncKey(entry.id), copy.metaJson());
-  if (copy.name != entry.name) {
-    _saveList([for (final e in felgaList()) e.id == entry.id ? FelgaEntry(e.id, copy.name, e.password) : e]);
+  final password = FelgaLedger.fromJson(copy.book).password ?? entry.password;
+  if (copy.name != entry.name || password != entry.password) {
+    _saveList([for (final e in felgaList()) e.id == entry.id ? FelgaEntry(e.id, copy.name, password) : e]);
   }
 }
 
@@ -125,35 +127,43 @@ void _syncSoon([Duration wait = const Duration(milliseconds: 400)]) {
   _syncTimer = Timer(wait, _syncOpen);
 }
 
-/// The Felgalizacija open and the one online brought together (see
-/// [syncFelga]). With no connection nothing happens: the next change or
-/// check tries again. What changed here while it was on its way is kept too.
-Future<void> _syncOpen() async {
+Future<void> _syncOpen() => _sync(_open);
+
+/// [entry] and the one online brought together (see [putOnline]): the first
+/// time it gets its address online and its password a note that leads there.
+/// With no connection nothing happens: the next change or check tries again.
+/// What changed here while it was on its way is kept too.
+Future<void> _sync(FelgaEntry entry) async {
   if (_syncing) {
     _syncAgain = true;
     return;
   }
   final remote = felgaRemote();
-  final entry = _open;
   if (remote == null || !felgaList().any((e) => e.id == entry.id)) return;
   _syncing = true;
   try {
     var before = _copyOf(entry);
-    if (before.rev == 0) {
-      // Going online the first time: its maker's name is their account's.
-      final book = FelgaLedger.fromJson(before.book);
-      if (book.claimByName(_playerName, await remote.me())) {
-        before = before.withNow(book: book.toJson());
-        _write(entry.storageKey, before.book);
-        if (_ledgerId == entry.id) _ledger?.takeFrom(book);
-      }
+    final start = FelgaLedger.fromJson(before.book);
+    var ready = false;
+    // Its password goes in its book (so every member's phone knows it) ...
+    if (start.password == null) {
+      start.password = entry.password;
+      ready = true;
     }
-    final after = await syncFelga(remote, entry.password, before);
+    // ... and, going online the first time, its maker's name is their account's.
+    if (before.rev == 0 && start.claimByName(_playerName, await remote.me())) ready = true;
+    if (ready) {
+      before = before.withNow(book: start.toJson());
+      _write(entry.storageKey, before.book);
+      if (_ledgerId == entry.id) _ledger?.takeFrom(start);
+    }
+    final after = await putOnline(remote, entry.password, before);
     final nowEntry = felgaList().where((e) => e.id == entry.id).firstOrNull;
     if (nowEntry == null) return; // deleted meanwhile
+    final open = _open.id == entry.id;
     if (felgaTakenOut(before.book, after.book, await remote.me())) {
       _drop(nowEntry);
-      _gone?.call(nowEntry);
+      if (open) _gone?.call(nowEntry);
       return;
     }
     final now = _copyOf(nowEntry);
@@ -164,9 +174,10 @@ Future<void> _syncOpen() async {
             .toJson();
     final name = now.name == before.name ? after.name : now.name;
     _keepCopy(nowEntry, after.withNow(book: book, name: name));
-    final bookIn = book != now.book, nameIn = name != now.name;
+    final passwordIn = FelgaLedger.fromJson(book).password != FelgaLedger.fromJson(now.book).password;
+    final bookIn = book != now.book, nameIn = name != now.name || passwordIn;
     if (bookIn && _ledgerId == entry.id) _ledger?.takeFrom(FelgaLedger.fromJson(book));
-    if (bookIn || nameIn) _cameIn?.call(book: bookIn, name: nameIn);
+    if (open && (bookIn || nameIn)) _cameIn?.call(book: bookIn, name: nameIn);
   } on Object {
     // No connection (or not set up online): tried again later.
   } finally {
@@ -216,8 +227,9 @@ Future<void> _checkTakenOut(ViewContext ctx, bool Function() stillShown) async {
     final me = await remote.me();
     var dropped = false;
     for (final entry in online) {
-      final there = await remote.fetch(entry.password);
-      if (there == null || !felgaTakenOut(_copyOf(entry).book, there.book, me)) continue;
+      final copy = _copyOf(entry);
+      final there = await remote.fetch(copy.at ?? felgaKey(entry.password));
+      if (there == null || there.isNote || !felgaTakenOut(copy.book, there.book, me)) continue;
       _drop(entry);
       ctx.toast(_takenOutText(entry));
       dropped = true;
@@ -248,10 +260,10 @@ Future<void> _joinOnline(ViewContext ctx, String password) async {
     ctx.toast(tr('No Felgalizacija has this password.'));
     return;
   }
-  final RemoteFelga? found;
+  final ({String at, RemoteFelga felga})? found;
   final String me;
   try {
-    found = await remote.fetch(password);
+    found = await findFelga(remote, password);
     me = await remote.me();
   } on Object {
     ctx.toast(tr('The Felgalizacija could not be reached: try again.'));
@@ -261,15 +273,17 @@ Future<void> _joinOnline(ViewContext ctx, String password) async {
     ctx.toast(tr('No Felgalizacija has this password.'));
     return;
   }
-  final RemoteFelga online = found;
+  final RemoteFelga online = found.felga;
+  // One from before addresses (at the place of its password) moves when it opens.
+  final at = found.at == felgaKey(password) ? null : found.at;
   final book = FelgaLedger.fromJson(online.book);
 
   void join(void Function() change) {
     change();
     final entry = FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', online.name, password);
     _saveList([...felgaList(), entry]);
-    final copy =
-        FelgaCopy(name: online.name, book: online.book, rev: online.rev, baseName: online.name, baseBook: online.book);
+    final copy = FelgaCopy(
+        name: online.name, book: online.book, rev: online.rev, baseName: online.name, baseBook: online.book, at: at);
     // What changed (a name now this phone's, or a new one) goes online when
     // it opens.
     _keepCopy(entry, copy.withNow(book: book.toJson()));
@@ -789,7 +803,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   _syncSoon(Duration.zero);
 
   return screen = el('main', cls: 'screen felga', children: [
-    _topPart(moneyPart, _open, price: () => ledger.priceCents, onPrice: (cents, all) {
+    _topPart(ctx, moneyPart, _open, price: () => ledger.priceCents, onPrice: (cents, all) {
       ledger.setPrice(cents, applyToAll: all);
       changed();
     }),
@@ -800,17 +814,12 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     paidPart,
     resetPart,
     historyPart,
-    // At the very foot, on the right: the whole Felgalizacija deleted, asked
-    // three times; then the menu, with 10 s to undo it.
+    // At the very foot, on the right: the Felgalizacija off this phone only,
+    // asked once.
     button(tr('Delete Felgalizacija'), cls: 'felga-delete', focusKey: 'felga-delete', onPressed: (_) {
-      _ask(tr('Are you sure you want to delete this Felgalizacija?'), () {
-        _ask(tr('Are you really sure? Everything in it will be gone.'), () {
-          _ask(
-              tr('Are you really, like, a hundred thousand million percent sure you want to delete the whole '
-                  'Felgalizacija of the entire club forever, with no way back, all the history you had together?'),
-              () => _deleteOpen(ctx));
-        });
-      });
+      _ask(
+          tr('Are you sure you want to delete the Felgalizacija? You can always join again later with the password.'),
+          () => _deleteOpen(ctx));
     }),
   ]);
 }
@@ -828,41 +837,86 @@ Map<String, List<FelgaDay>> _byDate(List<FelgaDay> days) {
   return byDate;
 }
 
-/// Deletes the Felgalizacija open - its book and its place in the list - and
-/// goes to the menu, where "Felgalizacija deleted" shows for 10 s with Undo,
-/// which brings it all back. Not undone, it is gone for good.
+/// Deletes the Felgalizacija open from this phone - its book and its place in
+/// the list - and goes to the menu ("Felgalizacija deleted"). Online it stays
+/// for the others: this phone's name is taken out of it and its password
+/// changed (see [_leaveOnline]).
 void _deleteOpen(ViewContext ctx) {
-  final list = felgaList();
   final entry = _open;
-  final index = list.indexWhere((e) => e.id == entry.id);
-  final others = {for (final e in list) if (e.id != entry.id) e.id};
-  // Off this phone only: online it stays for the others.
-  final book = _read(entry.storageKey), meta = _read(_syncKey(entry.id));
-  _write(entry.storageKey, null);
-  _write(_syncKey(entry.id), null);
+  final copy = _copyOf(entry);
+  _drop(entry);
   try {
     web.window.sessionStorage.removeItem(_openKey);
   } on Object {
     // Kept for this visit only.
   }
-  _saveList([for (final e in list) if (e.id != entry.id) e]);
-  _ledger = null;
-  _ledgerId = null;
   _flashes.clear();
   _openResets.clear();
   _adding = false;
   ctx.showPage(MenuPage.home);
-  _undoBar(tr('Felgalizacija deleted'), () {
-    // The one made in its place when it was the last is not kept.
-    final now = [for (final e in felgaList()) if (others.contains(e.id)) e];
-    now.insert(math.max(0, math.min(index, now.length)), entry);
-    _saveList(now);
-    if (book != null) _write(entry.storageKey, book);
-    if (meta != null) _write(_syncKey(entry.id), meta);
-    _ledger = null;
-    _ledgerId = null;
-    ctx.rerender();
-  });
+  ctx.toast(tr('Felgalizacija deleted'));
+  _leaveOnline(entry, copy);
+}
+
+/// This phone left [entry] (its [copy] as it was): online, its name is taken
+/// out and the password changed - the old one leads nowhere, the members
+/// stay in and see the new one. Never online: nothing to do.
+Future<void> _leaveOnline(FelgaEntry entry, FelgaCopy copy) async {
+  final remote = felgaRemote();
+  if (remote == null || (copy.rev == 0 && copy.at == null)) return;
+  try {
+    final online = await putOnline(remote, entry.password, copy);
+    final at = online.at;
+    if (at == null) return;
+    final me = await remote.me();
+    final next = _newPassword();
+    if (!await movePassword(remote, at, online.name, entry.password, next)) return;
+    final book = FelgaLedger.fromJson(online.book);
+    final mine = book.memberOf(me);
+    if (mine != null) book.remove(mine);
+    book.password = next;
+    await syncFelga(remote, at, online.withNow(book: book.toJson()));
+  } on Object {
+    // No connection: online it stays as it was.
+  }
+}
+
+/// A new password for the Felgalizacija [id] (online too: the old one leads
+/// nowhere, the members stay in); the new one, or null when it cannot be
+/// changed now ("could not be reached").
+Future<String?> _changePassword(ViewContext ctx, String id) async {
+  var entry = felgaList().where((e) => e.id == id).firstOrNull;
+  if (entry == null) return null;
+  final next = _newPassword();
+  final remote = felgaRemote();
+  var copy = _copyOf(entry);
+  if (remote != null && (copy.rev != 0 || copy.at != null)) {
+    try {
+      if (copy.at == null) {
+        await _sync(entry); // moved to its address first
+        copy = _copyOf(entry);
+      }
+      final at = copy.at;
+      if (at == null || !await movePassword(remote, at, entry.name, entry.password, next)) {
+        throw const OnlineException('password not moved');
+      }
+    } on Object {
+      ctx.toast(tr('The Felgalizacija could not be reached: try again.'));
+      return null;
+    }
+  }
+  entry = felgaList().where((e) => e.id == id).firstOrNull;
+  if (entry == null) return null;
+  _saveList([for (final e in felgaList()) e.id == id ? FelgaEntry(e.id, e.name, next) : e]);
+  // In its book too: every member's phone learns it.
+  if (_open.id == id) {
+    final ledger = _book..password = next;
+    _save(ledger);
+  } else {
+    final book = FelgaLedger.fromJson(_read(entry.storageKey))..password = next;
+    _write(entry.storageKey, book.toJson());
+  }
+  return next;
 }
 
 /// At the foot of the screen for [lasts]: [message] and Undo ([undo] runs).
@@ -1161,6 +1215,10 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
           }
           ctx.rerender();
         });
+        // Not undone: online at once, so its password lets others in.
+        Timer(const Duration(milliseconds: 4500), () {
+          if (felgaList().any((e) => e.id == entry.id)) _sync(entry);
+        });
       },
     );
 
@@ -1226,6 +1284,7 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
   );
   if (_menuAdding) fillPanel(focus: false);
   // One this phone was taken out of (on another phone) leaves the menu.
+  _playerName = ctx.game.playerName;
   _checkTakenOut(ctx, () => plus.isConnected);
 
   // Goes down and up (quickly) before its Felgalizacija opens.
@@ -1260,9 +1319,9 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
 /// 1.5 s). The X takes it away at once. Under it "change name" with a +:
 /// pressed, a line for the new name glides open under the top, with the dart
 /// right of it; the dart (or Enter) gives the Felgalizacija that name.
-web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
+web.HTMLElement _topPart(ViewContext ctx, web.HTMLElement money, FelgaEntry entry,
     {required int Function() price, required void Function(int cents, bool applyToAll) onPrice}) {
-  final password = entry.password;
+  var password = entry.password;
   final box = el('div', cls: 'felga-pass-box');
   void copyNow() {
     _copy(password);
@@ -1295,7 +1354,19 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
       web.EventStreamProvider<web.Event>(end).forElement(shown).listen((_) => hold?.cancel());
     }
     web.EventStreamProviders.contextMenuEvent.forElement(shown).listen((event) => event.preventDefault());
-    final row = el('div', cls: 'felga-pass-row', children: [shown]);
+    // Under it, small: a new random password (the members stay in).
+    var changing = false;
+    final change = button(tr('Change password'), cls: 'felga-change-pass', onPressed: (_) async {
+      if (changing) return;
+      changing = true;
+      final next = await _changePassword(ctx, entry.id);
+      changing = false;
+      if (next == null) return;
+      password = next;
+      shown.textContent = next;
+      ctx.toast(tr('Password changed'));
+    });
+    final row = el('div', cls: 'felga-pass-row', children: [shown, change]);
     box.append(row);
     _slideOpen(row);
   }

@@ -22,9 +22,17 @@ To switch everything online off again, empty both values in `web/online.json`.
 
 ## How it works
 
-Each Felgalizacija is kept under `/felga/<key>`. The key is the SHA-256 hash
-of the Felgalizacija's password, so only someone who knows the password can find
-it. Nobody can list the Felgalizacije.
+Each Felgalizacija lives at its own address, `/felga/<64 random hex digits>`.
+Only its members' phones know that address. Its password is a key to it: under
+`/felga/<SHA-256 of the password>` there is a note `{"at": address}`. Nobody can
+list the places, so only someone who knows the password finds the note.
+
+The current password is also kept in the book (`pass`), so every member's phone
+learns a new one. Changing the password writes a note for the new one and
+closes the old note (`{"closed": true}`), so the old password leads nowhere,
+while the members, who know the address, stay in. A Felgalizacija put online
+before addresses existed sat at the place of its password. The first phone with
+the newer version moves it to an address and leaves a note in its place.
 
 - **Joining:** typing the password of a Felgalizacija that is not on the phone
   finds it online. A popup then lists the names nobody has claimed yet. Picking
@@ -36,7 +44,11 @@ it. Nobody can list the Felgalizacije.
   make +2.
 - **Checking:** the open Felgalizacija page checks for changes every 5 seconds,
   and right after every change.
-- **Deleting** a Felgalizacija removes it from that phone only.
+- **Change password** (under the password in settings) makes a new random
+  password. The members stay in.
+- **Deleting** a Felgalizacija (asked once) removes it from that phone only.
+  Online, that phone's name is taken out and the password changed. A phone whose
+  name is taken out on another phone loses the Felgalizacija too.
 - **On localhost** (trying the app out on the computer) the app never talks to
   Firebase. A stand-in kept in the browser plays its part, so tests never write
   to the real database.
