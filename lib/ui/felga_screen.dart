@@ -1157,6 +1157,15 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
       el('div', cls: 'felga-pass', children: [
         el('div', cls: 'felga-pass-line', children: [settingsWord, settingsPlus]),
         settingsBox,
+        // Unseen and flat: the lines of the settings, so the column is as wide
+        // shut as open and "settings +" does not move when they open.
+        el('div', cls: 'felga-pass-sizer', attrs: {'aria-hidden': 'true'}, children: [
+          for (final words in [tr('password'), tr('change name'), '${tr('cost per felga')} ${formatEuro(price())}'])
+            el('div', cls: 'felga-pass-line', children: [
+              el('span', cls: 'felga-pass-word', text: words),
+              el('span', cls: 'felga-pass-plus'),
+            ]),
+        ]),
       ]),
       el('div', cls: 'felga-money', children: [money]),
     ]),

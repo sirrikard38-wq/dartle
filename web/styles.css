@@ -1762,3 +1762,8 @@ body.money-pad-open { padding-bottom: 240px; }
 .felga-btn-name,
 .felga-naming .felga-name-input,
 .felga-rename .felga-name-input { text-transform: none; }
+
+/* The settings' lines, unseen and flat, keep the column as wide as when they
+   are open. */
+.felga-pass-sizer { height: 0; overflow: hidden; visibility: hidden; display: flex; flex-direction: column; align-items: center; }
+.felga-pass-sizer .felga-pass-plus { display: inline-block; flex: none; }
