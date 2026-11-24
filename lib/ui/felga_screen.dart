@@ -1119,7 +1119,7 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
       _slideOpen(row);
     },
   );
-  final costWord = button(tr('cost'), cls: 'felga-pass-word', onPressed: (_) => costPlus.click());
+  final costWord = button(tr('cost per felga'), cls: 'felga-pass-word', onPressed: (_) => costPlus.click());
 
   // Settings: pressed, its + turns and these three glide open under it.
   final settingsBox = el('div', cls: 'felga-settings-box');

@@ -21,7 +21,7 @@ const Map<String, String> croatian = {
   'settings': 'postavke',
   'Open the settings': 'Otvori postavke',
   'Close the settings': 'Zatvori postavke',
-  'cost': 'cijena',
+  'cost per felga': 'cijena po felgi',
   'Change the cost of a felga': 'Promijeni cijenu felge',
   'Cost of a felga': 'Cijena jedne felge',
   'Apply to all felgas already entered?': 'Primijeniti na sve već upisane felge?',
