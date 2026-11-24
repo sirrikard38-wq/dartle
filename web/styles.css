@@ -1573,7 +1573,7 @@ body.money-pad-open { padding-bottom: 240px; }
      its numbers (now just outside the double ring) 4px from S, D and T and
      in the row's height at the most. */
   --size: min((100cqw - 2 * var(--side-w) - 12px) * 400 / 366 + 6mm * 400 / 288,
-    (100cqw - 2 * var(--side-w) - 8px) * 400 / 336, 100cqh * 400 / 338, 480px);
+    (100cqw - 2 * var(--side-w) - 4px) * 400 / 354, 100cqh * 400 / 352, 480px);
   width: var(--size); height: var(--size); flex: none;
   margin: calc((100cqh - var(--size)) / 2) calc((100cqw - 2 * var(--side-w) - var(--size)) / 2);
 }

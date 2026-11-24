@@ -1119,7 +1119,7 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
       _slideOpen(row);
     },
   );
-  final costWord = button(tr('cost per felga'), cls: 'felga-pass-word', onPressed: (_) => costPlus.click());
+  final costWord = button(tr('felga cost'), cls: 'felga-pass-word', onPressed: (_) => costPlus.click());
 
   // Settings: pressed, its + turns and these three glide open under it.
   final settingsBox = el('div', cls: 'felga-settings-box');
@@ -1132,10 +1132,10 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
     onToggle: (open) {
       if (open) {
         final inner = el('div', cls: 'felga-settings', children: [
-          el('div', cls: 'felga-pass-line', children: [word, plus]),
-          box,
           el('div', cls: 'felga-pass-line', children: [renameWord, renamePlus]),
           el('div', cls: 'felga-pass-line', children: [costWord, costNow, costPlus]),
+          el('div', cls: 'felga-pass-line', children: [word, plus]),
+          box,
         ]);
         settingsBox
           ..textContent = ''
@@ -1160,7 +1160,7 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
         // Unseen and flat: the lines of the settings, so the column is as wide
         // shut as open and "settings +" does not move when they open.
         el('div', cls: 'felga-pass-sizer', attrs: {'aria-hidden': 'true'}, children: [
-          for (final words in [tr('password'), tr('change name'), '${tr('cost per felga')} ${formatEuro(price())}'])
+          for (final words in [tr('change name'), '${tr('felga cost')} ${formatEuro(price())}', tr('password')])
             el('div', cls: 'felga-pass-line', children: [
               el('span', cls: 'felga-pass-word', text: words),
               el('span', cls: 'felga-pass-plus'),
