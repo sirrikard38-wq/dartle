@@ -116,14 +116,20 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     }) as web.HTMLInputElement;
     void fit() => fitToText(input, minCh: 10, room: () => web.window.innerWidth - 130.0);
     fit();
+    // The new name comes in over the +; the page moves up by its row at once,
+    // so the +, the box and everything under them stay where they are on the
+    // screen (no late jump of the page to keep the box in sight).
     void confirm() {
       if (input.value.trim().isNotEmpty) {
+        final before = input.getBoundingClientRect().top;
         ledger.add(input.value);
         input.value = '';
         fit();
         changed();
+        final moved = input.getBoundingClientRect().top - before;
+        if (moved.abs() >= 0.5) web.window.scrollBy(web.ScrollToOptions(top: moved, behavior: 'instant'));
       }
-      input.focus();
+      input.focus(web.FocusOptions(preventScroll: true));
     }
 
     input.onInput.listen((_) => fit());
