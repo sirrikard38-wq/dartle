@@ -84,8 +84,8 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   final ledger = _book;
 
   web.HTMLElement part() => el('div', cls: 'felga-part');
-  final moneyPart = part(), owesPart = part(), namesPart = part(), newNamePart = part();
-  final togglePart = part(), paidPart = part(), clubPart = part(), historyPart = part();
+  final moneyPart = el('div', cls: 'felga-money-rows'), owesPart = part(), namesPart = part();
+  final newNamePart = part(), togglePart = part(), paidPart = part(), resetPart = part(), historyPart = part();
   void fill(web.HTMLElement into, List<web.HTMLElement> children) {
     into.textContent = '';
     for (final child in children) {
@@ -102,7 +102,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   // The box for a new name: 10 letters wide, wider as a longer name is typed,
   // in the middle of the screen, its tick to the right of it; Enter or the
   // tick adds the name and the box is empty and ready for the next one.
-  void openNameBox({required bool focus}) {
+  void openNameBox({required bool focus, bool slide = false}) {
     final input = el('input', cls: 'felga-input', attrs: {
       'type': 'text',
       'maxlength': '40',
@@ -135,7 +135,9 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       ]));
     // Pressed, the tick leaves the typing in the box (the keyboard stays up).
     tick.onMouseDown.listen((event) => event.preventDefault());
-    fill(newNamePart, [el('div', cls: 'felga-new', children: [el('span'), input, tick])]);
+    final row = el('div', cls: 'felga-new', children: [el('span'), input, tick]);
+    fill(newNamePart, [row]);
+    if (slide) _slideOpen(row);
     if (focus) input.focus();
   }
 
@@ -231,8 +233,9 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     return el('label', cls: 'money', children: [input, el('span', cls: 'euro', text: '€')]);
   }
 
-  // The + under the names: pressed, it turns into an X (over a second) and
-  // the box for a new name comes under it; the X takes the box away.
+  // The + under the names: pressed, it turns into an X (over a second), the
+  // box for a new name glides open under it and an x comes right of each
+  // name's +1 (to take them out); the X takes them away.
   web.HTMLElement toggleButton() => _turningPlus(
         cls: 'felga-toggle',
         focusKey: 'felga-toggle',
@@ -241,10 +244,12 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         closedLabel: tr('Add a name'),
         onToggle: (open) {
           _adding = open;
+          namesPart.classList.toggle('removing', open);
           if (open) {
-            openNameBox(focus: true);
+            openNameBox(focus: true, slide: true);
           } else {
-            fill(newNamePart, []);
+            final row = newNamePart.firstElementChild;
+            if (row != null) _slideShut(row as web.HTMLElement);
           }
         },
       );
@@ -293,15 +298,12 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   refresh = () {
     final before = rowTops();
     final anyone = ledger.members.isNotEmpty;
-    // The two sums one under the other: the words end under each other, the
-    // amounts too (the € under the €), a little apart; the two in the middle.
+    // The two sums one under the other, at the top on the right ([_topPart]).
     fill(moneyPart, [
-      el('div', cls: 'felga-money', children: [
-        el('span', cls: 'felga-money-words', text: tr('Owed to the club')),
-        el('strong', text: formatEuro(ledger.owedTotalCents)),
-        el('span', cls: 'felga-money-words', text: tr('Money in the club now')),
-        el('strong', text: formatEuro(ledger.currentCents)),
-      ]),
+      el('span', cls: 'felga-money-words', text: tr('Money in the club')),
+      el('strong', text: formatEuro(ledger.currentCents)),
+      el('span', cls: 'felga-money-words', text: tr('Owed to the club')),
+      el('strong', text: formatEuro(ledger.owedTotalCents)),
     ]);
     // Right under the money: the felgas and the fines, most first, each
     // place numbered on the left (1. at the top). The numbers stay where they
@@ -340,14 +342,27 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       ],
     ]);
     // The names, with -1 and +1 one under the other (as wide as the longest
-    // name); under them the box for a new one, and the + (X while it is open).
+    // name), and right of +1 an x to take the name out - seen only while the
+    // + is open (an X); its room is always kept (an empty column on the left
+    // too), so nothing moves. Under them the box for a new one, and the +.
     fill(namesPart, [
       if (anyone)
         el('div', cls: 'felga-names', children: [
           for (final member in ledger.members) ...[
+            el('span'),
             step(member, -1),
             flash(el('span', cls: 'felga-name', text: member.name), _latest((f) => f.member == member)),
             step(member, 1),
+            button('', cls: 'felga-remove', ariaLabel: tr('Throw {name} out', {'name': member.name}), onPressed: (_) {
+              _ask(tr('Do you want to throw {name} out of the Felgalizacija?', {'name': member.name}), () {
+                ledger.remove(member);
+                _flashes.removeWhere((f) => f.member == member);
+                changed();
+              });
+            })
+              ..append(svg('svg', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
+                svg('path', attrs: {'d': 'M6 6 L18 18 M18 6 L6 18'}),
+              ])),
           ],
         ]),
     ]);
@@ -357,6 +372,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     fill(paidPart, [
       if (anyone) ...[
         _arrow(),
+        el('h3', cls: 'felga-title', text: tr('Payments')),
         el('div', cls: 'felga-grid paid', children: [
           el('span'),
           el('span'),
@@ -381,25 +397,15 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         ]),
       ],
     ]);
-    // Club money: an amount above zero is added to the club, below zero spent
-    // from it; each is added up, and the box is empty again.
-    fill(clubPart, [
-      el('div', cls: 'felga-spent', children: [
-        el('span', text: tr('Club money')),
-        moneyBox(tr('Club money'), (cents) {
-          ledger.clubCents += cents;
-          changed();
-        }),
-        el('span', cls: 'felga-club-sum', text: formatEuro(ledger.clubCents)),
-      ]),
-      // Reset, asked twice: everything back to 0; what there was stays as a
-      // line "From ... to ...". One with the same days already there: add
-      // them up, or delete these for good?
+    // Reset, asked twice: the numbers above back to 0; the felgas by date
+    // stay, added up in a line "From ... to ..." (or added to the line of the
+    // same days, or deleted for good).
+    fill(resetPart, [
       button(tr('Reset'), cls: 'felga-reset-all', focusKey: 'felga-reset', onPressed: (_) {
         _ask(tr('Are you sure you want to reset all the data?'), () {
           _ask(
-              tr('Are you really 100% million billion percent sure you want to reset the data? '
-                  'The history will stay.'), () {
+              tr('Are you really 100% million billion percent sure? Only the Felgalizacija\'s numbers of now are '
+                  'reset: the felgas in the history are not deleted.'), () {
             void reset(FelgaResetKeep keep) {
               ledger.reset(DateTime.now(), keep: keep);
               _flashes.clear(); // no flash goes on over the zeros
@@ -420,34 +426,46 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         });
       }),
     ]);
-    // The history: each -1 / +1 since the last reset under the name and the
-    // day, with that day's felgas of the name, the latest at the top; at the
-    // very foot, on the right, a button for each reset ("From 01.11.2026 to
-    // 21.11.2026"), the latest first.
+    // Felgas by date: today's in the middle, under the day; under them, a
+    // little apart, each day before as a line "Felgas 23.11.2026" on the right
+    // (the latest first) that opens its names; then "History" and a line
+    // "From ... to ..." for each reset, the latest first.
     final days = ledger.currentDays, resets = ledger.periods;
+    final today = felgaDate(DateTime.now());
+    final byDate = _byDate(days);
+    final todays = byDate[today];
+    final earlier = [for (final e in byDate.entries) if (e.key != today) e];
+    // A line gone: saved; the part drawn again only if its list is empty now.
+    void gone() {
+      _save(ledger);
+      final left = _byDate(ledger.currentDays).keys.where((d) => d != today);
+      if (ledger.periods.isEmpty || left.isEmpty) refresh();
+    }
+
     fill(historyPart, [
       if (days.isNotEmpty || resets.isNotEmpty) ...[
         _arrow(),
         el('h3', cls: 'felga-title', text: tr('Felgas by date')),
         el('div', cls: 'felga-history', children: [
-          for (final MapEntry(key: date, value: names) in _byDate(days).entries) ...[
-            el('p', cls: 'felga-day-date', text: date),
-            el('div', cls: 'felga-grid history', children: [
-              for (final day in names) ...[
-                el('span', cls: 'felga-cell name', text: day.name),
-                el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
-                el('span', cls: 'felga-cell num', text: formatEuro(day.count * FelgaLedger.centsPerPoint)),
-              ],
-            ]),
+          if (todays != null) ...[
+            el('p', cls: 'felga-day-date', text: today),
+            _dayGrid(todays),
           ],
+          if (earlier.isNotEmpty)
+            el('div', cls: 'felga-days', children: [
+              for (final MapEntry(key: date, value: names) in earlier)
+                _dayLine(date, names, onDelete: () {
+                  ledger.deleteDay(date);
+                  gone();
+                }),
+            ]),
           if (resets.isNotEmpty)
             el('div', cls: 'felga-resets', children: [
+              el('p', cls: 'felga-history-label', text: tr('History')),
               for (final reset in resets)
                 _resetLine(reset, onDelete: () {
                   ledger.deletePeriod(reset);
-                  _save(ledger);
-                  // The last line gone: the history goes too.
-                  if (ledger.periods.isEmpty && ledger.currentDays.isEmpty) refresh();
+                  gone();
                 }),
             ]),
         ]),
@@ -457,16 +475,16 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   };
 
   refresh();
+  namesPart.classList.toggle('removing', _adding);
   if (_adding) openNameBox(focus: false);
   return el('main', cls: 'screen felga', children: [
-    _lockPart(_open.password),
-    moneyPart,
+    _topPart(moneyPart, _open.password),
     owesPart,
     namesPart,
     togglePart,
     newNamePart,
     paidPart,
-    clubPart,
+    resetPart,
     historyPart,
     // At the very foot, on the right: the whole Felgalizacija deleted, asked
     // three times; then the menu, with 10 s to undo it.
@@ -790,7 +808,7 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
 
   final panel = el('div', cls: 'felga-join');
 
-  void fillPanel({required bool focus}) {
+  void fillPanel({required bool focus, bool slide = false}) {
     final name = el('input', cls: 'felga-name-input', attrs: {
       'type': 'text',
       'maxlength': '30',
@@ -811,7 +829,7 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
       ctx.rerender();
     });
 
-    final password = el('input', cls: 'felga-pass-input', attrs: {
+    final password = el('input', cls: 'felga-name-input felga-pass-input', attrs: {
       'type': 'text',
       'maxlength': '10',
       'autocomplete': 'off',
@@ -819,7 +837,6 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
       'autocorrect': 'off',
       'spellcheck': 'false',
       'enterkeyhint': 'go',
-      'placeholder': tr('password'),
       'aria-label': tr('Password'),
     }) as web.HTMLInputElement;
     password.onKeyDown.listen((event) {
@@ -836,11 +853,16 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
       ctx.toast(tr('No Felgalizacija has this password.'));
     });
 
+    final inner = el('div', cls: 'felga-join-inner', children: [
+      el('div', cls: 'menu-btn felga-btn felga-naming', children: [lines('', name)]),
+      el('p', cls: 'felga-or', text: tr('Or')),
+      el('p', cls: 'felga-join-question', text: tr('Do you have a password to join?')),
+      password,
+    ]);
     panel
       ..textContent = ''
-      ..append(el('div', cls: 'felga-naming', children: [lines('', name)]))
-      ..append(el('p', cls: 'felga-join-question', text: tr('Do you have a password to join?')))
-      ..append(password);
+      ..append(inner);
+    if (slide) _slideOpen(inner);
     // At once, still in the press: so the phone's keyboard comes up.
     if (focus) name.focus();
   }
@@ -854,9 +876,10 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
     onToggle: (open) {
       _menuAdding = open;
       if (open) {
-        fillPanel(focus: true);
+        fillPanel(focus: true, slide: true);
       } else {
-        panel.textContent = '';
+        final inner = panel.firstElementChild;
+        if (inner != null) _slideShut(inner as web.HTMLElement);
       }
     },
   );
@@ -878,58 +901,63 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
   ];
 }
 
-/// At the top of a Felgalizacija: an arrow and a lock. Pressed, the arrow
-/// flies into the lock and the password shows under it; pressed, the password
-/// is copied ("Copied" shows for 1.5 s and fades away). It is hidden again once
-/// it is scrolled out of sight, or the page is left.
-web.HTMLElement _lockPart(String password) {
-  final part = el('div', cls: 'felga-lock-part');
-  StreamSubscription<web.Event>? watch;
-  void hide() {
-    watch?.cancel();
-    watch = null;
-    part.classList
-      ..remove('open')
-      ..remove('hit');
-  }
-
-  late final web.HTMLButtonElement shown;
-  final lock = button('', cls: 'felga-lock', ariaLabel: tr('Show the password'), onPressed: (_) {
-    if (part.classList.contains('hit')) return;
-    part.classList.add('hit');
-    Timer(Duration(milliseconds: wantsLessMotion ? 0 : 750), () {
-      if (!part.classList.contains('hit')) return;
-      part.classList.add('open');
-      watch = web.EventStreamProviders.scrollEvent.forTarget(web.window).listen((_) {
-        if (!part.isConnected) {
-          hide();
-          return;
-        }
-        final at = shown.getBoundingClientRect();
-        if (at.bottom < 0 || at.top > web.window.innerHeight) hide();
-      });
-    });
-  })
-    ..append(svg('svg', attrs: {'viewBox': '0 0 64 26', 'aria-hidden': 'true'}, children: [
-      svg('g', cls: 'lock-arrow', children: [
-        svg('path', attrs: {'d': 'M2 15 H27 M22 10.5 L27.5 15 L22 19.5 M2 11 L6 15 L2 19 M6 11 L10 15 L6 19'}),
-      ]),
-      svg('g', cls: 'lock-body', children: [
-        svg('path', attrs: {'d': 'M45 12 V8.5 a6 6 0 0 1 12 0 V12'}),
-        svg('rect', attrs: {'x': '41', 'y': '12', 'width': '20', 'height': '12', 'rx': '2.5'}),
-        svg('path', attrs: {'d': 'M51 16.5 V19.5'}),
-      ]),
-    ]));
-
-  shown = button(password, cls: 'felga-password', ariaLabel: tr('Copy the password'), onPressed: (_) {
+/// At the top, on the right: Money in the club and Owed to the club ([money]:
+/// the words end under each other, the amounts too, the € under the €), and
+/// under them "password" in small grey letters with a +. Either pressed, the
+/// + turns into an X and the password glides open under them (white, as
+/// small); pressed - or held for a second - it is copied ("Copied" shows for
+/// 1.5 s). The X takes it away at once.
+web.HTMLElement _topPart(web.HTMLElement money, String password) {
+  final box = el('div', cls: 'felga-pass-box');
+  void copyNow() {
     _copy(password);
     final note = el('span', cls: 'felga-copied', text: tr('Copied'), attrs: {'role': 'status'});
-    part.append(note);
+    box.append(note);
     Timer(const Duration(milliseconds: 1500), () => note.remove());
-  });
-  return part
-    ..append(lock)
-    ..append(shown);
+  }
+
+  void show(bool open) {
+    box.textContent = '';
+    if (!open) return;
+    Timer? hold;
+    var held = false;
+    final shown = button(password, cls: 'felga-password', ariaLabel: tr('Copy the password'), onPressed: (_) {
+      if (held) {
+        held = false; // copied already, by holding it
+        return;
+      }
+      copyNow();
+    });
+    const web.EventStreamProvider<web.Event>('pointerdown').forElement(shown).listen((_) {
+      held = false;
+      hold?.cancel();
+      hold = Timer(const Duration(seconds: 1), () {
+        held = true;
+        copyNow();
+      });
+    });
+    for (final end in const ['pointerup', 'pointerleave', 'pointercancel']) {
+      web.EventStreamProvider<web.Event>(end).forElement(shown).listen((_) => hold?.cancel());
+    }
+    web.EventStreamProviders.contextMenuEvent.forElement(shown).listen((event) => event.preventDefault());
+    final row = el('div', cls: 'felga-pass-row', children: [shown]);
+    box.append(row);
+    _slideOpen(row);
+  }
+
+  final plus = _turningPlus(
+    cls: 'felga-pass-plus',
+    focusKey: 'felga-pass',
+    open: false,
+    openLabel: tr('Hide the password'),
+    closedLabel: tr('Show the password'),
+    onToggle: show,
+  );
+  final word = button(tr('password'), cls: 'felga-pass-word', onPressed: (_) => plus.click());
+  return el('div', cls: 'felga-top', children: [
+    el('div', cls: 'felga-money', children: [money, word, plus]),
+    box,
+  ]);
 }
 
 /// Puts [text] on the clipboard.
@@ -973,52 +1001,39 @@ void _choose(String question, List<(String, void Function())> answers, {bool sec
   ]);
 }
 
-/// A reset in the history: a button "From 01.11.2026 to 21.11.2026" and an X
-/// right of it. The button opens (and closes) every name with their felgas,
-/// what they owed and what they paid, the most felgas first - it opens and
-/// closes in its place and nothing else on the page is drawn again, so
-/// nothing above it moves. The X asks, and the line goes in fireworks; the
-/// lines under it glide up into its place ([onDelete] takes it out of the
-/// book).
-web.HTMLElement _resetLine(FelgaPeriod reset, {required void Function() onDelete}) {
-  final totals = [...reset.totals]..sort((a, b) => b.felgas.compareTo(a.felgas));
-  web.HTMLElement numbers() => el('div', cls: 'felga-reset-totals', children: [
-        el('span'),
-        el('span', cls: 'felga-head felgas', text: 'Felga'),
-        el('span', cls: 'felga-head', text: tr('Owed')),
-        el('span', cls: 'felga-head', text: tr('Paid')),
-        for (final t in totals) ...[
-          el('span', cls: 'felga-cell name', text: t.name),
-          el('span', cls: 'felga-cell num felgas', text: '${t.felgas}'),
-          el('span', cls: 'felga-cell num', text: formatEuro(t.owedCents)),
-          el('span', cls: 'felga-cell num', text: formatEuro(t.paidCents)),
-        ],
-      ]);
-
-  final line = el('div', cls: 'felga-reset-line', attrs: {'data-reset': reset.id});
-  web.HTMLElement? shown = _openResets.contains(reset.id) ? numbers() : null;
+/// A line in the history, on the right: a button ([label]) and an X right of
+/// it. The button opens (and closes) [numbers] under it - in its place, and
+/// nothing else on the page is drawn again, so nothing above it moves. The X
+/// asks [question], and the line goes in fireworks; the lines under it glide
+/// up into its place ([onDelete] takes it out of the book).
+web.HTMLElement _recordLine({
+  required String id,
+  required String label,
+  required web.HTMLElement Function() numbers,
+  required String question,
+  required void Function() onDelete,
+}) {
+  final line = el('div', cls: 'felga-reset-line', attrs: {'data-reset': id});
+  web.HTMLElement? shown = _openResets.contains(id) ? numbers() : null;
   late final web.HTMLButtonElement open;
-  open = button(tr('From {from} to {to}', {'from': reset.from, 'to': reset.to}),
-      cls: 'felga-reset-link',
-      attrs: {'aria-expanded': '${shown != null}'},
-      onPressed: (_) {
-        final was = shown;
-        if (was == null) {
-          _openResets.add(reset.id);
-          final grown = numbers();
-          shown = grown;
-          line.append(grown);
-          _slideOpen(grown);
-        } else {
-          _openResets.remove(reset.id);
-          shown = null;
-          _slideShut(was);
-        }
-        open.setAttribute('aria-expanded', '${shown != null}');
-      });
+  open = button(label, cls: 'felga-reset-link', attrs: {'aria-expanded': '${shown != null}'}, onPressed: (_) {
+    final was = shown;
+    if (was == null) {
+      _openResets.add(id);
+      final grown = numbers();
+      shown = grown;
+      line.append(grown);
+      _slideOpen(grown);
+    } else {
+      _openResets.remove(id);
+      shown = null;
+      _slideShut(was);
+    }
+    open.setAttribute('aria-expanded', '${shown != null}');
+  });
   final cross = button('', cls: 'felga-reset-x', ariaLabel: tr('Delete this record'), onPressed: (_) {
-    _ask(tr('Do you want to delete this record from planet Earth forever, really 100%?'), () {
-      _openResets.remove(reset.id);
+    _ask(question, () {
+      _openResets.remove(id);
       _goInFireworks(line, onDelete);
     });
   })
@@ -1031,6 +1046,48 @@ web.HTMLElement _resetLine(FelgaPeriod reset, {required void Function() onDelete
   return line;
 }
 
+/// A reset: "From 01.11.2026 to 21.11.2026"; opened, every name with their
+/// felgas, what they owed and what they paid, the most felgas first.
+web.HTMLElement _resetLine(FelgaPeriod reset, {required void Function() onDelete}) {
+  final totals = [...reset.totals]..sort((a, b) => b.felgas.compareTo(a.felgas));
+  return _recordLine(
+    id: reset.id,
+    label: tr('From {from} to {to}', {'from': reset.from, 'to': reset.to}),
+    numbers: () => el('div', cls: 'felga-reset-totals', children: [
+      el('span'),
+      el('span', cls: 'felga-head felgas', text: 'Felga'),
+      el('span', cls: 'felga-head', text: tr('Owed')),
+      el('span', cls: 'felga-head', text: tr('Paid')),
+      for (final t in totals) ...[
+        el('span', cls: 'felga-cell name', text: t.name),
+        el('span', cls: 'felga-cell num felgas', text: '${t.felgas}'),
+        el('span', cls: 'felga-cell num', text: formatEuro(t.owedCents)),
+        el('span', cls: 'felga-cell num', text: formatEuro(t.paidCents)),
+      ],
+    ]),
+    question: tr('Do you want to delete this record from planet Earth forever, really 100%?'),
+    onDelete: onDelete,
+  );
+}
+
+/// A day before today: "Felgas 23.11.2026"; opened, its names.
+web.HTMLElement _dayLine(String date, List<FelgaDay> names, {required void Function() onDelete}) => _recordLine(
+      id: 'day:$date',
+      label: tr('Felgas {date}', {'date': date}),
+      numbers: () => _dayGrid(names),
+      question: tr('Are you sure you want to delete the felgas of {date}?', {'date': date}),
+      onDelete: onDelete,
+    );
+
+/// A day's names, the most felgas first: name, felgas, what they cost.
+web.HTMLElement _dayGrid(List<FelgaDay> names) => el('div', cls: 'felga-grid history', children: [
+      for (final day in names) ...[
+        el('span', cls: 'felga-cell name', text: day.name),
+        el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
+        el('span', cls: 'felga-cell num', text: formatEuro(day.count * FelgaLedger.centsPerPoint)),
+      ],
+    ]);
+
 /// [box] (just put in) grows from nothing to its height.
 void _slideOpen(web.HTMLElement box) {
   if (wantsLessMotion) return;
@@ -1041,10 +1098,10 @@ void _slideOpen(web.HTMLElement box) {
     ..opacity = '0';
   box.getBoundingClientRect(); // so that the start is drawn
   box.style
-    ..transition = 'height 260ms ease, opacity 260ms ease'
+    ..transition = 'height 420ms cubic-bezier(0.4, 0, 0.2, 1), opacity 420ms ease'
     ..height = '${height}px'
     ..opacity = '1';
-  Timer(const Duration(milliseconds: 280), () {
+  Timer(const Duration(milliseconds: 440), () {
     box.style
       ..transition = ''
       ..height = ''
@@ -1063,10 +1120,10 @@ void _slideShut(web.HTMLElement box) {
     ..height = '${box.getBoundingClientRect().height}px';
   box.getBoundingClientRect();
   box.style
-    ..transition = 'height 220ms ease, opacity 220ms ease'
+    ..transition = 'height 360ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms ease'
     ..height = '0px'
     ..opacity = '0';
-  Timer(const Duration(milliseconds: 240), () => box.remove());
+  Timer(const Duration(milliseconds: 380), () => box.remove());
 }
 
 /// A deleted reset: fireworks round [line] as it fades out; then it goes

@@ -86,7 +86,7 @@ DateTime? _readDate(String date) {
 /// what each has paid, and the club's money: everything paid, with what was
 /// added to it or spent from it.
 class FelgaLedger {
-  FelgaLedger({List<FelgaMember>? members, this.clubCents = 0, List<FelgaDay>? history, List<FelgaPeriod>? periods})
+  FelgaLedger({List<FelgaMember>? members, this.leftCents = 0, List<FelgaDay>? history, List<FelgaPeriod>? periods})
       : members = members ?? [],
         history = history ?? [],
         periods = periods ?? [];
@@ -96,9 +96,9 @@ class FelgaLedger {
 
   final List<FelgaMember> members;
 
-  /// "Club money": every amount entered for the club, added up - below zero
-  /// spent, above zero added.
-  int clubCents;
+  /// What the names taken out of the Felgalizacija had paid: it stays in the
+  /// club's money.
+  int leftCents;
 
   /// The history since the last reset: one line for each name and day -
   /// every -1 and +1 of that day added up in it - the latest -1 / +1 first.
@@ -162,8 +162,20 @@ class FelgaLedger {
         ..points = 0
         ..paidCents = 0;
     }
-    clubCents = 0;
+    leftCents = 0;
   }
+
+  /// Takes [member] out: gone from the lists, still in the history; what
+  /// they paid stays in the club's money, and what they still owed is owed to
+  /// the club no more.
+  void remove(FelgaMember member) {
+    if (!members.remove(member)) return;
+    leftCents += member.paidCents;
+  }
+
+  /// Takes the felgas of [date] (dd.mm.yyyy) out of the history; nobody's
+  /// felgas change.
+  void deleteDay(String date) => history.removeWhere((d) => d.date == date);
 
   /// Takes [period] out of the history for good.
   void deletePeriod(FelgaPeriod period) => periods.remove(period);
@@ -205,8 +217,8 @@ class FelgaLedger {
   int get owedTotalCents => members.fold(0, (sum, m) => sum + debtCents(m));
 
   /// "Money in the club now": everything paid in, with whatever was entered
-  /// as club money ([clubCents]: above zero added, below zero spent).
-  int get currentCents => totalCents + clubCents;
+  /// by names since taken out ([leftCents]).
+  int get currentCents => totalCents + leftCents;
 
   /// The members by points, most first (equal points keep the order they were
   /// added in).
@@ -226,7 +238,7 @@ class FelgaLedger {
   }
 
   String toJson() => jsonEncode({
-        'club': clubCents,
+        'left': leftCents,
         'members': [
           for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents},
         ],
@@ -285,8 +297,8 @@ class FelgaLedger {
         ));
       }
       return FelgaLedger(
-        // Before "Club money" it was what was spent: that much below zero.
-        clubCents: (data['club'] as num?)?.toInt() ?? -((data['spent'] as num?)?.toInt() ?? 0),
+        // "Club money" (kept as 'club' or 'spent') is no more: left out.
+        leftCents: (data['left'] as num?)?.toInt() ?? 0,
         members: [
           for (final m in (data['members'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
             FelgaMember(m['name'] as String,

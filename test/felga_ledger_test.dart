@@ -18,7 +18,7 @@ void main() {
     expect(formatEuro(FelgaLedger.owedCents(miha)), '2,5€');
   });
 
-  test('debt is what is owed less what was paid; the club has what was paid, with what was added or spent', () {
+  test('debt is what is owed less what was paid; the club has what was paid', () {
     final ledger = FelgaLedger()..add('Riko');
     final riko = ledger.members.single..points = 3;
     riko.paidCents += parseEuroCents('1')!;
@@ -27,11 +27,8 @@ void main() {
     expect(formatEuro(FelgaLedger.debtCents(riko)), '2,5€');
     riko.paidCents += parseEuroCents('10')!;
     expect(formatEuro(FelgaLedger.debtCents(riko)), '-7,5€', reason: 'paid more than owed');
-    ledger.clubCents += parseEuroCents('-3,25')!; // spent
     expect(formatEuro(ledger.totalCents), '9€');
-    expect(formatEuro(ledger.currentCents), '5,75€');
-    ledger.clubCents += parseEuroCents('10')!; // added
-    expect(formatEuro(ledger.currentCents), '15,75€');
+    expect(formatEuro(ledger.currentCents), '9€');
     // Total money in the club: what everyone still owes (Riko paid 7,5 more).
     ledger
       ..add('Miha')
@@ -114,12 +111,12 @@ void main() {
       ..step(riko, 1, tuesday)
       ..step(miha, -1, tuesday);
     riko.paidCents = 100;
-    ledger.clubCents = -300;
+    ledger.leftCents = 300;
     expect(ledger.sameDaysAs(tuesday), isNull);
     ledger.reset(tuesday);
     expect([for (final m in ledger.members) m.points], [0, 0, 0]);
     expect([for (final m in ledger.members) m.paidCents], [0, 0, 0]);
-    expect(ledger.clubCents, 0);
+    expect(ledger.leftCents, 0);
     expect(ledger.members.map((m) => m.name), ['Riko', 'Miha', 'Sin'], reason: 'the names stay');
     expect(ledger.history, isEmpty, reason: 'the days are gone');
     String totals(FelgaPeriod p) => p.totals.map((t) => '${t.name} ${t.felgas} ${t.owedCents} ${t.paidCents}').join(', ');
@@ -184,7 +181,7 @@ void main() {
   test('it is kept and read back', () {
     final ledger = FelgaLedger()
       ..add('Riko')
-      ..clubCents = -1250;
+      ..leftCents = 1250;
     ledger.members.single
       ..points = 4
       ..paidCents = 300;
@@ -192,9 +189,45 @@ void main() {
     expect(back.members.single.name, 'Riko');
     expect(back.members.single.points, 4);
     expect(back.members.single.paidCents, 300);
-    expect(back.clubCents, -1250);
+    expect(back.leftCents, 1250);
     expect(FelgaLedger.fromJson('nonsense').members, isEmpty);
-    // Saved before "Club money": what was spent comes back below zero.
-    expect(FelgaLedger.fromJson('{"spent": 400, "members": []}').clubCents, -400);
+    // "Club money" kept before is left out.
+    expect(FelgaLedger.fromJson('{"club": -400, "spent": 400, "members": []}').leftCents, 0);
+  });
+
+  test('a name taken out: gone from the lists, its days stay; its money stays in the club, its debt goes', () {
+    final ledger = FelgaLedger()
+      ..add('Riko')
+      ..add('Miha');
+    final [riko, miha] = ledger.members;
+    final day = DateTime(2026, 11, 24);
+    ledger
+      ..step(riko, 1, day)
+      ..step(riko, 1, day)
+      ..step(miha, 1, day)
+      ..step(miha, 1, day)
+      ..step(miha, 1, day);
+    riko.paidCents = 100;
+    miha.paidCents = 50; // owes 1€ more
+    expect(formatEuro(ledger.currentCents), '1,5€');
+    expect(formatEuro(ledger.owedTotalCents), '1€');
+    ledger.remove(miha);
+    expect(ledger.members.map((m) => m.name), ['Riko']);
+    expect(formatEuro(ledger.currentCents), '1,5€', reason: 'the money in the club is the same');
+    expect(formatEuro(ledger.owedTotalCents), '0€', reason: 'what Miha owed is owed no more');
+    expect(ledger.history.map((d) => '${d.name} ${d.count}'), ['Miha 3', 'Riko 2'], reason: 'the history stays');
+    final back = FelgaLedger.fromJson(ledger.toJson());
+    expect(back.currentCents, ledger.currentCents);
+  });
+
+  test('a day is taken out of the history; the felgas stay', () {
+    final ledger = FelgaLedger()..add('Riko');
+    final riko = ledger.members.single;
+    ledger
+      ..step(riko, 1, DateTime(2026, 11, 23))
+      ..step(riko, 1, DateTime(2026, 11, 24))
+      ..deleteDay('23.11.2026');
+    expect(ledger.history.map((d) => d.date), ['24.11.2026']);
+    expect(riko.points, 2);
   });
 }

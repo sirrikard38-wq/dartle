@@ -1595,3 +1595,75 @@ body.money-pad-open { padding-bottom: 240px; }
   background: var(--white); color: var(--ink); border: 0; border-radius: 6px; padding: 6px 12px;
   font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
 }
+
+/* Welcome: the name box looks the same with the cursor in it or not - it does
+   not light up a moment after the screen shows. */
+.name-input:focus { border-color: var(--line-strong); }
+
+/* The menu's buttons: no glow left on one (a phone keeps a "hover" where a
+   finger was); pressed, a very light fill and a push down of a few mm, both
+   gone as soon as it is let go. */
+.menu-btn:hover { background: transparent; }
+@media (hover: hover) { .menu-btn:hover { background: #121212; } }
+.menu-btn { transition: transform 180ms ease-out, background-color 180ms ease-out; }
+.menu-btn:active { transform: translateY(6px); background: rgba(255, 255, 255, 0.06); transition-duration: 60ms; }
+
+/* The + turns into an X: a quarter turn and a half (45 degrees), and back. */
+.turning-plus.open svg { transform: rotate(45deg); }
+
+/* The top of a Felgalizacija, on the right: Money in the club, Owed to the
+   club, and "password" with a + - the words end under each other, the
+   amounts too (€ under €, the + under them). */
+.felga-top { align-self: stretch; display: flex; flex-direction: column; align-items: flex-end; margin: 12px 5mm 0; position: relative; }
+.felga-money-rows { display: contents; }
+.felga-top .felga-money { margin: 0; justify-content: end; align-items: center; column-gap: 12px; row-gap: 4px; }
+.felga-pass-word {
+  justify-self: end; background: none; border: 0; padding: 2px 0; color: var(--muted);
+  font: inherit; font-size: 0.75rem; letter-spacing: 0.06em; cursor: pointer;
+}
+.felga-pass-plus {
+  justify-self: end; width: 22px; height: 22px; padding: 2px; margin-right: -3px; border: 0; background: none;
+  color: var(--fg); cursor: pointer;
+}
+.felga-pass-plus svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.felga-pass-box { position: relative; display: flex; flex-direction: column; align-items: flex-end; }
+.felga-pass-row { display: flex; justify-content: flex-end; }
+.felga-top .felga-password {
+  display: block; margin: 2px 0 0; padding: 2px 0; border: 0; border-radius: 0; background: none; color: var(--white);
+  font-family: inherit; font-size: 0.75rem; letter-spacing: 0.06em; cursor: pointer;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.felga-top .felga-copied { left: auto; right: 0; transform: none; }
+
+/* The names: an empty column left and the x column right (seen only while
+   the + is open), the same width, so the names stay in the middle. */
+.felga-names { grid-template-columns: 30px auto auto auto 30px; }
+.felga-remove {
+  width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  visibility: hidden; opacity: 0; transition: opacity 300ms ease, visibility 0s linear 300ms;
+}
+.felga-remove svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.felga-part.removing .felga-remove { visibility: visible; opacity: 1; transition: opacity 300ms ease; }
+.felga-remove:active { color: var(--fg); }
+
+/* The menu, a new Felgalizacija: a Felgalizacija button with a line for the
+   name in it, "Or", the question and a line for the password. */
+.felga-join { display: block; }
+.felga-join-inner { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.felga-join-inner > .felga-naming { cursor: default; }
+.felga-join-inner > .felga-naming:active { transform: none; background: transparent; }
+.felga-or { margin: 8px 0 0; text-align: center; color: var(--muted); }
+.felga-join-inner .felga-join-question { margin: 0; }
+.felga-join-inner .felga-pass-input {
+  align-self: center; width: 12ch; padding: 2px 4px; border: 0; border-bottom: 2px solid var(--fg); border-radius: 0;
+  background: none; letter-spacing: 0.06em;
+}
+
+/* Felgas by date: today's in the middle; a little apart, the days before on
+   the right, each "Felgas 23.11.2026" with an X; then "History" in grey on
+   the right and the resets. */
+.felga-history { width: calc(100% - 10mm); max-width: none; }
+.felga-days { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 30px; }
+.felga-history > .felga-days:first-child, .felga-history > .felga-resets:first-child { margin-top: 0; }
+.felga-history-label { margin: 0 0 2px; color: var(--muted); text-align: right; font-size: 0.85rem; letter-spacing: 0.06em; }
