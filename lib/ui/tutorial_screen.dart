@@ -557,8 +557,9 @@ web.HTMLElement _numberSpacer() =>
 /// calculator deals it - now and then one with no checkout, for the "No
 /// checkout" button - and played the same way: the boxes, what is left, the
 /// board with S, D and T, Undo. The last dart is judged at once and the answer
-/// shows as on the calculator's result screen, with Next checkout and Replay
-/// checkout. No points and nothing saved.
+/// shows as on the calculator's result screen, with Replay and Next - which
+/// are not there while it is played: the board has their room. No points and
+/// nothing saved.
 List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
   final challenge = session.practice;
 
@@ -568,8 +569,8 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
     ctx.rerender();
   }
 
-  // Always at the foot, while playing and after: another number, or this one
-  // again from the first dart.
+  // At the foot of the answer: this number again from the first dart, or
+  // another one.
   final actions = el('div', cls: 'practice-actions', children: [
     button(tr('Replay'), cls: 'cta secondary', focusKey: 'replay', onPressed: (_) => again(session.replay)),
     button(tr('Next'), cls: 'cta', focusKey: 'next', onPressed: (_) => again(session.newQuestion)),
@@ -648,7 +649,6 @@ List<web.HTMLElement> _practice(ViewContext ctx, TutorialSession session) {
       },
       onNoCheckout: (kb) => again(session.pressNoCheckout),
     ),
-    actions,
   ];
 }
 

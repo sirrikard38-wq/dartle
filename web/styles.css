@@ -1018,7 +1018,7 @@ summary { cursor: pointer; color: var(--muted); }
    phone); the board then takes all the room that is left (a size container:
    its width follows the room's height and width); Next checkout and Replay
    checkout stand at the foot. Nothing scrolls. */
-.tutorial-page:has(> .practice-actions) { overflow: hidden; justify-content: flex-start; }
+.tutorial-page:has(> .practice-actions), .tutorial-page:has(> .board-view) { overflow: hidden; justify-content: flex-start; }
 .tutorial-page:has(> .board-view) {
   --tile: min(17vw, clamp(46px, 8vh, 72px));
   --tile: min(17vw, clamp(46px, 8dvh, 72px));
