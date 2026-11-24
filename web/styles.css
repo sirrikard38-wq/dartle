@@ -1335,8 +1335,6 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .felga-arrow svg { flex: none; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .felga-arrow .arrow-feathers { width: 30px; }
-.felga-arrow .arrow-point { width: 18px; }
-.felga-arrow .arrow-point path { fill: currentColor; }
 .felga-arrow .arrow-shaft { flex: 1; height: 2px; background: currentColor; }
 /* The lists: in the middle, the columns apart and as wide as their widest
    number can get (so a new point moves nothing). */
@@ -1463,7 +1461,7 @@ body.money-pad-open { padding-bottom: 240px; }
   animation: felga-glow 1.5s ease-out both; animation-delay: inherit;
 }
 /* The history under Club money: name, day, that day's felgas. */
-.felga-grid.history { grid-template-columns: auto auto minmax(4ch, auto); margin-top: 0; }
+.felga-grid.history { grid-template-columns: auto minmax(3ch, auto) minmax(6ch, auto); margin-top: 0; }
 .felga-cell.date { color: var(--muted); }
 /* Reset, under Club money. */
 .felga-reset-all {
@@ -1543,3 +1541,57 @@ body.money-pad-open { padding-bottom: 240px; }
 /* The answer with one board: its favorite dart further out from the board,
    beside its top right, not on the numbers. */
 .practice-result .result-boards .board-figure:only-child .fav-btn { top: -6cqw; right: -11cqw; }
+/* Welcome: "by PK Normal" ends right under the end of DARTLE (DARTLE's last
+   0.2em is its letter spacing). */
+.welcome .intro .i2 { text-align: right; padding-right: calc(0.2 * clamp(3rem, 16vw, 5.5rem)); }
+
+/* Practice's answer: the number as big and in the very place it is while it
+   is played (and in every other part); the verdict over it in the room of
+   the line "Finish on a double or Bull.". */
+.screen.tutorial .practice-result > .headline {
+  margin: 2px auto 4px; height: calc(0.9rem * 1.35); line-height: calc(0.9rem * 1.35); font-size: 1.2rem; flex: none;
+}
+.screen.tutorial .practice-result > .target.small {
+  font-size: clamp(3rem, 9vh, 6.5rem); font-size: clamp(3rem, 9dvh, 6.5rem);
+  line-height: 1; margin: 0 0 6px; flex: none;
+}
+@media (max-height: 780px) {
+  .screen.tutorial .practice-result > .headline { margin: 0 auto 2px; }
+  .screen.tutorial .practice-result > .target.small {
+    font-size: clamp(2.6rem, 7vh, 6.5rem); font-size: clamp(2.6rem, 7dvh, 6.5rem); margin-bottom: 2px;
+  }
+}
+
+/* Practice: S, D and T right at the edges of the screen, and the board
+   between them as big as it goes - its numbers 4px from them at the least.
+   Above and below its numbers the board has empty room of its own, which may
+   reach out of its row. */
+.screen.tutorial .tutorial-page:has(> .board-view) > .board-view { padding-left: 2px; padding-right: 2px; }
+.screen.tutorial .tutorial-page:has(> .board-view) .board-wrap.sided .dartboard {
+  --size: min((100cqw - 2 * var(--side-w) - 12px) * 400 / 366, 100cqh * 400 / 368, 440px);
+  width: var(--size); height: var(--size); flex: none;
+  margin: calc((100cqh - var(--size)) / 2) calc((100cqw - 2 * var(--side-w) - var(--size)) / 2);
+}
+
+/* Felgas by date: each day once, in grey, and its names under it. */
+.felga-day-date { margin: 14px 0 8px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.felga-history > .felga-day-date:first-child { margin-top: 0; }
+
+/* Delete Felgalizacija: red and underlined, at the foot on the right. */
+.felga-delete {
+  display: block; margin: 36px 5mm 10px auto; padding: 6px 0; background: none; border: 0;
+  color: #ff4a4a; text-decoration: underline; text-underline-offset: 3px; font-size: 0.9rem; cursor: pointer;
+}
+/* "Felgalizacija deleted" with Undo, at the foot for 10 s. */
+.undo-bar {
+  position: fixed; left: 50%; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px; width: max-content; max-width: 92vw;
+  background: var(--ink); color: var(--white); border: 2px solid var(--white); border-radius: 8px;
+  padding: 8px 10px 8px 16px; font-weight: 700; z-index: 40; opacity: 0; transition: opacity 400ms ease-out;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+}
+.undo-bar.show { opacity: 1; transition: opacity 150ms ease-out; }
+.undo-btn {
+  background: var(--white); color: var(--ink); border: 0; border-radius: 6px; padding: 6px 12px;
+  font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
+}

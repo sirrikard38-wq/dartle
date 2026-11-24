@@ -430,14 +430,16 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         _arrow(),
         el('h3', cls: 'felga-title', text: tr('Felgas by date')),
         el('div', cls: 'felga-history', children: [
-          if (days.isNotEmpty)
+          for (final MapEntry(key: date, value: names) in _byDate(days).entries) ...[
+            el('p', cls: 'felga-day-date', text: date),
             el('div', cls: 'felga-grid history', children: [
-              for (final day in days) ...[
+              for (final day in names) ...[
                 el('span', cls: 'felga-cell name', text: day.name),
-                el('span', cls: 'felga-cell date', text: day.date),
                 el('span', cls: 'felga-cell num felgas', text: '${day.count}'),
+                el('span', cls: 'felga-cell num', text: formatEuro(day.count * FelgaLedger.centsPerPoint)),
               ],
             ]),
+          ],
           if (resets.isNotEmpty)
             el('div', cls: 'felga-resets', children: [
               for (final reset in resets)
@@ -466,7 +468,92 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     paidPart,
     clubPart,
     historyPart,
+    // At the very foot, on the right: the whole Felgalizacija deleted, asked
+    // three times; then the menu, with 10 s to undo it.
+    button(tr('Delete Felgalizacija'), cls: 'felga-delete', focusKey: 'felga-delete', onPressed: (_) {
+      _ask(tr('Are you sure you want to delete this Felgalizacija?'), () {
+        _ask(tr('Are you really sure? Everything in it will be gone.'), () {
+          _ask(
+              tr('Are you really, like, a hundred thousand million percent sure you want to delete the whole '
+                  'Felgalizacija of the entire club forever, with no way back, all the history you had together?'),
+              () => _deleteOpen(ctx));
+        });
+      });
+    }),
   ]);
+}
+
+/// The days of [days] (the latest first), each with its names, the most
+/// felgas first.
+Map<String, List<FelgaDay>> _byDate(List<FelgaDay> days) {
+  final byDate = <String, List<FelgaDay>>{};
+  for (final day in days) {
+    (byDate[day.date] ??= []).add(day);
+  }
+  for (final names in byDate.values) {
+    names.sort((a, b) => b.count.compareTo(a.count));
+  }
+  return byDate;
+}
+
+/// Deletes the Felgalizacija open - its book and its place in the list - and
+/// goes to the menu, where "Felgalizacija deleted" shows for 10 s with Undo,
+/// which brings it all back. Not undone, it is gone for good.
+void _deleteOpen(ViewContext ctx) {
+  final list = felgaList();
+  final entry = _open;
+  final index = list.indexWhere((e) => e.id == entry.id);
+  final others = {for (final e in list) if (e.id != entry.id) e.id};
+  String? book;
+  try {
+    book = web.window.localStorage.getItem(entry.storageKey);
+    web.window.localStorage.removeItem(entry.storageKey);
+    web.window.sessionStorage.removeItem(_openKey);
+  } on Object {
+    // Kept for this visit only.
+  }
+  _saveList([for (final e in list) if (e.id != entry.id) e]);
+  _ledger = null;
+  _ledgerId = null;
+  _flashes.clear();
+  _openResets.clear();
+  _adding = false;
+  ctx.showPage(MenuPage.home);
+  _undoBar(tr('Felgalizacija deleted'), () {
+    // The one made in its place when it was the last is not kept.
+    final now = [for (final e in felgaList()) if (others.contains(e.id)) e];
+    now.insert(math.max(0, math.min(index, now.length)), entry);
+    _saveList(now);
+    try {
+      if (book != null) web.window.localStorage.setItem(entry.storageKey, book);
+    } on Object {
+      // Kept for this visit only.
+    }
+    _ledger = null;
+    _ledgerId = null;
+    ctx.rerender();
+  });
+}
+
+/// At the foot of the screen for 10 s: [message] and Undo ([undo] runs).
+void _undoBar(String message, void Function() undo) {
+  final bar = el('div', cls: 'undo-bar', attrs: {'role': 'status', 'aria-live': 'polite'});
+  late final Timer timer;
+  void gone() {
+    bar.classList.remove('show');
+    Timer(const Duration(milliseconds: 450), () => bar.remove());
+  }
+
+  bar
+    ..append(el('span', text: message))
+    ..append(button(tr('Undo'), cls: 'undo-btn', onPressed: (_) {
+      timer.cancel();
+      gone();
+      undo();
+    }));
+  web.document.body!.append(bar);
+  Timer(const Duration(milliseconds: 16), () => bar.classList.add('show'));
+  timer = Timer(const Duration(seconds: 10), gone);
 }
 
 /// The number keys of the money boxes, the page's own (a phone keyboard cannot
@@ -1047,10 +1134,7 @@ web.HTMLElement _sparks({bool inward = false, Duration age = Duration.zero}) => 
 /// feathers on the left, the point on the right. It parts the sections.
 web.HTMLElement _arrow() => el('div', cls: 'felga-arrow', attrs: {'aria-hidden': 'true'}, children: [
       svg('svg', cls: 'arrow-feathers', attrs: {'viewBox': '0 0 30 20'}, children: [
-        svg('path', attrs: {'d': 'M1 3 L10 10 L1 17 M9 3 L18 10 L9 17 M17 3 L26 10 L17 17 M10 10 H30'}),
+        svg('path', attrs: {'d': 'M1 1 L29 10 L1 19 L12 10 Z M12 10 H30'}),
       ]),
       el('span', cls: 'arrow-shaft'),
-      svg('svg', cls: 'arrow-point', attrs: {'viewBox': '0 0 18 20'}, children: [
-        svg('path', attrs: {'d': 'M0 10 H4 M0 3 L18 10 L0 17 L5 10 Z'}),
-      ]),
     ]);

@@ -9,8 +9,8 @@ import 'dom.dart';
 import 'update_reload.dart';
 import 'view_context.dart';
 
-/// Shown every time the app opens: DARTLE and "Checkout calculator by PK
-/// Normal" fade in one after another, then give way to "Welcome" with a name
+/// Shown every time the app opens: DARTLE and "by PK Normal" (its last letter
+/// under DARTLE's last) fade in one after another, then give way to "Welcome" with a name
 /// box. Enter (or the dart button) continues to the menu. Tap to skip.
 web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
   final game = ctx.game;
@@ -59,7 +59,7 @@ web.HTMLElement buildWelcomeScreen(ViewContext ctx) {
     // Fade in from nothing, one after the other; no movement.
     el('div', cls: 'intro', children: [
       el('h1', cls: 'i1', text: 'DARTLE'),
-      el('p', cls: 'i2', text: tr('Checkout calculator by PK Normal')),
+      el('p', cls: 'i2', text: tr('by PK Normal')),
     ]),
     el('div', cls: 'form', children: [
       el('h2', text: tr('Welcome')),
