@@ -1,7 +1,9 @@
 name: Deploy site
 
 # Tests the code, builds the static site (dart run tool/build.dart) and
-# publishes build/ to GitHub Pages on every push to main.
+# publishes build/ to GitHub Pages on every push to main. Built and published
+# in two jobs, as GitHub advises: published in the same job, the upload was
+# at times not found yet ("No artifacts named github-pages").
 on:
   push:
     branches: [main]
@@ -12,16 +14,14 @@ permissions:
   pages: write
   id-token: write
 
+# One publish at a time; one already running is not cut off.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
@@ -35,5 +35,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
