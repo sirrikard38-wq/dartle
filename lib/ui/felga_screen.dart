@@ -1717,83 +1717,156 @@ web.HTMLElement _dayGrid(List<FelgaDay> names, int price) => el('div', cls: 'fel
       ],
     ]);
 
-/// [box] (just put in) grows from nothing to its height.
-void _slideOpen(web.HTMLElement box) {
-  if (wantsLessMotion) return;
-  final at = web.window.getComputedStyle(box);
-  final room = (top: at.marginTop, bottom: at.marginBottom, padTop: at.paddingTop, padBottom: at.paddingBottom);
-  final height = box.getBoundingClientRect().height;
-  _softEdge(box, true);
-  box.style
-    ..overflow = 'hidden'
-    ..height = '0px'
-    ..marginTop = '0px'
-    ..marginBottom = '0px'
-    ..paddingTop = '0px'
-    ..paddingBottom = '0px'
-    ..opacity = '0';
-  box.getBoundingClientRect(); // so that the start is drawn
-  box.style
-    ..transition = _slideTransition(420)
-    ..height = '${height}px'
-    ..marginTop = room.top
-    ..marginBottom = room.bottom
-    ..paddingTop = room.padTop
-    ..paddingBottom = room.padBottom
-    ..opacity = '1';
-  Timer(const Duration(milliseconds: 440), () {
-    box.style
-      ..transition = ''
-      ..height = ''
-      ..marginTop = ''
-      ..marginBottom = ''
-      ..paddingTop = ''
-      ..paddingBottom = ''
-      ..overflow = '';
-    _softEdge(box, false);
+// Gliding open and shut, smoothly also on a slow phone: the page is laid out
+// once, at the start - the box is at once at its full height (or out) - and
+// what changes while it glides is only drawn, never laid out again: what is
+// under it slides into place (`translate`), the box is uncovered from the
+// top down (its mask grows, with a soft lower edge) and fades in (opacity).
+// (Growing its height instead lays the whole page out on every frame, and a
+// phone then shows only a few of them: 25%, 50%, 100%.)
+
+const int _openMs = 420, _shutMs = 360;
+const String _glide = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+/// The soft lower edge of the uncovered part of a box, px.
+const double _softPx = 18;
+
+/// What is after [box] on the page and moves when it comes or goes: the
+/// boxes after it, and after each box it is in (not the fixed or floating
+/// ones).
+List<web.HTMLElement> _under(web.HTMLElement box) {
+  final out = <web.HTMLElement>[];
+  web.Element? at = box;
+  while (at != null && at != web.document.body && at != web.document.documentElement) {
+    for (var next = at.nextElementSibling; next != null; next = next.nextElementSibling) {
+      final position = web.window.getComputedStyle(next).position;
+      if (position != 'fixed' && position != 'absolute') out.add(next as web.HTMLElement);
+    }
+    at = at.parentElement;
+  }
+  return out;
+}
+
+List<double> _tops(List<web.HTMLElement> boxes) => [for (final b in boxes) b.getBoundingClientRect().top];
+
+/// [boxes] drawn [from] px away (each its own) from where they are, then
+/// gliding to their place over [ms].
+void _slideIntoPlace(List<web.HTMLElement> boxes, List<double> from, int ms) {
+  final moving = <web.HTMLElement>[];
+  for (var i = 0; i < boxes.length; i++) {
+    if (from[i].abs() < 0.5) continue;
+    boxes[i].style
+      ..transition = 'none'
+      ..setProperty('translate', '0 ${from[i]}px');
+    moving.add(boxes[i]);
+  }
+  if (moving.isEmpty) return;
+  web.document.body?.getBoundingClientRect(); // the start is drawn first
+  for (final b in moving) {
+    b.style
+      ..transition = 'translate ${ms}ms $_glide'
+      ..setProperty('translate', '0 0');
+  }
+  Timer(Duration(milliseconds: ms + 30), () {
+    for (final b in moving) {
+      b.style
+        ..transition = ''
+        ..removeProperty('translate');
+    }
   });
 }
 
-/// Height, margins, padding and opacity, gliding over [ms].
-String _slideTransition(int ms) => [
-      for (final p in const ['height', 'margin-top', 'margin-bottom', 'padding-top', 'padding-bottom'])
-        '$p ${ms}ms cubic-bezier(0.4, 0, 0.2, 1)',
-      'opacity ${ms}ms ease',
-    ].join(', ');
-
-/// While [box] glides open or shut its lower edge is soft (it fades out over
-/// its last 18px), so nothing seems to come out from behind a sharp edge.
-void _softEdge(web.HTMLElement box, bool on) {
-  const fade = 'linear-gradient(to bottom, #000 0, #000 calc(100% - 18px), transparent 100%)';
-  for (final name in const ['mask-image', '-webkit-mask-image']) {
-    if (on) {
-      box.style.setProperty(name, fade);
-    } else {
-      box.style.removeProperty(name);
+/// [box]'s mask: uncovered from the top down to [px] (its lower 18 px soft).
+void _mask(web.HTMLElement box, double? px) {
+  for (final prefix in const ['', '-webkit-']) {
+    if (px == null) {
+      for (final p in const ['mask-image', 'mask-size', 'mask-repeat', 'mask-position']) {
+        box.style.removeProperty('$prefix$p');
+      }
+      continue;
     }
+    box.style
+      ..setProperty('${prefix}mask-image', 'linear-gradient(to bottom, #000 calc(100% - ${_softPx}px), transparent 100%)')
+      ..setProperty('${prefix}mask-repeat', 'no-repeat')
+      ..setProperty('${prefix}mask-position', '0 0')
+      ..setProperty('${prefix}mask-size', '100% ${px}px');
   }
 }
 
-/// [box] shrinks to nothing and goes.
+String _maskTransition(int ms) =>
+    'mask-size ${ms}ms $_glide, -webkit-mask-size ${ms}ms $_glide, opacity ${ms}ms ease-out';
+
+/// [box] (just put in) comes in: uncovered from the top down and fading in,
+/// while what is under it glides down to make room.
+void _slideOpen(web.HTMLElement box) {
+  if (wantsLessMotion) return;
+  final under = _under(box);
+  final now = _tops(under);
+  final shown = box.style.display;
+  box.style.display = 'none';
+  final before = _tops(under);
+  box.style.display = shown;
+  final height = box.getBoundingClientRect().height;
+  _mask(box, 0);
+  box.style
+    ..transition = 'none'
+    ..opacity = '0';
+  _slideIntoPlace(under, [for (var i = 0; i < under.length; i++) before[i] - now[i]], _openMs);
+  box.getBoundingClientRect();
+  box.style
+    ..transition = _maskTransition(_openMs)
+    ..opacity = '1';
+  _mask(box, height + _softPx);
+  Timer(const Duration(milliseconds: _openMs + 30), () {
+    box.style
+      ..transition = ''
+      ..opacity = '';
+    _mask(box, null);
+  });
+}
+
+/// [box] goes: covered from the bottom up and fading out, while what is under
+/// it glides up into its place; then it is taken out.
 void _slideShut(web.HTMLElement box) {
   if (wantsLessMotion) {
     box.remove();
     return;
   }
-  _softEdge(box, true);
+  final under = _under(box);
+  final before = _tops(under);
+  final rect = box.getBoundingClientRect();
+  // Out of the page where it is (over what slides up into its place).
+  final left = box.offsetLeft, top = box.offsetTop;
   box.style
-    ..overflow = 'hidden'
-    ..height = '${box.getBoundingClientRect().height}px';
+    ..position = 'absolute'
+    ..left = '${left}px'
+    ..top = '${top}px'
+    ..width = '${rect.width}px'
+    ..boxSizing = 'border-box'
+    ..margin = '0'
+    ..pointerEvents = 'none';
+  // The page as long as it was until it is over: the screen never jumps
+  // because the page got shorter at once.
+  final keep = el('div', attrs: {'aria-hidden': 'true'})..style.height = '${rect.height}px';
+  web.document.body?.append(keep);
+  final now = _tops(under);
+  _mask(box, rect.height + _softPx);
+  box.style
+    ..transition = 'none'
+    ..opacity = '1';
+  _slideIntoPlace(under, [for (var i = 0; i < under.length; i++) before[i] - now[i]], _shutMs);
   box.getBoundingClientRect();
   box.style
-    ..transition = _slideTransition(360)
-    ..height = '0px'
-    ..marginTop = '0px'
-    ..marginBottom = '0px'
-    ..paddingTop = '0px'
-    ..paddingBottom = '0px'
+    ..transition = _maskTransition(_shutMs)
     ..opacity = '0';
-  Timer(const Duration(milliseconds: 380), () => box.remove());
+  _mask(box, 0);
+  keep.style
+    ..transition = 'height ${_shutMs}ms $_glide'
+    ..height = '0px';
+  Timer(const Duration(milliseconds: _shutMs + 20), () {
+    box.remove();
+    keep.remove();
+  });
 }
 
 /// A deleted reset: fireworks round [line] as it fades out; then it goes
