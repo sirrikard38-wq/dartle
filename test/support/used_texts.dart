@@ -4,8 +4,8 @@ import 'package:dartle/dartle.dart';
 
 /// Every text the app asks the translator for, found in the source: the first
 /// argument of `tr(...)` and the two English forms of `trn(...)` (as the key
-/// `'one|other'`), plus the texts that are looked up from a list (mode names, the
-/// leaderboard buttons, the ring names).
+/// `'one|other'`), plus the texts that are looked up from a list (mode names,
+/// the ring names).
 ///
 /// Used by the translation tests to check that the Croatian catalog has every
 /// one of them - and nothing that is no longer used.
@@ -29,9 +29,6 @@ Set<String> usedTexts() {
   }
   for (final mode in GameMode.values) {
     keys..add(mode.label)..add(mode.blurb);
-  }
-  for (final sort in LeaderboardSort.values) {
-    keys.add(sort.label);
   }
   for (final multiplier in Multiplier.values) {
     keys.add(multiplier.label);

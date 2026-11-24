@@ -4,7 +4,7 @@ import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
 
-/// Web requests for the online leaderboard, through the browser's `fetch`.
+/// Web requests for Felgalizacija online, through the browser's `fetch`.
 class BrowserJsonHttp implements JsonHttp {
   @override
   Future<HttpReply> send(
@@ -24,8 +24,8 @@ class BrowserJsonHttp implements JsonHttp {
   }
 }
 
-/// Reads `online.json` next to the page. Null (no online leaderboard, scores
-/// stay on this device) when the file is missing, empty or unfinished. It is
+/// Reads `online.json` next to the page. Null (nothing online: every
+/// Felgalizacija stays on its phone) when the file is missing, empty or unfinished. It is
 /// always checked with the server, so a change to the file shows up at once and
 /// not after the browser's saved copy expires.
 Future<OnlineConfig?> loadOnlineConfig() async {
@@ -40,31 +40,20 @@ Future<OnlineConfig?> loadOnlineConfig() async {
   }
 }
 
-/// The online place as read at the start (null: none), and the one sign-in
-/// of this device that the leaderboard and Felgalizacija share - so the two
-/// never sign in as two players at once.
+/// The online place as read at the start (null: none) and this phone's one
+/// sign-in.
 OnlineConfig? _config;
 FirebaseSession? _session;
 StorageService? _storage;
 
-/// The leaderboard for this device: the shared online one when `online.json`
-/// is filled in, otherwise just the scores on this device.
-Future<LeaderboardRepository?> buildLeaderboard(StorageService storage) async {
-  final config = _config = await loadOnlineConfig();
+/// Reads where Felgalizacije are shared (`online.json`), at the start.
+Future<void> setUpOnline(StorageService storage) async {
   _storage = storage;
-  if (config == null) return null;
-  final http = BrowserJsonHttp();
-  final session = _session = FirebaseSession(config, http, storage);
-  return OnlineLeaderboardRepository(
-    config: config,
-    http: http,
-    storage: storage,
-    session: session,
-    local: LocalLeaderboardRepository(storage),
-  );
+  final config = _config = await loadOnlineConfig();
+  if (config != null) _session = FirebaseSession(config, BrowserJsonHttp(), storage);
 }
 
-/// Where Felgalizacije are shared: the Firebase of the leaderboard - but on
+/// Where Felgalizacije are shared: the Firebase of `online.json` - but on
 /// this computer (localhost, trying the app out) a stand-in kept in this
 /// browser, so trying it never writes to the real one. Null without either.
 FelgaRemote? felgaRemote() {

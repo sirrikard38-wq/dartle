@@ -7,8 +7,8 @@ import 'attempt_record.dart';
 /// so there is a single source of truth and no counters that can drift.
 ///
 /// Two of these exist side by side, each under its own key: the one the
-/// Statistics screen shows (which "Reset statistics" clears) and the record the
-/// leaderboard is worked out from (which a reset never touches).
+/// Statistics screen shows (which "Reset statistics" clears) and any other
+/// record kept apart from it.
 class HistoryRepository {
   HistoryRepository(this._storage, {String key = storageKey}) : _key = key;
 

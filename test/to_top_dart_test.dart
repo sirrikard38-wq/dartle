@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// The little dart at the end of the Leaderboard and Favorites. Pinned from the
+/// The little dart at the end of Favorites. Pinned from the
 /// source and the stylesheet (it is drawn and animated in the browser).
 void main() {
   final app = File('lib/ui/app.dart').readAsStringSync();
@@ -14,12 +14,11 @@ void main() {
       RegExp('(^|\n)${RegExp.escape(selector)} \\{[^}]*\\}').firstMatch(css)!.group(0)!;
 
   group('where it shows', () {
-    test('it is one button for the whole app, switched on for the two screens', () {
+    test('it is one button for the whole app, switched on for Favorites', () {
       expect(app, contains('_toTop = ToTopDart();'));
       expect(app, contains('_toTop.enabled ='));
       final switchOn = app.substring(app.indexOf('_toTop.enabled ='));
       expect(switchOn, contains('MenuPage.favorites'));
-      expect(switchOn, contains('MenuPage.leaderboard'));
       expect(switchOn.substring(0, switchOn.indexOf(';')), contains('!fullScreen'));
       expect(switchOn.substring(0, switchOn.indexOf(';')), contains('GamePhase.menu'));
     });

@@ -59,7 +59,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // The leaderboard settings: always ask the server (the browser may hold a
+  // The online settings: always ask the server (the browser may hold a
   // copy up to 10 minutes old, and a saved copy would stick for the whole
   // build), and use the saved copy only when there is no connection.
   if (new URL(request.url).pathname.endsWith('/online.json')) {

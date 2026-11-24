@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import '../storage/storage_service.dart';
-import 'leaderboard_service.dart';
 
 /// One answer to a web request.
 class HttpReply {
@@ -13,7 +12,7 @@ class HttpReply {
   bool get ok => status >= 200 && status < 300;
 }
 
-/// The only thing the online leaderboard needs from the web: send a request,
+/// The only thing the online part needs from the web: send a request,
 /// get the answer. The browser version is in `lib/ui/online_setup.dart`; tests
 /// use a fake.
 abstract interface class JsonHttp {
@@ -35,9 +34,9 @@ class OnlineException implements Exception {
   String toString() => 'OnlineException: $message';
 }
 
-/// Where the shared leaderboard lives: a Firebase Realtime Database. Read from
-/// `web/online.json`; without it (or with it unfinished) the leaderboard simply
-/// stays on this device. See docs/online-leaderboard.md for the setup.
+/// Where the shared Felgalizacije live: a Firebase Realtime Database. Read from
+/// `web/online.json`; without it (or with it unfinished) every Felgalizacija
+/// simply stays on its phone. See docs/online.md for the setup.
 class OnlineConfig {
   const OnlineConfig({
     required this.databaseUrl,
@@ -61,7 +60,7 @@ class OnlineConfig {
   final String tokenBase;
 
   /// Reads `online.json`. Null when it is empty, unfinished or not valid, which
-  /// means "no online leaderboard".
+  /// means "nothing online".
   static OnlineConfig? tryParse(String text) {
     try {
       final json = jsonDecode(text);
@@ -89,8 +88,8 @@ class OnlineConfig {
 
 /// The player's anonymous Firebase sign-in: no password, no account to make.
 /// The first time, Firebase hands out an id; it is kept on the device and the
-/// short-lived token that goes with it is renewed when it runs out. The
-/// database rules only let a player write the entry under their own id.
+/// short-lived token that goes with it is renewed when it runs out. The id
+/// is this phone's account: the names of a Felgalizacija are synced to it.
 class FirebaseSession {
   FirebaseSession(this._config, this._http, this._storage, {DateTime Function()? now})
       : _now = now ?? DateTime.now;
@@ -206,144 +205,5 @@ class FirebaseSession {
     _refreshToken = refreshToken;
     final seconds = int.tryParse('$expiresInSeconds') ?? 3600;
     _expires = _now().add(Duration(seconds: seconds));
-  }
-}
-
-/// The shared leaderboard: everyone who plays Dartle, in a Firebase Realtime
-/// Database under `/leaderboard/<player id>`.
-///
-///  * Reading needs no sign-in. If the board cannot be reached, the scores on
-///    this device (and the sample players) are shown instead.
-///  * Every submit also keeps the local copy and then tries the online board;
-///    a failed upload is quietly retried with the next result, because every
-///    submit carries the player's whole totals.
-class OnlineLeaderboardRepository implements LeaderboardRepository {
-  OnlineLeaderboardRepository({
-    required OnlineConfig config,
-    required JsonHttp http,
-    required StorageService storage,
-    required LeaderboardRepository local,
-    DateTime Function()? now,
-    FirebaseSession? session,
-    this.maxEntries = topPlayers,
-    this.requestTimeout = const Duration(seconds: 6),
-  })  : _config = config,
-        _http = http,
-        _local = local,
-        _session = session ?? FirebaseSession(config, http, storage, now: now);
-
-  /// The leaderboard has this many players: the top ones by points.
-  static const int topPlayers = 180;
-
-  /// The most players loaded (the top ones by points).
-  final int maxEntries;
-
-  /// How long to wait for the online board before giving up and showing this
-  /// device's scores (and before skipping an upload until the next result).
-  final Duration requestTimeout;
-
-  static const String path = 'leaderboard';
-  static const int maxNameLength = 20;
-
-  final OnlineConfig _config;
-  final JsonHttp _http;
-  final LeaderboardRepository _local;
-  final FirebaseSession _session;
-
-  bool _online = false;
-  String? _playerId;
-
-  @override
-  bool get isOnline => _online;
-
-  @override
-  String? get playerId => _playerId;
-
-  @override
-  Future<List<LeaderboardEntry>> fetchEntries() async {
-    try {
-      final reply = await _http
-          .send(
-            'GET',
-            Uri.parse('${_config.databaseUrl}/$path.json').replace(queryParameters: {
-              'orderBy': '"totalPoints"',
-              'limitToLast': '$maxEntries',
-            }),
-          )
-          .timeout(requestTimeout);
-      if (!reply.ok) throw OnlineException('leaderboard answered ${reply.status}');
-      final decoded = jsonDecode(reply.body); // null when nobody has played yet
-      final entries = <LeaderboardEntry>[];
-      if (decoded is Map) {
-        decoded.forEach((id, value) {
-          final entry = _parse('$id', value);
-          if (entry != null) entries.add(entry);
-        });
-      }
-      // The server already sends only the top [maxEntries]; keep to that even
-      // if it ever sends more.
-      if (entries.length > maxEntries) {
-        entries.sort((a, b) {
-          final byPoints = b.totalPoints.compareTo(a.totalPoints);
-          return byPoints != 0 ? byPoints : a.playerName.compareTo(b.playerName);
-        });
-        entries.removeRange(maxEntries, entries.length);
-      }
-      _playerId = await _session.knownId();
-      _online = true;
-      return entries;
-    } on Object {
-      _online = false;
-      return _local.fetchEntries();
-    }
-  }
-
-  @override
-  Future<void> submit(LeaderboardEntry entry) async {
-    await _local.submit(entry);
-    try {
-      // Signing in and uploading together get one time limit each.
-      final session = await _session.signedIn().timeout(requestTimeout);
-      final reply = await _http
-          .send(
-            'PUT',
-            Uri.parse('${_config.databaseUrl}/$path/${session.id}.json')
-                .replace(queryParameters: {'auth': session.token}),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(_payload(entry)),
-          )
-          .timeout(requestTimeout);
-      if (reply.ok) _playerId = session.id;
-    } on Object {
-      // No connection, or the board is down: the next result sends it again.
-    }
-  }
-
-  /// What is stored for a player: no id (the id is the key), no empty values.
-  Map<String, Object?> _payload(LeaderboardEntry e) {
-    final name = e.playerName.length > maxNameLength
-        ? e.playerName.substring(0, maxNameLength)
-        : e.playerName;
-    return {
-      'playerName': name,
-      'totalPoints': e.totalPoints < 0 ? 0 : e.totalPoints,
-      if (e.averageTimeMs != null) 'averageTimeMs': e.averageTimeMs,
-      'accuracyPercent': e.accuracyPercent,
-      'optimalPercent': e.optimalPercent,
-      'attempts': e.attempts,
-    };
-  }
-
-  /// One row of the board; anything malformed is skipped, never fatal.
-  LeaderboardEntry? _parse(String id, Object? value) {
-    if (value is! Map) return null;
-    try {
-      final json = value.cast<String, Object?>();
-      final entry = LeaderboardEntry.fromJson({...json, 'id': id});
-      if (entry.playerName.trim().isEmpty) return null;
-      return entry;
-    } on Object {
-      return null;
-    }
   }
 }

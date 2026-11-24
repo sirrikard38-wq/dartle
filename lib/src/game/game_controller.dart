@@ -14,7 +14,6 @@ import '../domain/difficulty.dart';
 import '../domain/optimal_route_service.dart';
 import '../favorites/favorites.dart';
 import '../i18n/i18n.dart';
-import '../leaderboard/leaderboard_service.dart';
 import '../scoring/scoring_service.dart';
 import '../stats/attempt_record.dart';
 import '../stats/history_repository.dart';
@@ -81,7 +80,6 @@ class GameController {
     required ScoringService scoring,
     required StatisticsService statistics,
     required HistoryRepository history,
-    required LeaderboardService leaderboard,
     required StorageService storage,
     AttemptTimer Function()? timerFactory,
     DateTime Function()? now,
@@ -93,7 +91,6 @@ class GameController {
         _scoring = scoring,
         _statistics = statistics,
         _historyRepo = history,
-        _leaderboard = leaderboard,
         _storage = storage,
         _timerFactory = timerFactory ?? AttemptTimer.new,
         _now = now ?? DateTime.now,
@@ -103,9 +100,9 @@ class GameController {
   static const String playerNameKey = 'dartle.player.v1';
   static const String defaultPlayerName = 'Player';
 
-  /// Where the leaderboard's own record of attempts is saved. "Reset
-  /// statistics" never touches it, so a reset cannot change the leaderboard.
-  static const String leaderboardRecordKey = 'dartle.leaderboard-record.v1';
+  /// Where the leaderboard (no more) kept its record of attempts: taken off
+  /// the phone at the start.
+  static const String oldLeaderboardRecordKey = 'dartle.leaderboard-record.v1';
 
   /// Undo can be used this many times per session in Checkout calculator.
   static const int maxUndos = 3;
@@ -117,7 +114,6 @@ class GameController {
   final ScoringService _scoring;
   final StatisticsService _statistics;
   final HistoryRepository _historyRepo;
-  final LeaderboardService _leaderboard;
   final StorageService _storage;
   final AttemptTimer Function() _timerFactory;
   final DateTime Function() _now;
@@ -128,12 +124,6 @@ class GameController {
 
   /// What the Statistics screen shows; "Reset statistics" clears it.
   List<AttemptRecord> _history = [];
-
-  /// What the leaderboard is worked out from. Separate from [_history], and
-  /// never cleared by a reset.
-  List<AttemptRecord> _leaderboardRecord = [];
-  late final HistoryRepository _leaderboardRecordRepo =
-      HistoryRepository(_storage, key: leaderboardRecordKey);
 
   /// Checkout tutorial: the cards and the state of Learn and Practice.
   late final TutorialSession tutorial =
@@ -309,15 +299,6 @@ class GameController {
       _entered.isNotEmpty &&
       (undosLeft == null || undosLeft! > 0);
 
-  Future<List<LeaderboardEntry>> leaderboard(LeaderboardSort sort) =>
-      _leaderboard.ranked(sort);
-
-  /// True when the last leaderboard shown came from the shared online board.
-  bool get leaderboardIsOnline => _leaderboard.isOnline;
-
-  /// This player's id on the online board (to mark their row), if any.
-  String? get leaderboardPlayerId => _leaderboard.playerId;
-
   void addListener(void Function() listener) => _listeners.add(listener);
 
   Future<void> init() async {
@@ -326,18 +307,8 @@ class GameController {
     _history = (await _historyRepo.load())
         .where((r) => r.mode == GameMode.calculator)
         .toList();
-    // The leaderboard's record. The first time (no record yet, e.g. after an
-    // update) it starts as a copy of the attempts saved so far, so nobody loses
-    // their score; from then on a reset leaves it alone.
-    final record = await _leaderboardRecordRepo.loadIfSaved();
-    if (record == null) {
-      _leaderboardRecord = List.of(_history);
-      if (_leaderboardRecord.isNotEmpty) {
-        await _leaderboardRecordRepo.save(_leaderboardRecord);
-      }
-    } else {
-      _leaderboardRecord = record.where((r) => r.mode == GameMode.calculator).toList();
-    }
+    // There is no leaderboard any more: its record goes.
+    await _storage.remove(oldLeaderboardRecordKey);
     final saved = await _storage.read(playerNameKey);
     _needsPlayerName = saved == null || saved.trim().isEmpty;
     _playerName = _needsPlayerName ? defaultPlayerName : saved!;
@@ -570,8 +541,7 @@ class GameController {
     _notify();
   }
 
-  /// Clears the statistics. The leaderboard is not touched in any way: its own
-  /// record of attempts stays, and nothing is sent to it.
+  /// Clears the statistics.
   Future<void> resetStatistics() async {
     _history = [];
     await _historyRepo.clear();
@@ -629,17 +599,10 @@ class GameController {
         optimalRoute: challenge.optimalRoute.notation,
       );
       _history = [..._history, record];
-      _leaderboardRecord = [..._leaderboardRecord, record];
     }
     _phase = GamePhase.result;
     _notify();
-    if (recorded) {
-      await _historyRepo.save(_history);
-      await _leaderboardRecordRepo.save(_leaderboardRecord);
-      // The leaderboard is worked out from its own record, not from the
-      // statistics (which the player can reset).
-      await _leaderboard.submit(_playerName, _statistics.summarize(_leaderboardRecord));
-    }
+    if (recorded) await _historyRepo.save(_history);
   }
 
   void _nextChallenge() {

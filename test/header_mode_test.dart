@@ -4,12 +4,11 @@ import 'package:dartle/dartle.dart';
 import 'package:test/test.dart';
 
 /// The header while a game is played: only the word DARTLE, with nothing written
-/// under it, and the leaderboard title in the middle. Pinned from the source and the
+/// under it. Pinned from the source and the
 /// stylesheet (they are drawn in the browser).
 void main() {
   final app = File('lib/ui/app.dart').readAsStringSync();
   final css = File('web/styles.css').readAsStringSync();
-  final leaderboard = File('lib/ui/leaderboard_screen.dart').readAsStringSync();
 
   group('nothing under the word DARTLE while a game is played', () {
     final header = app.substring(
@@ -41,15 +40,6 @@ void main() {
     test('the modes keep their names, which the menus and the buttons use', () {
       expect(GameMode.values.map((m) => m.label),
           ['Checkout calculator', 'Checkout choice']);
-    });
-  });
-
-  group('the leaderboard', () {
-    test('only the total points: no title, no other ranking to choose', () {
-      expect(leaderboard, isNot(contains('180 Leaderboard')));
-      expect(leaderboard, isNot(contains('Rank by')));
-      expect(leaderboard, contains('LeaderboardSort.points'));
-      expect(leaderboard, isNot(contains('LeaderboardSort.values')));
     });
   });
 }

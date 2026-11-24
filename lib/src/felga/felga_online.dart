@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../leaderboard/online_leaderboard.dart';
+import '../online/firebase.dart';
 import '../storage/storage_service.dart';
 import 'felga_ledger.dart';
 
@@ -116,8 +116,8 @@ Future<FelgaCopy> syncFelga(FelgaRemote remote, String password, FelgaCopy mine)
   return copy;
 }
 
-/// The Felgalizacije in the Firebase Realtime Database of the online
-/// leaderboard, under `/felga/<key>`, written by signed-in phones only.
+/// The Felgalizacije in the Firebase Realtime Database, under `/felga/<key>`,
+/// written by signed-in phones only.
 class FirebaseFelgaRemote implements FelgaRemote {
   FirebaseFelgaRemote({
     required OnlineConfig config,

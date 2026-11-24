@@ -4,7 +4,7 @@ Wordle-style trainer for 501 checkouts, in three modes and a tutorial:
 
 - **Checkout calculator** - a number and three boxes (a visit). Boxes that are
   crossed out are darts already used; you fill the free ones. Against the
-  clock, scored by streak and saved to the leaderboard. All the
+  clock, scored by streak and saved to the statistics. All the
   one-dart numbers (21) together come up 2% of the time; every other number, the
   seven with no checkout included, shares the other 98% equally.
 - **Checkout practice** - choose your own darts one at a time; the optimal darts
@@ -61,13 +61,12 @@ The Android project is generated in the build (only the settings, artwork and
 build cache so each download can update the last; it is not a Play Store key.
 There is no iPhone app file: that needs a paid Apple developer account.
 
-## Online leaderboard
+## Felgalizacija online
 
-The leaderboard can be shared by every player through a free Firebase Realtime
-Database (anonymous sign-in, rules in `firebase/database.rules.json`). Setup is
-in [docs/online-leaderboard.md](docs/online-leaderboard.md): fill in
-`web/online.json`. Until it is filled in, or when there is no connection, the
-leaderboard shows the scores on the device, as before.
+Each Felgalizacija can be shared between phones through a free Firebase
+Realtime Database (anonymous sign-in, rules in `firebase/database.rules.json`,
+address in `web/online.json`). How it works and how to switch it on:
+[docs/online.md](docs/online.md). Without it, each phone keeps its own.
 
 ## Rules chosen (documented, not assumed)
 
@@ -174,11 +173,12 @@ lib/src/timing       AttemptTimer (monotonic, idempotent start)
 lib/src/stats        AttemptRecord, HistoryRepository, StatisticsService
 lib/src/favorites    Favorites (the routes marked with the dart icon)
 lib/src/i18n         Language, tr(), the Croatian catalog
-lib/src/leaderboard  LeaderboardRepository (+ local impl), LeaderboardService
+lib/src/felga        FelgaLedger, sharing it online (sync, merge)
+lib/src/online       Firebase sign-in and online.json
 lib/src/storage      StorageService interface (+ in-memory impl)
 lib/src/game         GameController + composition root
 lib/ui, web          DOM views (package:web), localStorage adapter, CSS
 ```
 
-To add a backend: implement `StorageService` and/or `LeaderboardRepository`
-and pass them into `createGameController`.
+To add a backend: implement `StorageService`
+and pass it into `createGameController`.

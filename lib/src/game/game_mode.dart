@@ -27,7 +27,7 @@ enum GameMode {
   /// Only Checkout calculator plays the celebration sound.
   bool get hasSound => this == GameMode.calculator;
 
-  /// Only Checkout calculator is saved: statistics and the leaderboard. The
+  /// Only Checkout calculator is saved (statistics). The
   /// other mode is just for learning.
   bool get isRecorded => this == GameMode.calculator;
 

@@ -172,11 +172,10 @@ void main() {
   });
 
   group('the texts the app builds from the game', () {
-    test('the mode names, the leaderboard buttons and the scoring lines all change', () {
+    test('the mode names and the scoring lines all change', () {
       I18n.current = Language.hr;
       expect(tr(GameMode.calculator.label), 'Checkout kalkulator');
       expect(tr(GameMode.choice.label), 'Checkout izbor');
-      expect(tr(LeaderboardSort.points.label), 'Ukupno bodova');
       final score = const ScoringService().score(
         correct: true,
         timeLeft: const Duration(seconds: 10),

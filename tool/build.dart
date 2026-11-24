@@ -5,7 +5,7 @@ Future<void> main() async {
   final out = Directory('build')..createSync(recursive: true);
   File('web/styles.css').copySync('${out.path}/styles.css');
   File('web/manifest.webmanifest').copySync('${out.path}/manifest.webmanifest');
-  // Where the shared online leaderboard lives (empty = scores stay on the device).
+  // Where Felgalizacije are shared online (empty = each stays on its phone).
   File('web/online.json').copySync('${out.path}/online.json');
   _copyDir(Directory('web/icons'), Directory('${out.path}/icons'));
 

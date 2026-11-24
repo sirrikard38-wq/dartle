@@ -177,40 +177,4 @@ void main() {
       expect((await board.load()).map((r) => r.target), [72, 40]);
     });
   });
-
-  group('Leaderboard', () {
-    LeaderboardEntry e(String n, int pts, int? ms, double acc, double opt) =>
-        LeaderboardEntry(
-          playerName: n,
-          totalPoints: pts,
-          averageTimeMs: ms,
-          accuracyPercent: acc,
-          optimalPercent: opt,
-          attempts: 10,
-        );
-    final entries = [
-      e('a', 100, 5000, 50, 10),
-      e('b', 300, null, 70, 90),
-      e('c', 200, 3000, 90, 50),
-    ];
-
-    List<String> names(LeaderboardSort s) =>
-        LeaderboardService.rank(entries, s).map((x) => x.playerName).toList();
-
-    test('ranks by each criterion', () {
-      expect(names(LeaderboardSort.points), ['b', 'c', 'a']);
-      expect(names(LeaderboardSort.averageTime), ['c', 'a', 'b']);
-      expect(names(LeaderboardSort.accuracy), ['c', 'b', 'a']);
-      expect(names(LeaderboardSort.optimalPercent), ['b', 'c', 'a']);
-    });
-
-    test('local repository replaces a player entry, and adds no players of its own', () async {
-      final service =
-          LeaderboardService(LocalLeaderboardRepository(InMemoryStorageService()));
-      await service.submit('Me', stats.summarize([rec(points: 9999)]));
-      await service.submit('Me', stats.summarize([rec(points: 9999), rec(points: 1)]));
-      final board = await service.ranked();
-      expect(board.map((x) => x.playerName), ['Me']);
-    });
-  });
 }

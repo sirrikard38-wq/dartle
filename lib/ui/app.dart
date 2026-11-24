@@ -11,7 +11,6 @@ import 'felga_screen.dart';
 import 'footer.dart';
 import 'game_screen.dart';
 import 'install.dart';
-import 'leaderboard_screen.dart';
 import 'menu_screen.dart';
 import 'modal.dart';
 import 'result_screen.dart';
@@ -139,7 +138,6 @@ class DartleApp {
           MenuPage.welcome => buildWelcomeScreen(_ctx),
           MenuPage.home => buildMenuScreen(_ctx),
           MenuPage.favorites => buildFavoritesScreen(_ctx),
-          MenuPage.leaderboard => buildLeaderboardScreen(_ctx),
           MenuPage.tutorial => buildTutorialScreen(_ctx),
           MenuPage.felga => buildFelgaScreen(_ctx),
         },
@@ -175,17 +173,17 @@ class DartleApp {
     // starts at the top, not wherever the last, longer screen was scrolled to.
     // After the focus above, which can scroll a button into view.
     if (screenChanged) web.window.scrollTo(0.toJS, 0);
-    // At the end of the Leaderboard and Favorites a little dart
+    // At the end of Favorites a little dart
     // shoots you back to the top.
     _toTop.element.setAttribute('aria-label', tr('Back to the top'));
     _toTop.enabled = !fullScreen &&
         _game.phase == GamePhase.menu &&
-        (_page == MenuPage.leaderboard || _page == MenuPage.favorites);
+        _page == MenuPage.favorites;
   }
 
   web.HTMLElement _buildHeader() {
     final inMenu = _game.phase == GamePhase.menu;
-    // Back: stats/leaderboard -> menu; checkout/result -> menu; menu: none.
+    // Back: a menu page -> menu; checkout/result -> menu; menu: none.
     final left = inMenu && _page == MenuPage.home
         ? el('span', cls: 'header-spacer')
         : _buildBackDart();

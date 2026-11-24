@@ -6,8 +6,7 @@ import 'felga_screen.dart';
 import 'view_context.dart';
 
 /// Main menu: Start (straight into Checkout calculator, the one game left, on
-/// Practice), Favorites, each Felgalizacija and a + for another (the
-/// Leaderboard is no longer offered; its page stays).
+/// Practice), Favorites, each Felgalizacija and a + for another.
 web.HTMLElement buildMenuScreen(ViewContext ctx) {
   final game = ctx.game;
 

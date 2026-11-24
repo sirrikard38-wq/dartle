@@ -287,17 +287,6 @@ const Map<String, String> croatian = {
   '{n}: no favorites': '{n}: nema favorita',
   '{n}: show its favorites': '{n}: prikaži favorite',
 
-  // ---------------------------------------------------------- leaderboard
-  'Total points': 'Ukupno bodova',
-  'Average time': 'Prosječno vrijeme',
-  'Accuracy': 'Točnost',
-  'Optimal %': 'Optimalno %',
-  'Loading…': 'Učitavanje…',
-  'No scores yet - be the first!': 'Još nema rezultata - budi prvi!',
-  'Your name and scores are visible to all players.':
-      'Tvoje ime i rezultati vidljivi su svim igračima.',
-  'Scores on this device.': 'Rezultati na ovom uređaju.',
-
   // ---------------------------------------------------------- how to play
   'How to play': 'Kako igrati',
   'The basics': 'Osnove',

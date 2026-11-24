@@ -328,7 +328,7 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 }
 .felga-pass-input::placeholder { color: var(--muted); letter-spacing: 0.04em; }
 .felga-pass-input:focus { border-color: var(--fg); }
-/* The + for another Felgalizacija, where the Leaderboard was. */
+/* The + for another Felgalizacija. */
 .menu-plus {
   justify-self: center; width: 52px; height: 52px; padding: 0; border: 0; background: none; color: var(--fg);
   display: flex; align-items: center; justify-content: center; cursor: pointer;
@@ -849,15 +849,7 @@ summary { cursor: pointer; color: var(--muted); }
 .how-section h4 { margin: 14px 0 2px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .how-section p { margin: 0; }
 
-/* ---------- Leaderboard ---------- */
-.rank-list { list-style: none; margin: 0; padding: 0; width: 100%; }
-.rank-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
-.rank-list { counter-reset: rank; }
-.rank-list li::before { counter-increment: rank; content: counter(rank); width: 2em; color: var(--muted); text-align: left; }
-.rank-list .name { flex: 1; text-align: left; }
-/* A place nobody has taken yet: just its number, until a player joins. */
-.rank-list li.empty { color: var(--muted); }
-.rank-list li.me { font-weight: 700; background: #1a1a1a; }
+/* ---------- Chips and numbers ---------- */
 .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
 .chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 20px; background: transparent; }
 .chip.selected { background: var(--white); color: var(--ink); }
@@ -880,9 +872,9 @@ summary { cursor: pointer; color: var(--muted); }
 .modal-line a { color: var(--fg); }
 
 /* ---------- Back to the top ---------- */
-/* At the end of the Leaderboard and Statistics a little dart (the welcome screen's,
-   pointing up) shows at the left, level with the content's left edge (on Statistics
-   the right is where Reset statistics is). Pressed, it is thrown straight up from its
+/* At the end of Favorites a little dart (the welcome screen's,
+   pointing up) shows at the left, level with the content's left edge. Pressed, it
+   is thrown straight up from its
    corner while the page scrolls to the top. It rises only part of the way up the screen
    and fades away smoothly as the top of the page comes into view - no circle, no
    wiggle, and it never goes to the top of the screen (the script sets its transform

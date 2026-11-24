@@ -9,9 +9,9 @@ import 'package:web/web.dart' as web;
 
 Future<void> main() async {
   final storage = LocalStorageService();
-  // The shared online leaderboard, if web/online.json is filled in.
-  final leaderboard = await buildLeaderboard(storage);
-  final game = createGameController(storage, leaderboard: leaderboard);
+  // Felgalizacija shared online, if web/online.json is filled in.
+  await setUpOnline(storage);
+  final game = createGameController(storage);
   final root = web.document.querySelector('#app')!;
   autoHideScrollbars(); // scrollbars show only while scrolling, then fade out
   final app = DartleApp(root, game);
