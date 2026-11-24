@@ -31,9 +31,9 @@ jobs:
       - run: dart run tool/build.dart
       # The source map and deps file are only for debugging; keep the site lean.
       - run: rm -f build/main.dart.js.map build/main.dart.js.deps
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: build
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
