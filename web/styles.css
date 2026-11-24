@@ -250,6 +250,7 @@ h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margi
 .dart-stage.shooting .dart-go { transform: translateX(0.5cm); }
 /* Stuck: the dart wiggles around its tip, which stays in the middle of the
    circle, and settles - like a dart quivering in a board. */
+.felga-name-line.stuck .felga-name-dart .dart-icon,
 .dart-stage.stuck .dart-icon { transform-origin: 97% 50%; animation: dart-wiggle 550ms ease-out; }
 @keyframes dart-wiggle {
   0%   { transform: rotate(0deg); }
@@ -1696,3 +1697,25 @@ body.money-pad-open { padding-bottom: 240px; }
    spacing, not bold. */
 .felga-btn-name { text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.1rem; font-weight: inherit; }
 .felga-naming .felga-name-input { text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.1rem; font-weight: 400; }
+
+/* A name typed on a line (a new Felgalizacija, a new name): once the box is
+   pressed, a small dart right of it points at it; pressed, it flies into the
+   name and quivers there (as the welcome dart does), and the name is taken. */
+.felga-name-line { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.felga-name-dart {
+  position: absolute; left: calc(100% + 10px); top: 50%; width: 40px; height: 30px; padding: 0; border: 0;
+  background: none; color: var(--fg); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transform: translateY(-50%) rotate(180deg); opacity: 0; visibility: hidden;
+  transition: opacity 200ms ease, transform 150ms ease, visibility 0s linear 200ms;
+}
+.felga-name-dart .dart-icon { width: 40px; height: 16px; }
+.felga-name-line.ready .felga-name-dart { opacity: 1; visibility: visible; transition: opacity 200ms ease, transform 150ms ease; }
+.felga-name-line.shot .felga-name-dart { transform: translateY(-50%) rotate(180deg) translateX(12px); }
+/* Change name: the line under the top, in the middle, like the word
+   FELGALIZACIJA. */
+.felga-top-area { align-self: stretch; display: flex; flex-direction: column; }
+.felga-top-area > .felga-top { align-self: stretch; }
+.felga-rename-box { display: flex; flex-direction: column; align-items: center; }
+.felga-rename { display: flex; justify-content: center; padding: 12px 0 4px; }
+.felga-rename .felga-name-input { text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.1rem; font-weight: 400; }
+.felga-pass > .felga-pass-line + .felga-pass-line, .felga-pass-box + .felga-pass-line { margin-top: 2px; }

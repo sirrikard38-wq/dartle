@@ -5,6 +5,8 @@ import 'dart:math' as math;
 import 'package:web/web.dart' as web;
 
 import '../dartle.dart';
+import 'dart_icon.dart';
+import 'dart_shot_timing.dart';
 import 'dom.dart';
 import 'keyboard.dart';
 import 'modal.dart';
@@ -485,7 +487,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   namesPart.classList.toggle('removing', _adding);
   if (_adding) openNameBox(focus: false);
   return el('main', cls: 'screen felga', children: [
-    _topPart(moneyPart, _open.password),
+    _topPart(moneyPart, _open),
     owesPart,
     namesPart,
     togglePart,
@@ -560,8 +562,8 @@ void _deleteOpen(ViewContext ctx) {
   });
 }
 
-/// At the foot of the screen for 10 s: [message] and Undo ([undo] runs).
-void _undoBar(String message, void Function() undo) {
+/// At the foot of the screen for [lasts]: [message] and Undo ([undo] runs).
+void _undoBar(String message, void Function() undo, {Duration lasts = const Duration(seconds: 10)}) {
   final bar = el('div', cls: 'undo-bar', attrs: {'role': 'status', 'aria-live': 'polite'});
   late final Timer timer;
   void gone() {
@@ -578,7 +580,7 @@ void _undoBar(String message, void Function() undo) {
     }));
   web.document.body!.append(bar);
   Timer(const Duration(milliseconds: 16), () => bar.classList.add('show'));
-  timer = Timer(const Duration(seconds: 10), gone);
+  timer = Timer(lasts, gone);
 }
 
 /// The number keys of the money boxes, the page's own (a phone keyboard cannot
@@ -830,28 +832,28 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
   final panel = el('div', cls: 'felga-join');
 
   void fillPanel({required bool focus, bool slide = false}) {
-    final name = el('input', cls: 'felga-name-input', attrs: {
-      'type': 'text',
-      'maxlength': '30',
-      'autocomplete': 'off',
-      'enterkeyhint': 'done',
-      'aria-label': tr('Name of the Felgalizacija'),
-    }) as web.HTMLInputElement;
-    // The line under the name grows with every letter, and the whole name is
-    // always seen (smaller letters for one too long for the button).
-    void fit() => fitToText(name,
-        minCh: 8, room: () => ((name.closest('.felga-naming') as web.HTMLElement?)?.clientWidth ?? 0) - 28.0);
-    fit();
-    name.onInput.listen((_) => fit());
-    name.onKeyDown.listen((event) {
-      if (event.key != 'Enter') return;
-      event.preventDefault();
-      final typed = name.value.trim();
-      if (typed.isEmpty) return;
-      _saveList([...felgaList(), FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', typed, _newPassword())]);
-      _menuAdding = false;
-      ctx.rerender();
-    });
+    late final _NameLine name;
+    name = _nameLine(
+      label: tr('Name of the Felgalizacija'),
+      // The whole name always seen, the dart right of it in the button too.
+      room: () => ((name.input.closest('.felga-naming') as web.HTMLElement?)?.clientWidth ?? 0) - 120.0,
+      onConfirm: (typed) {
+        final entry = FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', typed, _newPassword());
+        _saveList([...felgaList(), entry]);
+        _menuAdding = false;
+        ctx.rerender();
+        // For 4 s it can be undone: as if it had never been made.
+        _undoBar(tr('New Felgalizacija created'), lasts: const Duration(seconds: 4), () {
+          _saveList([for (final e in felgaList()) if (e.id != entry.id) e]);
+          try {
+            web.window.localStorage.removeItem(entry.storageKey);
+          } on Object {
+            // Nothing was kept.
+          }
+          ctx.rerender();
+        });
+      },
+    );
 
     final password = el('input', cls: 'felga-name-input felga-pass-input', attrs: {
       'type': 'text',
@@ -878,7 +880,7 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
     });
 
     final inner = el('div', cls: 'felga-join-inner', children: [
-      el('div', cls: 'menu-btn felga-btn felga-naming', children: [lines('', name)]),
+      el('div', cls: 'menu-btn felga-btn felga-naming', children: [lines('', name.line)]),
       el('p', cls: 'felga-or', text: tr('Or')),
       el('p', cls: 'felga-join-question', text: tr('Do you have a password to join?')),
       password,
@@ -886,10 +888,10 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
     panel
       ..textContent = ''
       ..append(inner);
-    fit();
+    name.fit();
     if (slide) _slideOpen(inner);
     // At once, still in the press: so the phone's keyboard comes up.
-    if (focus) name.focus();
+    if (focus) name.input.focus();
   }
 
   final plus = _turningPlus(
@@ -939,8 +941,11 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
 /// each other, the amounts too, the € under the €). Either of the first two
 /// pressed, the + turns into an X and the password glides open under them
 /// (white, as small); pressed - or held for a second - it is copied ("Copied" shows for
-/// 1.5 s). The X takes it away at once.
-web.HTMLElement _topPart(web.HTMLElement money, String password) {
+/// 1.5 s). The X takes it away at once. Under it "change name" with a +:
+/// pressed, a line for the new name glides open under the top, with the dart
+/// right of it; the dart (or Enter) gives the Felgalizacija that name.
+web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry) {
+  final password = entry.password;
   final box = el('div', cls: 'felga-pass-box');
   void copyNow() {
     _copy(password);
@@ -987,13 +992,111 @@ web.HTMLElement _topPart(web.HTMLElement money, String password) {
     onToggle: show,
   );
   final word = button(tr('password'), cls: 'felga-pass-word', onPressed: (_) => plus.click());
-  return el('div', cls: 'felga-top', children: [
-    el('div', cls: 'felga-pass', children: [
-      el('div', cls: 'felga-pass-line', children: [word, plus]),
-      box,
+
+  final renameBox = el('div', cls: 'felga-rename-box');
+  late final web.HTMLButtonElement renamePlus;
+  renamePlus = _turningPlus(
+    cls: 'felga-pass-plus',
+    focusKey: 'felga-rename',
+    open: false,
+    openLabel: tr('Close'),
+    closedLabel: tr('Change the name'),
+    onToggle: (open) {
+      if (!open) {
+        final row = renameBox.firstElementChild;
+        if (row != null) _slideShut(row as web.HTMLElement);
+        return;
+      }
+      final now = felgaList().where((e) => e.id == entry.id).firstOrNull ?? entry;
+      final name = _nameLine(
+        label: tr('New name of the Felgalizacija'),
+        value: now.name,
+        room: () => web.window.innerWidth - 140.0,
+        onConfirm: (typed) {
+          _saveList([for (final e in felgaList()) e.id == entry.id ? FelgaEntry(e.id, typed, e.password) : e]);
+          renamePlus.click(); // closes the line
+        },
+      );
+      final row = el('div', cls: 'felga-rename', children: [name.line]);
+      renameBox
+        ..textContent = ''
+        ..append(row);
+      name.fit();
+      _slideOpen(row);
+      name.input.focus();
+    },
+  );
+  final renameWord = button(tr('change name'), cls: 'felga-pass-word', onPressed: (_) => renamePlus.click());
+  return el('div', cls: 'felga-top-area', children: [
+    el('div', cls: 'felga-top', children: [
+      el('div', cls: 'felga-pass', children: [
+        el('div', cls: 'felga-pass-line', children: [word, plus]),
+        box,
+        el('div', cls: 'felga-pass-line', children: [renameWord, renamePlus]),
+      ]),
+      el('div', cls: 'felga-money', children: [money]),
     ]),
-    el('div', cls: 'felga-money', children: [money]),
+    renameBox,
   ]);
+}
+
+/// A name on a line ([_nameLine]): the line, its box, and [fit] to size it.
+typedef _NameLine = ({web.HTMLElement line, web.HTMLInputElement input, void Function() fit});
+
+/// A name typed on a line that grows with it, and right of it, once the box
+/// is pressed, a small dart pointing at it. The dart pressed (or Enter), it
+/// flies into the name and quivers there, like the dart of the welcome screen;
+/// then [onConfirm] gets the name. [room]: the width the name may take.
+_NameLine _nameLine({
+  required String label,
+  required void Function(String name) onConfirm,
+  double Function()? room,
+  String value = '',
+}) {
+  final input = el('input', cls: 'felga-name-input', attrs: {
+    'type': 'text',
+    'maxlength': '30',
+    'autocomplete': 'off',
+    'enterkeyhint': 'done',
+    'aria-label': label,
+  }) as web.HTMLInputElement
+    ..value = value;
+  void fit() => fitToText(input, minCh: 8, room: room);
+  final line = el('span', cls: 'felga-name-line${value.isEmpty ? '' : ' ready'}');
+  var shooting = false;
+  void shoot() {
+    final typed = input.value.trim();
+    if (typed.isEmpty || shooting) {
+      input.focus();
+      return;
+    }
+    shooting = true;
+    if (web.window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      onConfirm(typed);
+      return;
+    }
+    line.classList.add('shot');
+    Timer(const Duration(milliseconds: dartFlightMs), () {
+      line.classList.add('stuck');
+      Timer(const Duration(milliseconds: dartWiggleMs), () => onConfirm(typed));
+    });
+  }
+
+  final dart = button('', cls: 'felga-name-dart', ariaLabel: tr('Confirm the name'), onPressed: (_) => shoot())
+    ..appendChild(dartIcon() as web.Node);
+  // Pressed, the dart leaves the typing in the box (the keyboard stays up).
+  dart.onMouseDown.listen((event) => event.preventDefault());
+  input.onFocus.listen((_) => line.classList.add('ready'));
+  input.onInput.listen((_) => fit());
+  input.onKeyDown.listen((event) {
+    if (event.key != 'Enter') return;
+    event.preventDefault();
+    shoot();
+  });
+  line
+    ..append(input)
+    ..append(dart);
+  return (line: line, input: input, fit: fit);
 }
 
 /// Puts [text] on the clipboard.
