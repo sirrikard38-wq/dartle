@@ -1720,10 +1720,11 @@ web.HTMLElement _dayGrid(List<FelgaDay> names, int price) => el('div', cls: 'fel
 // Gliding open and shut, smoothly also on a slow phone: the page is laid out
 // once, at the start - the box is at once at its full height (or out) - and
 // what changes while it glides is only drawn, never laid out again: what is
-// under it slides into place (`translate`), the box is uncovered from the
-// top down (its mask grows, with a soft lower edge) and fades in (opacity).
-// (Growing its height instead lays the whole page out on every frame, and a
-// phone then shows only a few of them: 25%, 50%, 100%.)
+// round it slides into place (`translate`) - under it, and above it too where
+// the page is centred (the menu) - the box goes along with what it is in, is
+// uncovered from the top down (its mask grows, with a soft lower edge) and
+// fades in. (Growing its height instead lays the whole page out on every
+// frame, and a phone then shows only a few of them: 25%, 50%, 100%.)
 
 const int _openMs = 420, _shutMs = 360;
 const String _glide = 'cubic-bezier(0.4, 0, 0.2, 1)';
@@ -1731,23 +1732,27 @@ const String _glide = 'cubic-bezier(0.4, 0, 0.2, 1)';
 /// The soft lower edge of the uncovered part of a box, px.
 const double _softPx = 18;
 
-/// What is after [box] on the page and moves when it comes or goes: the
-/// boxes after it, and after each box it is in (not the fixed or floating
-/// ones).
-List<web.HTMLElement> _under(web.HTMLElement box) {
+/// What is round [box] on the page and can move when it comes or goes: the
+/// boxes before and after it, and before and after each box it is in (not
+/// the fixed or floating ones).
+List<web.HTMLElement> _around(web.HTMLElement box) {
   final out = <web.HTMLElement>[];
   web.Element? at = box;
   while (at != null && at != web.document.body && at != web.document.documentElement) {
-    for (var next = at.nextElementSibling; next != null; next = next.nextElementSibling) {
-      final position = web.window.getComputedStyle(next).position;
-      if (position != 'fixed' && position != 'absolute') out.add(next as web.HTMLElement);
+    final parent = at.parentElement;
+    for (var other = parent?.firstElementChild; other != null; other = other.nextElementSibling) {
+      if (other == at) continue;
+      final position = web.window.getComputedStyle(other).position;
+      if (position != 'fixed' && position != 'absolute') out.add(other as web.HTMLElement);
     }
-    at = at.parentElement;
+    at = parent;
   }
   return out;
 }
 
 List<double> _tops(List<web.HTMLElement> boxes) => [for (final b in boxes) b.getBoundingClientRect().top];
+
+double _topOf(web.Element? box) => box?.getBoundingClientRect().top ?? 0;
 
 /// [boxes] drawn [from] px away (each its own) from where they are, then
 /// gliding to their place over [ms].
@@ -1776,7 +1781,8 @@ void _slideIntoPlace(List<web.HTMLElement> boxes, List<double> from, int ms) {
   });
 }
 
-/// [box]'s mask: uncovered from the top down to [px] (its lower 18 px soft).
+/// [box]'s mask: uncovered from the top down to [px] (its lower 18 px soft);
+/// null: no mask.
 void _mask(web.HTMLElement box, double? px) {
   for (final prefix in const ['', '-webkit-']) {
     if (px == null) {
@@ -1793,72 +1799,83 @@ void _mask(web.HTMLElement box, double? px) {
   }
 }
 
-String _maskTransition(int ms) =>
-    'mask-size ${ms}ms $_glide, -webkit-mask-size ${ms}ms $_glide, opacity ${ms}ms ease-out';
+/// The box's own glide: its mask, its fading and its moving with what it is in.
+String _boxTransition(int ms, {required int fadeMs}) => 'mask-size ${ms}ms $_glide, -webkit-mask-size ${ms}ms $_glide, '
+    'translate ${ms}ms $_glide, opacity ${fadeMs}ms ease';
 
 /// [box] (just put in) comes in: uncovered from the top down and fading in,
-/// while what is under it glides down to make room.
+/// while what is round it glides to make room (and it with what it is in).
 void _slideOpen(web.HTMLElement box) {
   if (wantsLessMotion) return;
-  final under = _under(box);
-  final now = _tops(under);
+  final around = _around(box);
+  final now = _tops(around), parentNow = _topOf(box.parentElement);
   final shown = box.style.display;
   box.style.display = 'none';
-  final before = _tops(under);
+  final before = _tops(around), parentBefore = _topOf(box.parentElement);
   box.style.display = shown;
   final height = box.getBoundingClientRect().height;
   _mask(box, 0);
   box.style
     ..transition = 'none'
-    ..opacity = '0';
-  _slideIntoPlace(under, [for (var i = 0; i < under.length; i++) before[i] - now[i]], _openMs);
+    ..opacity = '0'
+    ..setProperty('translate', '0 ${parentBefore - parentNow}px');
+  _slideIntoPlace(around, [for (var i = 0; i < around.length; i++) before[i] - now[i]], _openMs);
   box.getBoundingClientRect();
   box.style
-    ..transition = _maskTransition(_openMs)
-    ..opacity = '1';
+    ..transition = _boxTransition(_openMs, fadeMs: _openMs)
+    ..opacity = '1'
+    ..setProperty('translate', '0 0');
   _mask(box, height + _softPx);
   Timer(const Duration(milliseconds: _openMs + 30), () {
     box.style
       ..transition = ''
-      ..opacity = '';
+      ..opacity = ''
+      ..removeProperty('translate');
     _mask(box, null);
   });
 }
 
-/// [box] goes: covered from the bottom up and fading out, while what is under
-/// it glides up into its place; then it is taken out.
+/// [box] goes: covered from the bottom up and fading out, while what is round
+/// it glides into its place (and it with what it is in - so it never lies
+/// over what moves); then it is taken out.
 void _slideShut(web.HTMLElement box) {
   if (wantsLessMotion) {
     box.remove();
     return;
   }
-  final under = _under(box);
-  final before = _tops(under);
+  final around = _around(box);
+  final before = _tops(around), parentBefore = _topOf(box.parentElement);
   final rect = box.getBoundingClientRect();
-  // Out of the page where it is (over what slides up into its place).
-  final left = box.offsetLeft, top = box.offsetTop;
+  // Out of the page where it is (what is round it takes its place).
   box.style
     ..position = 'absolute'
-    ..left = '${left}px'
-    ..top = '${top}px'
+    ..left = '${box.offsetLeft}px'
+    ..top = '${box.offsetTop}px'
     ..width = '${rect.width}px'
     ..boxSizing = 'border-box'
     ..margin = '0'
     ..pointerEvents = 'none';
+  // Its place for absolute boxes can differ from where it was: put it back.
+  final off = rect.top - box.getBoundingClientRect().top;
+  if (off.abs() >= 0.5) box.style.top = '${box.offsetTop + off}px';
   // The page as long as it was until it is over: the screen never jumps
   // because the page got shorter at once.
   final keep = el('div', attrs: {'aria-hidden': 'true'})..style.height = '${rect.height}px';
   web.document.body?.append(keep);
-  final now = _tops(under);
-  _mask(box, rect.height + _softPx);
+  final now = _tops(around), parentNow = _topOf(box.parentElement);
+  _mask(box, rect.height);
   box.style
     ..transition = 'none'
-    ..opacity = '1';
-  _slideIntoPlace(under, [for (var i = 0; i < under.length; i++) before[i] - now[i]], _shutMs);
+    ..opacity = '1'
+    ..setProperty('translate', '0 0');
+  _slideIntoPlace(around, [for (var i = 0; i < around.length; i++) before[i] - now[i]], _shutMs);
   box.getBoundingClientRect();
+  // It fades out a little ahead of the covering, so nothing of it is seen
+  // where the boxes under it come up.
   box.style
-    ..transition = _maskTransition(_shutMs)
-    ..opacity = '0';
+    ..transition = _boxTransition(_shutMs, fadeMs: (_shutMs * 0.7).round())
+    ..opacity = '0'
+    ..setProperty('translate', '0 ${parentNow - parentBefore}px');
   _mask(box, 0);
   keep.style
     ..transition = 'height ${_shutMs}ms $_glide'
