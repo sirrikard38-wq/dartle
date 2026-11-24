@@ -1768,17 +1768,49 @@ void _slideIntoPlace(List<web.HTMLElement> boxes, List<double> from, int ms) {
   if (moving.isEmpty) return;
   web.document.body?.getBoundingClientRect(); // the start is drawn first
   for (final b in moving) {
+    final glide = _glideMark(b);
     b.style
       ..transition = 'translate ${ms}ms $_glide'
       ..setProperty('translate', '0 0');
-  }
-  Timer(Duration(milliseconds: ms + 30), () {
-    for (final b in moving) {
+    // Tidied when its glide is really over - on a phone it starts a frame or
+    // two late, and tidying it on the clock cut its last bit short (a jerk).
+    _whenGlided(b, 'translate', ms, () {
+      if (!_stillGlide(b, glide)) return; // another glide took it over
       b.style
         ..transition = ''
         ..removeProperty('translate');
-    }
+    });
+  }
+}
+
+int _glides = 0;
+
+/// Marks [box] as in a new glide (one that starts on it while another is on
+/// its way takes it over); the mark.
+String _glideMark(web.HTMLElement box) {
+  final mark = '${++_glides}';
+  box.setAttribute('data-glide', mark);
+  return mark;
+}
+
+bool _stillGlide(web.HTMLElement box, String mark) => box.getAttribute('data-glide') == mark;
+
+/// [done] once [box]'s [property] has glided to its end - or, should the
+/// browser never say so, well after [ms].
+void _whenGlided(web.HTMLElement box, String property, int ms, void Function() done) {
+  var over = false;
+  late final StreamSubscription<web.TransitionEvent> listening;
+  void finish() {
+    if (over) return;
+    over = true;
+    listening.cancel();
+    done();
+  }
+
+  listening = const web.EventStreamProvider<web.TransitionEvent>('transitionend').forElement(box).listen((event) {
+    if (event.target == box && event.propertyName.endsWith(property)) finish();
   });
+  Timer(Duration(milliseconds: ms + 1000), finish);
 }
 
 /// [box]'s mask: uncovered from the top down to [px] (its lower 18 px soft);
@@ -1821,12 +1853,14 @@ void _slideOpen(web.HTMLElement box) {
     ..setProperty('translate', '0 ${parentBefore - parentNow}px');
   _slideIntoPlace(around, [for (var i = 0; i < around.length; i++) before[i] - now[i]], _openMs);
   box.getBoundingClientRect();
+  final glide = _glideMark(box);
   box.style
     ..transition = _boxTransition(_openMs, fadeMs: _openMs)
     ..opacity = '1'
     ..setProperty('translate', '0 0');
   _mask(box, height + _softPx);
-  Timer(const Duration(milliseconds: _openMs + 30), () {
+  _whenGlided(box, 'opacity', _openMs, () {
+    if (!_stillGlide(box, glide)) return;
     box.style
       ..transition = ''
       ..opacity = ''
@@ -1846,6 +1880,8 @@ void _slideShut(web.HTMLElement box) {
   final around = _around(box);
   final before = _tops(around), parentBefore = _topOf(box.parentElement);
   final rect = box.getBoundingClientRect();
+  final page = web.document.documentElement!;
+  final longer = page.scrollHeight; // the page as it was
   // Out of the page where it is (what is round it takes its place).
   box.style
     ..position = 'absolute'
@@ -1858,9 +1894,16 @@ void _slideShut(web.HTMLElement box) {
   // Its place for absolute boxes can differ from where it was: put it back.
   final off = rect.top - box.getBoundingClientRect().top;
   if (off.abs() >= 0.5) box.style.top = '${box.offsetTop + off}px';
-  // The page as long as it was until it is over: the screen never jumps
-  // because the page got shorter at once.
-  final keep = el('div', attrs: {'aria-hidden': 'true'})..style.height = '${rect.height}px';
+  box.style.display = 'none'; // the page without it
+  final shorter = page.scrollHeight;
+  box.style.display = '';
+  // The page as long as it was until it is over (a dot at its old end, out of
+  // the way of everything): the screen never jumps because the page got
+  // shorter at once. Only when it did.
+  final keep = el('div', attrs: {
+    'aria-hidden': 'true',
+    'style': 'position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; top: ${longer - 1}px',
+  });
   web.document.body?.append(keep);
   final now = _tops(around), parentNow = _topOf(box.parentElement);
   _mask(box, rect.height);
@@ -1877,13 +1920,14 @@ void _slideShut(web.HTMLElement box) {
     ..opacity = '0'
     ..setProperty('translate', '0 ${parentNow - parentBefore}px');
   _mask(box, 0);
+  // The dot moves up to where the page ends now, as the boxes glide.
   keep.style
-    ..transition = 'height ${_shutMs}ms $_glide'
-    ..height = '0px';
-  Timer(const Duration(milliseconds: _shutMs + 20), () {
-    box.remove();
-    keep.remove();
-  });
+    ..transition = 'top ${_shutMs}ms $_glide'
+    ..top = '${shorter - 1}px';
+  // Gone once it is out of sight (it fades ahead of the rest); the dot when
+  // the boxes are in their place.
+  _whenGlided(box, 'opacity', _shutMs, () => box.remove());
+  _whenGlided(keep, 'top', _shutMs, () => keep.remove());
 }
 
 /// A deleted reset: fireworks round [line] as it fades out; then it goes
