@@ -40,15 +40,48 @@ Future<OnlineConfig?> loadOnlineConfig() async {
   }
 }
 
+/// The online place as read at the start (null: none), and the one sign-in
+/// of this device that the leaderboard and Felgalizacija share - so the two
+/// never sign in as two players at once.
+OnlineConfig? _config;
+FirebaseSession? _session;
+StorageService? _storage;
+
 /// The leaderboard for this device: the shared online one when `online.json`
 /// is filled in, otherwise just the scores on this device.
 Future<LeaderboardRepository?> buildLeaderboard(StorageService storage) async {
-  final config = await loadOnlineConfig();
+  final config = _config = await loadOnlineConfig();
+  _storage = storage;
   if (config == null) return null;
+  final http = BrowserJsonHttp();
+  final session = _session = FirebaseSession(config, http, storage);
   return OnlineLeaderboardRepository(
     config: config,
-    http: BrowserJsonHttp(),
+    http: http,
     storage: storage,
+    session: session,
     local: LocalLeaderboardRepository(storage),
   );
+}
+
+/// Where Felgalizacije are shared: the Firebase of the leaderboard - but on
+/// this computer (localhost, trying the app out) a stand-in kept in this
+/// browser, so trying it never writes to the real one. Null without either.
+FelgaRemote? felgaRemote() {
+  final host = web.window.location.hostname;
+  if (host == 'localhost' || host == '127.0.0.1') {
+    String uid;
+    try {
+      // One "phone" per tab: two tabs can try joining each other.
+      uid = web.window.sessionStorage.getItem('dartle.felga-test-uid') ??
+          'tab-${DateTime.now().microsecondsSinceEpoch}';
+      web.window.sessionStorage.setItem('dartle.felga-test-uid', uid);
+    } on Object {
+      uid = 'tab';
+    }
+    return StorageFelgaRemote(_storage ?? InMemoryStorageService(), uid: uid);
+  }
+  final config = _config, session = _session;
+  if (config == null || session == null) return null;
+  return FirebaseFelgaRemote(config: config, http: BrowserJsonHttp(), session: session);
 }

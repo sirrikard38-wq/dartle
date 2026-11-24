@@ -10,6 +10,7 @@ import 'dart_shot_timing.dart';
 import 'dom.dart';
 import 'keyboard.dart';
 import 'modal.dart';
+import 'online_setup.dart';
 import 'swipes.dart';
 import 'view_context.dart';
 
@@ -69,6 +70,174 @@ void _save(FelgaLedger ledger) {
     web.window.localStorage.setItem(_open.storageKey, ledger.toJson());
   } on Object {
     // Kept for this visit only.
+  }
+  _syncSoon();
+}
+
+// ------------------------------------------------------------------ online
+
+/// Where a Felgalizacija's online bookkeeping is kept ([FelgaCopy.metaJson]).
+String _syncKey(String id) => 'dartle.felga-sync.$id';
+
+String? _read(String key) {
+  try {
+    return web.window.localStorage.getItem(key);
+  } on Object {
+    return null;
+  }
+}
+
+void _write(String key, String? value) {
+  try {
+    if (value == null) {
+      web.window.localStorage.removeItem(key);
+    } else {
+      web.window.localStorage.setItem(key, value);
+    }
+  } on Object {
+    // Kept for this visit only.
+  }
+}
+
+/// What this phone has of [entry].
+FelgaCopy _copyOf(FelgaEntry entry) => FelgaCopy.fromMeta(
+    name: entry.name, book: _read(entry.storageKey) ?? FelgaLedger().toJson(), meta: _read(_syncKey(entry.id)));
+
+/// Keeps [copy] as what this phone has of [entry] (its name in the list).
+void _keepCopy(FelgaEntry entry, FelgaCopy copy) {
+  _write(entry.storageKey, copy.book);
+  _write(_syncKey(entry.id), copy.metaJson());
+  if (copy.name != entry.name) {
+    _saveList([for (final e in felgaList()) e.id == entry.id ? FelgaEntry(e.id, copy.name, e.password) : e]);
+  }
+}
+
+bool _syncing = false, _syncAgain = false;
+Timer? _syncTimer;
+
+/// The open page, told that something came in from another phone: [book]
+/// changed, [name] changed.
+void Function({required bool book, required bool name})? _cameIn;
+
+/// Something changed: online in a moment (many quick presses go as one).
+void _syncSoon([Duration wait = const Duration(milliseconds: 400)]) {
+  _syncTimer?.cancel();
+  _syncTimer = Timer(wait, _syncOpen);
+}
+
+/// The Felgalizacija open and the one online brought together (see
+/// [syncFelga]). With no connection nothing happens: the next change or
+/// check tries again. What changed here while it was on its way is kept too.
+Future<void> _syncOpen() async {
+  if (_syncing) {
+    _syncAgain = true;
+    return;
+  }
+  final remote = felgaRemote();
+  final entry = _open;
+  if (remote == null || !felgaList().any((e) => e.id == entry.id)) return;
+  _syncing = true;
+  try {
+    var before = _copyOf(entry);
+    if (before.rev == 0) {
+      // Going online the first time: its maker's name is their account's.
+      final book = FelgaLedger.fromJson(before.book);
+      if (book.claimByName(_playerName, await remote.me())) {
+        before = before.withNow(book: book.toJson());
+        _write(entry.storageKey, before.book);
+        if (_ledgerId == entry.id) _ledger?.takeFrom(book);
+      }
+    }
+    final after = await syncFelga(remote, entry.password, before);
+    final nowEntry = felgaList().where((e) => e.id == entry.id).firstOrNull;
+    if (nowEntry == null) return; // deleted meanwhile
+    final now = _copyOf(nowEntry);
+    final book = now.book == before.book
+        ? after.book
+        : FelgaLedger.merged(
+                FelgaLedger.fromJson(before.book), FelgaLedger.fromJson(now.book), FelgaLedger.fromJson(after.book))
+            .toJson();
+    final name = now.name == before.name ? after.name : now.name;
+    _keepCopy(nowEntry, after.withNow(book: book, name: name));
+    final bookIn = book != now.book, nameIn = name != now.name;
+    if (bookIn && _ledgerId == entry.id) _ledger?.takeFrom(FelgaLedger.fromJson(book));
+    if (bookIn || nameIn) _cameIn?.call(book: bookIn, name: nameIn);
+  } on Object {
+    // No connection (or not set up online): tried again later.
+  } finally {
+    _syncing = false;
+    if (_syncAgain) {
+      _syncAgain = false;
+      _syncSoon(Duration.zero);
+    }
+  }
+}
+
+/// The player's name (for "that is me"), set when a page is built.
+String _playerName = '';
+
+/// Typing (a box has the cursor, or the money keys are up): the page is not
+/// drawn again under the fingers - it is when the typing is over.
+bool get _typing =>
+    web.document.activeElement?.tagName == 'INPUT' ||
+    (web.document.body?.classList.contains('money-pad-open') ?? false);
+
+/// Someone typed [password] of a Felgalizacija not on this phone: found
+/// online, "Are you one of the members of the Felgalizacija?" with every name
+/// nobody has said "that is me" of, one under the other, and No under them.
+/// A name pressed is this phone's from now on; No adds the player as a new
+/// name. One already this phone's opens at once.
+Future<void> _joinOnline(ViewContext ctx, String password) async {
+  final remote = felgaRemote();
+  if (remote == null) {
+    ctx.toast(tr('No Felgalizacija has this password.'));
+    return;
+  }
+  final RemoteFelga? found;
+  final String me;
+  try {
+    found = await remote.fetch(password);
+    me = await remote.me();
+  } on Object {
+    ctx.toast(tr('The Felgalizacija could not be reached: try again.'));
+    return;
+  }
+  if (found == null) {
+    ctx.toast(tr('No Felgalizacija has this password.'));
+    return;
+  }
+  final RemoteFelga online = found;
+  final book = FelgaLedger.fromJson(online.book);
+
+  void join(void Function() change) {
+    change();
+    final entry = FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', online.name, password);
+    _saveList([...felgaList(), entry]);
+    final copy =
+        FelgaCopy(name: online.name, book: online.book, rev: online.rev, baseName: online.name, baseBook: online.book);
+    // What changed (a name now this phone's, or a new one) goes online when
+    // it opens.
+    _keepCopy(entry, copy.withNow(book: book.toJson()));
+    _menuAdding = false;
+    openFelga(ctx, entry);
+  }
+
+  void asNew() => book.add(ctx.game.playerName, uid: me);
+  final names = book.unsynced;
+  if (book.memberOf(me) != null) {
+    join(() {});
+  } else if (names.isEmpty) {
+    join(asNew);
+  } else {
+    _choose(
+      tr('Are you one of the members of the Felgalizacija?'),
+      [
+        for (final m in names) (m.name, () => join(() => m.uid = me)),
+        (tr('No'), () => join(asNew)),
+      ],
+      secondLast: true,
+      stacked: true,
+    );
   }
 }
 
@@ -521,7 +690,40 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   refresh();
   namesPart.classList.toggle('removing', _adding);
   if (_adding) openNameBox(focus: false);
-  return el('main', cls: 'screen felga', children: [
+
+  // Shared online: what another phone changed comes in - checked at once and
+  // every 5 s while the page is open and seen - and is drawn in its place
+  // (not while typing: then when the typing ends).
+  _playerName = ctx.game.playerName;
+  var drawLater = false, renameLater = false;
+  late final web.HTMLElement screen;
+  void draw() {
+    if (renameLater) {
+      renameLater = drawLater = false;
+      ctx.rerender();
+    } else if (drawLater) {
+      drawLater = false;
+      refresh();
+    }
+  }
+
+  _cameIn = ({required bool book, required bool name}) {
+    if (!screen.isConnected) return;
+    drawLater |= book;
+    renameLater |= name;
+    if (!_typing) draw();
+  };
+  Timer.periodic(const Duration(seconds: 5), (timer) {
+    if (!screen.isConnected) {
+      timer.cancel();
+      return;
+    }
+    if (!_typing) draw();
+    if (!web.document.hidden) _syncOpen();
+  });
+  _syncSoon(Duration.zero);
+
+  return screen = el('main', cls: 'screen felga', children: [
     _topPart(moneyPart, _open, price: () => ledger.priceCents, onPrice: (cents, all) {
       ledger.setPrice(cents, applyToAll: all);
       changed();
@@ -569,10 +771,11 @@ void _deleteOpen(ViewContext ctx) {
   final entry = _open;
   final index = list.indexWhere((e) => e.id == entry.id);
   final others = {for (final e in list) if (e.id != entry.id) e.id};
-  String? book;
+  // Off this phone only: online it stays for the others.
+  final book = _read(entry.storageKey), meta = _read(_syncKey(entry.id));
+  _write(entry.storageKey, null);
+  _write(_syncKey(entry.id), null);
   try {
-    book = web.window.localStorage.getItem(entry.storageKey);
-    web.window.localStorage.removeItem(entry.storageKey);
     web.window.sessionStorage.removeItem(_openKey);
   } on Object {
     // Kept for this visit only.
@@ -589,11 +792,8 @@ void _deleteOpen(ViewContext ctx) {
     final now = [for (final e in felgaList()) if (others.contains(e.id)) e];
     now.insert(math.max(0, math.min(index, now.length)), entry);
     _saveList(now);
-    try {
-      if (book != null) web.window.localStorage.setItem(entry.storageKey, book);
-    } on Object {
-      // Kept for this visit only.
-    }
+    if (book != null) _write(entry.storageKey, book);
+    if (meta != null) _write(_syncKey(entry.id), meta);
     _ledger = null;
     _ledgerId = null;
     ctx.rerender();
@@ -920,7 +1120,9 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
         openFelga(ctx, mine);
         return;
       }
-      ctx.toast(tr('No Felgalizacija has this password.'));
+      // Not on this phone: looked for online.
+      password.blur();
+      _joinOnline(ctx, typed);
     });
 
     final inner = el('div', cls: 'felga-join-inner', children: [
@@ -1059,6 +1261,7 @@ web.HTMLElement _topPart(web.HTMLElement money, FelgaEntry entry,
         room: () => web.window.innerWidth - 140.0,
         onConfirm: (typed) {
           _saveList([for (final e in felgaList()) e.id == entry.id ? FelgaEntry(e.id, typed, e.password) : e]);
+          _syncSoon(); // the new name online too
           renamePlus.click(); // closes the line
         },
       );
@@ -1271,10 +1474,11 @@ void _ask(String question, void Function() yes) =>
 
 /// A question in a popup with its [answers] side by side, each running its
 /// own; the popup closes on any. [secondLast]: the last one is the quiet one.
-void _choose(String question, List<(String, void Function())> answers, {bool secondLast = false}) {
+/// [stacked]: one under the other.
+void _choose(String question, List<(String, void Function())> answers, {bool secondLast = false, bool stacked = false}) {
   showModal(title: tr('Reset'), showTitle: false, body: [
     modalLine(question),
-    el('div', cls: 'felga-ask', children: [
+    el('div', cls: stacked ? 'felga-ask felga-ask-list' : 'felga-ask', children: [
       for (final (i, (label, run)) in answers.indexed)
         button(label, cls: secondLast && i == answers.length - 1 ? 'cta secondary' : 'cta', onPressed: (_) {
           closeModal();

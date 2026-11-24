@@ -224,12 +224,13 @@ class OnlineLeaderboardRepository implements LeaderboardRepository {
     required StorageService storage,
     required LeaderboardRepository local,
     DateTime Function()? now,
+    FirebaseSession? session,
     this.maxEntries = topPlayers,
     this.requestTimeout = const Duration(seconds: 6),
   })  : _config = config,
         _http = http,
         _local = local,
-        _session = FirebaseSession(config, http, storage, now: now);
+        _session = session ?? FirebaseSession(config, http, storage, now: now);
 
   /// The leaderboard has this many players: the top ones by points.
   static const int topPlayers = 180;

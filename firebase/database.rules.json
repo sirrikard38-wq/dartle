@@ -30,6 +30,25 @@
           ".validate": false
         }
       }
+    },
+    "felga": {
+      "$key": {
+        ".read": "auth != null && $key.matches(/^[0-9a-f]{64}$/)",
+        ".write": "auth != null && $key.matches(/^[0-9a-f]{64}$/) && newData.exists()",
+        ".validate": "newData.hasChildren(['name', 'book', 'rev']) && (data.exists() ? newData.child('rev').val() === data.child('rev').val() + 1 : newData.child('rev').val() === 1)",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "book": {
+          ".validate": "newData.isString() && newData.val().length <= 1000000"
+        },
+        "rev": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
     }
   }
 }

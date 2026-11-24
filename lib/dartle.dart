@@ -33,6 +33,7 @@ export 'src/game/choice_parts.dart';
 export 'src/game/game_controller.dart';
 export 'src/game/game_mode.dart';
 export 'src/felga/felga_ledger.dart';
+export 'src/felga/felga_online.dart';
 export 'src/game/number_input.dart';
 export 'src/game/tutorial_session.dart';
 export 'src/i18n/i18n.dart';

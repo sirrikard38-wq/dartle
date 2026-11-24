@@ -1,11 +1,16 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 /// One person of Felgalizacija: points (+1 / -1) and the money they paid in.
 class FelgaMember {
-  FelgaMember(this.name, {this.points = 0, this.paidCents = 0, this.adjustCents = 0});
+  FelgaMember(this.name, {this.points = 0, this.paidCents = 0, this.adjustCents = 0, this.uid});
 
   String name;
   int points;
+
+  /// The account (the device's online sign-in) this name belongs to; null
+  /// while nobody has said "that is me" (not "synced").
+  String? uid;
 
   /// What their felgas cost beyond the cost of a felga now (below zero: less),
   /// from felgas counted at an earlier cost that was not applied to them.
@@ -231,11 +236,128 @@ class FelgaLedger {
     return true;
   }
 
-  /// Adds [name] (trimmed); nothing for an empty one.
-  void add(String name) {
+  /// Adds [name] (trimmed), the name of [uid] when given; nothing for an
+  /// empty one.
+  void add(String name, {String? uid}) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
-    members.add(FelgaMember(trimmed));
+    members.add(FelgaMember(trimmed, uid: uid));
+  }
+
+  /// The member that is [uid]'s name; null for none.
+  FelgaMember? memberOf(String uid) => members.where((m) => m.uid == uid).firstOrNull;
+
+  /// The names nobody has said "that is me" of yet.
+  List<FelgaMember> get unsynced => [for (final m in members) if (m.uid == null) m];
+
+  /// The maker of a Felgalizacija kept before it went online: the name
+  /// [name] becomes [uid]'s, if nobody has one yet and no name is [uid]'s.
+  bool claimByName(String name, String uid) {
+    if (memberOf(uid) != null) return false;
+    final mine = members.where((m) => m.uid == null && m.name == name.trim()).firstOrNull;
+    if (mine == null) return false;
+    mine.uid = uid;
+    return true;
+  }
+
+  /// Everything [other] has, taken over: a name in both stays the same
+  /// [FelgaMember] here (so what is open on the screen for it still works).
+  void takeFrom(FelgaLedger other) {
+    final kept = {for (final m in members) m.name: m};
+    members
+      ..clear()
+      ..addAll([
+        for (final o in other.members)
+          if (kept[o.name] case final m?)
+            (m
+              ..points = o.points
+              ..paidCents = o.paidCents
+              ..adjustCents = o.adjustCents
+              ..uid = o.uid)
+          else
+            o,
+      ]);
+    history
+      ..clear()
+      ..addAll(other.history);
+    periods
+      ..clear()
+      ..addAll(other.periods);
+    leftCents = other.leftCents;
+    priceCents = other.priceCents;
+  }
+
+  /// Two phones changed the same Felgalizacija: [theirs] is what is online
+  /// now, [mine] what this one made of [base] (what both had last). The
+  /// answer is [theirs] with everything [mine] changed since [base] put on
+  /// top: each name's felgas and payments go up and down by as much as they
+  /// did here (so a +1 here and a +1 there make +2), names added here come
+  /// in, names taken out here go, and so do the days and resets deleted here;
+  /// a new cost or a new reset here is kept. [mine]'s objects are used in it.
+  static FelgaLedger merged(FelgaLedger base, FelgaLedger mine, FelgaLedger theirs) {
+    final out = FelgaLedger.fromJson(theirs.toJson());
+    FelgaMember? named(FelgaLedger book, String name) => book.members.where((m) => m.name == name).firstOrNull;
+
+    for (final b in base.members) {
+      if (named(mine, b.name) == null) {
+        // Taken out here: what they paid is already in [leftCents]'s change.
+        final there = named(out, b.name);
+        if (there != null) out.members.remove(there);
+      }
+    }
+    for (final m in mine.members) {
+      final b = named(base, m.name);
+      final there = named(out, m.name);
+      if (there == null) {
+        if (b == null) out.members.add(m); // added here; one taken out there stays out
+        continue;
+      }
+      there
+        ..points = math.max(0, there.points + m.points - (b?.points ?? 0))
+        ..paidCents += m.paidCents - (b?.paidCents ?? 0)
+        ..adjustCents += m.adjustCents - (b?.adjustCents ?? 0);
+      if (m.uid != null && m.uid != b?.uid) there.uid = m.uid;
+    }
+
+    int count(FelgaLedger book, String name, String date) =>
+        book.history.where((d) => d.name == name && d.date == date).fold(0, (sum, d) => sum + d.count);
+    void change(String name, String date, {required bool toTop}) {
+      final by = count(mine, name, date) - count(base, name, date);
+      if (by == 0) return;
+      final i = out.history.indexWhere((d) => d.name == name && d.date == date);
+      if (!toTop && i >= 0) {
+        out.history[i].count += by;
+        return;
+      }
+      final line = i < 0 ? FelgaDay(name, date, 0) : out.history.removeAt(i);
+      line.count += by;
+      out.history.insert(0, line);
+    }
+
+    // The lines changed here go to the top, the latest of them first.
+    final seen = <String>{};
+    for (final d in mine.history.reversed) {
+      if (seen.add('${d.name}\n${d.date}')) change(d.name, d.date, toTop: true);
+    }
+    for (final d in base.history) {
+      if (seen.add('${d.name}\n${d.date}')) change(d.name, d.date, toTop: false);
+    }
+
+    if (mine.priceCents != base.priceCents) out.priceCents = mine.priceCents;
+    out.leftCents += mine.leftCents - base.leftCents;
+
+    final baseIds = {for (final p in base.periods) p.id: jsonEncode(_periodJson(p))};
+    final mineIds = {for (final p in mine.periods) p.id};
+    out.periods.removeWhere((p) => baseIds.containsKey(p.id) && !mineIds.contains(p.id));
+    for (final p in mine.periods.reversed) {
+      final i = out.periods.indexWhere((o) => o.id == p.id);
+      if (!baseIds.containsKey(p.id)) {
+        if (i < 0) out.periods.insert(0, p);
+      } else if (baseIds[p.id] != jsonEncode(_periodJson(p)) && i >= 0) {
+        out.periods[i] = p;
+      }
+    }
+    return out;
   }
 
   /// What [member] owes for their points.
@@ -276,23 +398,29 @@ class FelgaLedger {
         'left': leftCents,
         'price': priceCents,
         'members': [
-          for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents, 'adjust': m.adjustCents},
+          for (final m in members)
+            {
+              'name': m.name,
+              'points': m.points,
+              'paid': m.paidCents,
+              'adjust': m.adjustCents,
+              if (m.uid != null) 'uid': m.uid,
+            },
         ],
         'history': [
           for (final d in history) {'name': d.name, 'date': d.date, 'count': d.count},
         ],
-        'periods': [
-          for (final p in periods)
-            {
-              'id': p.id,
-              'from': p.from,
-              'to': p.to,
-              'totals': [
-                for (final t in p.totals) {'name': t.name, 'felgas': t.felgas, 'owed': t.owedCents, 'paid': t.paidCents},
-              ],
-            },
-        ],
+        'periods': [for (final p in periods) _periodJson(p)],
       });
+
+  static Map<String, Object?> _periodJson(FelgaPeriod p) => {
+        'id': p.id,
+        'from': p.from,
+        'to': p.to,
+        'totals': [
+          for (final t in p.totals) {'name': t.name, 'felgas': t.felgas, 'owed': t.owedCents, 'paid': t.paidCents},
+        ],
+      };
 
   /// From [toJson]; an empty ledger for anything it cannot read. Kept before
   /// "From ... to ...", each reset was a line "Up to" a day among the days
@@ -341,7 +469,8 @@ class FelgaLedger {
             FelgaMember(m['name'] as String,
                 points: (m['points'] as num?)?.toInt() ?? 0,
                 paidCents: (m['paid'] as num?)?.toInt() ?? 0,
-                adjustCents: (m['adjust'] as num?)?.toInt() ?? 0),
+                adjustCents: (m['adjust'] as num?)?.toInt() ?? 0,
+                uid: m['uid'] as String?),
         ],
         history: days,
         periods: periods,

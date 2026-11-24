@@ -68,3 +68,29 @@ To switch the online board off again, empty both values.
 - Code: `lib/src/leaderboard/online_leaderboard.dart` (all the logic, tested with
   a fake Firebase in `test/online_leaderboard_test.dart`), `lib/ui/online_setup.dart`
   (the browser's web requests and reading `online.json`).
+
+## Shared Felgalizacija
+
+The same database also shares each Felgalizacija between phones, under
+`/felga/<key>`. The key is the SHA-256 hash of the Felgalizacija's password, so
+only someone who knows the password can find it. Nobody can list the
+Felgalizacije.
+
+- **Switching it on:** publish the current
+  [`firebase/database.rules.json`](../firebase/database.rules.json) in the
+  Firebase console (Realtime Database -> Rules -> paste -> **Publish**).
+  Until then every phone keeps its Felgalizacije to itself, as before.
+- **Joining:** typing the password of a Felgalizacija that is not on the phone
+  finds it online. A popup then lists the names nobody has claimed yet. Picking
+  one makes it this phone's name; **No** adds the player as a new name.
+- **Writing:** each write carries `rev`, which must be one more than the value
+  stored (1 for a new one), so a phone can never write over a newer copy.
+  When two phones change it at once, the slower one fetches the newer copy and
+  adds its own changes on top (`FelgaLedger.merged`): a +1 here and a +1 there
+  make +2.
+- **Checking:** the open Felgalizacija page checks for changes every 5 seconds,
+  and right after every change.
+- **Deleting** a Felgalizacija removes it from that phone only.
+- **On localhost** (trying the app out on the computer) the app never talks to
+  Firebase. A stand-in kept in the browser plays its part, so tests never write
+  to the real database.
