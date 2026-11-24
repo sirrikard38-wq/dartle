@@ -1180,9 +1180,12 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
       final typed = password.value.trim();
       if (typed.isEmpty) return;
       final mine = felgaList().where((e) => e.password == typed).firstOrNull;
+      // Already on this phone: only said which one it is (its button is
+      // right above).
       if (mine != null) {
-        _menuAdding = false;
-        openFelga(ctx, mine);
+        ctx.toast(mine.name.isEmpty
+            ? tr('Felgalizacija already added.')
+            : tr('Felgalizacija already added, it is {name}', {'name': mine.name}));
         return;
       }
       // Not on this phone: looked for online.

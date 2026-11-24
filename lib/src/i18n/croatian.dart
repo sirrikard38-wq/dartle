@@ -96,6 +96,8 @@ const Map<String, String> croatian = {
   'Name of the Felgalizacija': 'Ime Felgalizacije',
   'Password': 'Šifra',
   'No Felgalizacija has this password.': 'Nijedna Felgalizacija nema tu šifru.',
+  'Felgalizacija already added.': 'Felgalizacija već dodana.',
+  'Felgalizacija already added, it is {name}': 'Felgalizacija već dodana, to je {name}',
   'The Felgalizacija could not be reached: try again.': 'Felgalizacija se ne može dohvatiti: pokušaj ponovo.',
   'Are you one of the members of the Felgalizacija?': 'Jesi li ti jedan od članova Felgalizacije?',
   'You are no longer a member of the Felgalizacija.': 'Više nisi član Felgalizacije.',
