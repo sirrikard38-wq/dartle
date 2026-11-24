@@ -1690,3 +1690,9 @@ body.money-pad-open { padding-bottom: 240px; }
   font: inherit; font-size: 1.05rem; letter-spacing: 0.04em; cursor: pointer;
 }
 .menu-list > .felga-add-words + .menu-plus { margin-top: -10px; }
+
+/* The name of a Felgalizacija (on its button and while it is typed) looks
+   just like the word FELGALIZACIJA over it: the same size, capitals and
+   spacing, not bold. */
+.felga-btn-name { text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.1rem; font-weight: inherit; }
+.felga-naming .felga-name-input { text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.1rem; font-weight: 400; }
