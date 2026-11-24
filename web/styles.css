@@ -1767,3 +1767,9 @@ body.money-pad-open { padding-bottom: 240px; }
    are open. */
 .felga-pass-sizer { height: 0; overflow: hidden; visibility: hidden; display: flex; flex-direction: column; align-items: center; }
 .felga-pass-sizer .felga-pass-plus { display: inline-block; flex: none; }
+
+/* Settings: every line ends at the same place, so the + of each stands right
+   under the + of "settings". */
+.felga-pass, .felga-settings-box, .felga-settings, .felga-pass-box, .felga-pass-sizer { align-items: flex-end; }
+.felga-pass-row { justify-content: flex-end; }
+.felga-top .felga-copied { left: auto; right: 0; transform: none; }
