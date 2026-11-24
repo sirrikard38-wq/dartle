@@ -1741,3 +1741,16 @@ body.money-pad-open { padding-bottom: 240px; }
   visibility: hidden; opacity: 0; transition: opacity 250ms ease, visibility 0s linear 250ms;
 }
 .felga-part.removing .felga-member-input { visibility: visible; opacity: 1; transition: opacity 250ms ease; }
+
+/* The dart beside a name line, a third smaller. */
+.felga-name-dart { width: 27px; height: 22px; left: calc(100% + 8px); }
+.felga-name-dart .dart-icon { width: 27px; height: 11px; }
+.felga-name-line.shot .felga-name-dart { transform: translateY(-50%) rotate(180deg) translateX(8px); }
+
+/* Settings: "settings +" and, under it, each "name +" in the middle of the
+   column, one under the other. */
+.felga-pass { align-items: center; }
+.felga-settings-box, .felga-settings, .felga-pass-box { align-items: center; }
+.felga-settings { padding: 4px 0 0; }
+.felga-pass-row { justify-content: center; }
+.felga-top .felga-copied { left: 50%; right: auto; transform: translateX(-50%); }
