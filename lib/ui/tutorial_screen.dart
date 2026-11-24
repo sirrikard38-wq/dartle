@@ -158,8 +158,8 @@ web.HTMLElement swipeTabs(
       follow: (step, fraction) =>
           mark.follow(exists(index + step) ? row.children.item(index + step) as web.HTMLElement? : null, fraction),
       fixedHeight: fixedHeight,
-      // Right on the first part: back to the game modes.
-      backPastStart: () => ctx.showPage(MenuPage.modes));
+      // Right on the first part: back to the menu.
+      backPastStart: () => ctx.showPage(MenuPage.home));
   return area;
 }
 

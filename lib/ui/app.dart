@@ -14,7 +14,6 @@ import 'install.dart';
 import 'leaderboard_screen.dart';
 import 'menu_screen.dart';
 import 'modal.dart';
-import 'modes_screen.dart';
 import 'result_screen.dart';
 import 'sound.dart';
 import 'swipes.dart';
@@ -139,7 +138,6 @@ class DartleApp {
       GamePhase.menu => switch (_page) {
           MenuPage.welcome => buildWelcomeScreen(_ctx),
           MenuPage.home => buildMenuScreen(_ctx),
-          MenuPage.modes => buildModesScreen(_ctx),
           MenuPage.favorites => buildFavoritesScreen(_ctx),
           MenuPage.leaderboard => buildLeaderboardScreen(_ctx),
           MenuPage.tutorial => buildTutorialScreen(_ctx),
@@ -244,9 +242,8 @@ class DartleApp {
 
   /// The Back button: the welcome screen's dart turned round to point left, with
   /// no background. Pressed, it does not shoot: it slides half a centimetre left
-  /// and fades out smoothly (no circle, no wiggle), then goes one step back: from
-  /// a game to the game modes, from anywhere else to the menu
-  /// ([ViewContext.backTarget]).
+  /// and fades out smoothly (no circle, no wiggle), then goes one step back: to
+  /// the menu ([ViewContext.backTarget]).
   web.HTMLElement _buildBackDart() {
     late final web.HTMLElement stage;
     var leaving = false;
@@ -280,13 +277,12 @@ class DartleApp {
   /// their popstate is not the phone's way back.
   int _ownPops = 0;
 
-  /// How deep the screen is: the menu 0; the game modes, Favorites and
-  /// Leaderboard 1; a game or the tutorial (under the game modes) 2.
+  /// How deep the screen is: the menu 0; everything else (Checkout
+  /// calculator, Favorites, a Felgalizacija) 1, right under it.
   int get _depth {
-    if (_game.phase != GamePhase.menu) return 2;
+    if (_game.phase != GamePhase.menu) return 1;
     return switch (_page) {
       MenuPage.welcome || MenuPage.home => 0,
-      MenuPage.tutorial => 2,
       _ => 1,
     };
   }
@@ -329,7 +325,7 @@ class DartleApp {
   /// A step is added as a screen goes a level deeper, before the new screen is
   /// drawn: the browser keeps a picture of the screen being left with it, and
   /// shows that picture as the phone's back slides to it - the screen the way
-  /// back goes to (from a game: the game modes, not the menu). Going back up
+  /// back goes to (the menu). Going back up
   /// another way (the Back dart, a button) takes the steps off again.
   void _syncHistory() {
     final depth = _depth;

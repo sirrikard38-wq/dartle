@@ -5,7 +5,8 @@ import 'dom.dart';
 import 'felga_screen.dart';
 import 'view_context.dart';
 
-/// Main menu: Start, Favorites, each Felgalizacija and a + for another (the
+/// Main menu: Start (straight into Checkout calculator, the one game left, on
+/// Practice), Favorites, each Felgalizacija and a + for another (the
 /// Leaderboard is no longer offered; its page stays).
 web.HTMLElement buildMenuScreen(ViewContext ctx) {
   final game = ctx.game;
@@ -17,7 +18,10 @@ web.HTMLElement buildMenuScreen(ViewContext ctx) {
         button(tr('Start'),
             cls: 'menu-btn primary',
             focusKey: 'start',
-            onPressed: (_) => ctx.showPage(MenuPage.modes)),
+            onPressed: (_) {
+              game.tutorial.tab = TutorialTab.practice;
+              ctx.showPage(MenuPage.tutorial);
+            }),
         button(tr('Favorites'),
             cls: 'menu-btn',
             focusKey: 'favorites',

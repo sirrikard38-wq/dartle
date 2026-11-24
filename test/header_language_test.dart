@@ -74,19 +74,12 @@ void mirrorAndBackTests() {
   });
 
   group('the Back dart goes one step back', () {
-    test('from a game or a result: the game modes', () {
-      for (final phase in [
-        GamePhase.playing,
-        GamePhase.result,
-      ]) {
-        expect(ViewContext.backTarget(phase), MenuPage.modes, reason: '$phase');
+    test('from every page, Checkout calculator too: the menu (no game modes in between)', () {
+      for (final phase in GamePhase.values) {
+        expect(ViewContext.backTarget(phase), MenuPage.home, reason: '$phase');
       }
-    });
-
-    test('from the modes, Favorites and the Leaderboard (all menu pages): the menu', () {
-      expect(ViewContext.backTarget(GamePhase.menu), MenuPage.home);
-      // Checkout tutorial goes back to the game modes it was chosen from.
-      expect(ViewContext.backTarget(GamePhase.menu, MenuPage.tutorial), MenuPage.modes);
+      expect(ViewContext.backTarget(GamePhase.menu, MenuPage.tutorial), MenuPage.home);
+      expect(MenuPage.values.map((p) => p.name), isNot(contains('modes')));
     });
 
     test('the dart uses it', () {

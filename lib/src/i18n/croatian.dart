@@ -22,7 +22,6 @@ const Map<String, String> croatian = {
   'Checkout choice': 'Checkout izbor',
   'Choose': 'Odaberi',
   'Press the darts to choose 2 or 3 darts.': 'Pritisni strelice za izbor 2 ili 3 strelice.',
-  'Learn what to aim at, and why.': 'Nauči što gađati i zašto.',
   'Learn': 'Učenje',
   'Added to favorites!': 'Dodano u favorite!',
   'Removed from favorites!': 'Maknuto iz favorita!',
