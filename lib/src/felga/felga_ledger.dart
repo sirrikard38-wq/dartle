@@ -2,10 +2,14 @@ import 'dart:convert';
 
 /// One person of Felgalizacija: points (+1 / -1) and the money they paid in.
 class FelgaMember {
-  FelgaMember(this.name, {this.points = 0, this.paidCents = 0});
+  FelgaMember(this.name, {this.points = 0, this.paidCents = 0, this.adjustCents = 0});
 
-  final String name;
+  String name;
   int points;
+
+  /// What their felgas cost beyond the cost of a felga now (below zero: less),
+  /// from felgas counted at an earlier cost that was not applied to them.
+  int adjustCents;
 
   /// Everything entered as paid, added up (it can go below zero).
   int paidCents;
@@ -16,7 +20,7 @@ class FelgaMember {
 class FelgaDay {
   FelgaDay(this.name, this.date, this.count);
 
-  final String name;
+  String name;
 
   /// The day, written dd.mm.yyyy.
   final String date;
@@ -86,13 +90,41 @@ DateTime? _readDate(String date) {
 /// what each has paid, and the club's money: everything paid, with what was
 /// added to it or spent from it.
 class FelgaLedger {
-  FelgaLedger({List<FelgaMember>? members, this.leftCents = 0, List<FelgaDay>? history, List<FelgaPeriod>? periods})
-      : members = members ?? [],
+  FelgaLedger({
+    List<FelgaMember>? members,
+    this.leftCents = 0,
+    this.priceCents = defaultPriceCents,
+    List<FelgaDay>? history,
+    List<FelgaPeriod>? periods,
+  })  : members = members ?? [],
         history = history ?? [],
         periods = periods ?? [];
 
-  /// One point costs this many cents.
-  static const int centsPerPoint = 50;
+  /// What a felga costs until another cost is set.
+  static const int defaultPriceCents = 50;
+
+  /// What a felga costs now ("cost").
+  int priceCents;
+
+  /// A new cost of a felga: for every felga already counted too ([applyToAll])
+  /// or only for the felgas from now on - those before keep their cost.
+  void setPrice(int cents, {required bool applyToAll}) {
+    if (cents <= 0) return;
+    for (final m in members) {
+      m.adjustCents = applyToAll ? 0 : m.adjustCents + m.points * (priceCents - cents);
+    }
+    priceCents = cents;
+  }
+
+  /// [member] is called [name] (trimmed) from now on, in the history too.
+  void rename(FelgaMember member, String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed == member.name) return;
+    for (final d in history) {
+      if (d.name == member.name) d.name = trimmed;
+    }
+    member.name = trimmed;
+  }
 
   final List<FelgaMember> members;
 
@@ -160,7 +192,8 @@ class FelgaLedger {
     for (final m in members) {
       m
         ..points = 0
-        ..paidCents = 0;
+        ..paidCents = 0
+        ..adjustCents = 0;
     }
     leftCents = 0;
   }
@@ -188,6 +221,8 @@ class FelgaLedger {
   bool step(FelgaMember member, int by, DateTime day) {
     if (member.points + by < 0) return false;
     member.points += by;
+    // No felgas left: nothing from an earlier cost either.
+    if (member.points == 0) member.adjustCents = 0;
     final date = felgaDate(day);
     final i = history.indexWhere((d) => d.name == member.name && d.date == date);
     final line = i < 0 ? FelgaDay(member.name, date, 0) : history.removeAt(i);
@@ -204,10 +239,10 @@ class FelgaLedger {
   }
 
   /// What [member] owes for their points.
-  static int owedCents(FelgaMember member) => member.points * centsPerPoint;
+  int owedCents(FelgaMember member) => member.points * priceCents + member.adjustCents;
 
   /// Still to pay: what they owe less what they paid (below zero: paid more).
-  static int debtCents(FelgaMember member) => owedCents(member) - member.paidCents;
+  int debtCents(FelgaMember member) => owedCents(member) - member.paidCents;
 
   /// Everything paid in.
   int get totalCents => members.fold(0, (sum, m) => sum + m.paidCents);
@@ -239,8 +274,9 @@ class FelgaLedger {
 
   String toJson() => jsonEncode({
         'left': leftCents,
+        'price': priceCents,
         'members': [
-          for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents},
+          for (final m in members) {'name': m.name, 'points': m.points, 'paid': m.paidCents, 'adjust': m.adjustCents},
         ],
         'history': [
           for (final d in history) {'name': d.name, 'date': d.date, 'count': d.count},
@@ -299,10 +335,13 @@ class FelgaLedger {
       return FelgaLedger(
         // "Club money" (kept as 'club' or 'spent') is no more: left out.
         leftCents: (data['left'] as num?)?.toInt() ?? 0,
+        priceCents: (data['price'] as num?)?.toInt() ?? defaultPriceCents,
         members: [
           for (final m in (data['members'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
             FelgaMember(m['name'] as String,
-                points: (m['points'] as num?)?.toInt() ?? 0, paidCents: (m['paid'] as num?)?.toInt() ?? 0),
+                points: (m['points'] as num?)?.toInt() ?? 0,
+                paidCents: (m['paid'] as num?)?.toInt() ?? 0,
+                adjustCents: (m['adjust'] as num?)?.toInt() ?? 0),
         ],
         history: days,
         periods: periods,

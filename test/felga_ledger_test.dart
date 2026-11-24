@@ -14,19 +14,19 @@ void main() {
     miha.points = 5;
     sin.points = 6 - 1;
     expect(ledger.byPoints.map((m) => m.name), ['Miha', 'Sin', 'Riko']);
-    expect(formatEuro(FelgaLedger.owedCents(riko)), '1,5€');
-    expect(formatEuro(FelgaLedger.owedCents(miha)), '2,5€');
+    expect(formatEuro(FelgaLedger().owedCents(riko)), '1,5€');
+    expect(formatEuro(FelgaLedger().owedCents(miha)), '2,5€');
   });
 
   test('debt is what is owed less what was paid; the club has what was paid', () {
     final ledger = FelgaLedger()..add('Riko');
     final riko = ledger.members.single..points = 3;
     riko.paidCents += parseEuroCents('1')!;
-    expect(formatEuro(FelgaLedger.debtCents(riko)), '0,5€');
+    expect(formatEuro(FelgaLedger().debtCents(riko)), '0,5€');
     riko.paidCents += parseEuroCents('-2')!;
-    expect(formatEuro(FelgaLedger.debtCents(riko)), '2,5€');
+    expect(formatEuro(FelgaLedger().debtCents(riko)), '2,5€');
     riko.paidCents += parseEuroCents('10')!;
-    expect(formatEuro(FelgaLedger.debtCents(riko)), '-7,5€', reason: 'paid more than owed');
+    expect(formatEuro(FelgaLedger().debtCents(riko)), '-7,5€', reason: 'paid more than owed');
     expect(formatEuro(ledger.totalCents), '9€');
     expect(formatEuro(ledger.currentCents), '9€');
     // Total money in the club: what everyone still owes (Riko paid 7,5 more).
@@ -218,6 +218,37 @@ void main() {
     expect(ledger.history.map((d) => '${d.name} ${d.count}'), ['Miha 3', 'Riko 2'], reason: 'the history stays');
     final back = FelgaLedger.fromJson(ledger.toJson());
     expect(back.currentCents, ledger.currentCents);
+  });
+
+  test('a cost per felga: for every felga, or only for the felgas from now on', () {
+    final ledger = FelgaLedger()..add('Riko');
+    final riko = ledger.members.single;
+    final day = DateTime(2026, 11, 24);
+    for (var i = 0; i < 6; i++) {
+      ledger.step(riko, 1, day);
+    }
+    expect(formatEuro(ledger.owedCents(riko)), '3€', reason: '0,50€ a felga at first');
+    ledger.setPrice(25, applyToAll: true);
+    expect(formatEuro(ledger.owedCents(riko)), '1,5€', reason: '6 felgas at 0,25€');
+    ledger.step(riko, 1, day);
+    expect(formatEuro(ledger.owedCents(riko)), '1,75€');
+    ledger.setPrice(100, applyToAll: false);
+    expect(formatEuro(ledger.owedCents(riko)), '1,75€', reason: 'the felgas before keep their cost');
+    ledger.step(riko, 1, day);
+    expect(formatEuro(ledger.owedCents(riko)), '2,75€', reason: 'a new one costs 1€');
+    final back = FelgaLedger.fromJson(ledger.toJson());
+    expect(back.priceCents, 100);
+    expect(back.owedCents(back.members.single), ledger.owedCents(riko));
+  });
+
+  test('a name changes, in the history too', () {
+    final ledger = FelgaLedger()..add('Miha');
+    final miha = ledger.members.single;
+    ledger
+      ..step(miha, 1, DateTime(2026, 11, 24))
+      ..rename(miha, ' Mihovil ');
+    expect(miha.name, 'Mihovil');
+    expect(ledger.history.single.name, 'Mihovil');
   });
 
   test('a day is taken out of the history; the felgas stay', () {
