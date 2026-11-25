@@ -1797,3 +1797,12 @@ body.money-pad-open { padding-bottom: 240px; }
   margin: 4px 0 0; padding: 4px 0; border: 0; background: none; color: var(--muted);
   font: inherit; font-size: 0.7rem; letter-spacing: 0.04em; text-decoration: underline; cursor: pointer;
 }
+
+/* "Log change": a line for each day on the right (as Felgas by date), which
+   opens what was done on it - the time in grey, then who and what. */
+.felga-log { width: calc(100% - 10mm); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.felga-log-day { width: 100%; display: flex; flex-direction: column; align-items: flex-end; }
+.felga-log-lines { align-self: stretch; margin: 6px 0 10px; }
+.felga-log-line { display: flex; gap: 10px; margin: 0 0 6px; font-size: 0.9rem; line-height: 1.35; text-align: left; }
+.felga-log-time { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.felga-log-text { min-width: 0; overflow-wrap: break-word; color: var(--fg); }

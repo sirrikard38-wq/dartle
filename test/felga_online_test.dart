@@ -140,6 +140,23 @@ void main() {
       expect(a.ledger.unsynced.map((m) => m.name), ['Riko', 'Tin']);
     });
 
+    test('the log keeps every line of both phones, once, by time', () async {
+      a.change((l) => l.note('Riko', 'plus', {'member': 'Tin'}));
+      b.change((l) => l.note('Mihovil', 'paid', {'member': 'Tin', 'cents': '200'}));
+      await a.sync();
+      await b.sync();
+      await a.sync();
+      for (final p in [a, b]) {
+        final log = p.ledger.log;
+        expect(log.map((e) => e.what), ['plus', 'paid']);
+        expect(log.last.args, {'member': 'Tin', 'cents': '200'});
+        expect(log.first.who, 'Riko');
+      }
+      // Once more: nothing doubled.
+      await b.sync();
+      expect(b.ledger.log, hasLength(2));
+    });
+
     test('a new name of the Felgalizacija goes over', () async {
       a.copy = a.copy.withNow(name: 'Klub 2');
       await a.sync();

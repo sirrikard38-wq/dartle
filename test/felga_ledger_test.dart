@@ -261,4 +261,21 @@ void main() {
     expect(ledger.history.map((d) => d.date), ['24.11.2026']);
     expect(riko.points, 2);
   });
+
+  test('the log is saved and read back, the latest 1000 kept', () {
+    final l = FelgaLedger()..add('Tin');
+    l.note('Riko', 'plus', {'member': 'Tin'});
+    l.note('Riko', 'copy');
+    final back = FelgaLedger.fromJson(l.toJson());
+    expect(back.log.map((e) => e.what), ['plus', 'copy']);
+    expect(back.log.first.who, 'Riko');
+    expect(back.log.first.args, {'member': 'Tin'});
+    expect(back.log.first.id, isNot(back.log.last.id));
+    for (var i = 0; i < 1005; i++) {
+      l.note('Riko', 'copy');
+    }
+    expect(l.log, hasLength(FelgaLedger.logKept));
+    // A book from before the log reads as one without lines.
+    expect(FelgaLedger.fromJson('{"members": []}').log, isEmpty);
+  });
 }

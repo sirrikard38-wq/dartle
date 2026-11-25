@@ -22,6 +22,21 @@ class FelgaMember {
 
 /// One line of the history: [name]'s felgas on [date] (-1 and +1 of that
 /// day added up).
+/// One line of the log of changes ("Log change"): when, who did it (the
+/// name of their phone in the Felgalizacija), what ([what], a kind the page
+/// words) and its pieces ([args]: a name, an amount, a date ...).
+class FelgaLogEntry {
+  FelgaLogEntry({required this.id, required this.at, required this.who, required this.what, Map<String, String>? args})
+      : args = args ?? const {};
+
+  /// Tells it apart from every other line, on every phone.
+  final String id;
+  final DateTime at;
+  final String who;
+  final String what;
+  final Map<String, String> args;
+}
+
 class FelgaDay {
   FelgaDay(this.name, this.date, this.count);
 
@@ -102,9 +117,11 @@ class FelgaLedger {
     this.password,
     List<FelgaDay>? history,
     List<FelgaPeriod>? periods,
+    List<FelgaLogEntry>? log,
   })  : members = members ?? [],
         history = history ?? [],
-        periods = periods ?? [];
+        periods = periods ?? [],
+        log = log ?? [];
 
   /// What a felga costs until another cost is set.
   static const int defaultPriceCents = 50;
@@ -148,6 +165,20 @@ class FelgaLedger {
 
   /// The resets, the latest first.
   final List<FelgaPeriod> periods;
+
+  /// Everything anyone did, the oldest first ("Log change"); the latest
+  /// [logKept] are kept.
+  final List<FelgaLogEntry> log;
+
+  static const int logKept = 1000;
+
+  /// [who] did [what] (with [args]) now: a line in the log.
+  void note(String who, String what, [Map<String, String> args = const {}]) {
+    final at = DateTime.now();
+    log.add(FelgaLogEntry(
+        id: '${at.microsecondsSinceEpoch}-${math.Random().nextInt(1 << 30)}', at: at, who: who, what: what, args: args));
+    if (log.length > logKept) log.removeRange(0, log.length - logKept);
+  }
 
   /// The days as they are shown: only those with felgas (a day that came to 0
   /// is not written), the latest first.
@@ -288,6 +319,9 @@ class FelgaLedger {
     periods
       ..clear()
       ..addAll(other.periods);
+    log
+      ..clear()
+      ..addAll(other.log);
     leftCents = other.leftCents;
     priceCents = other.priceCents;
     password = other.password;
@@ -364,6 +398,12 @@ class FelgaLedger {
         out.periods[i] = p;
       }
     }
+    // The log: every line of both, each once, by the time it was made.
+    final known = {for (final e in base.log) e.id, for (final e in out.log) e.id};
+    out.log
+      ..addAll([for (final e in mine.log) if (!known.contains(e.id)) e])
+      ..sort((a, b) => a.at.compareTo(b.at));
+    if (out.log.length > logKept) out.log.removeRange(0, out.log.length - logKept);
     return out;
   }
 
@@ -419,6 +459,11 @@ class FelgaLedger {
           for (final d in history) {'name': d.name, 'date': d.date, 'count': d.count},
         ],
         'periods': [for (final p in periods) _periodJson(p)],
+        if (log.isNotEmpty)
+          'log': [
+            for (final e in log)
+              {'id': e.id, 'at': e.at.millisecondsSinceEpoch, 'who': e.who, 'what': e.what, if (e.args.isNotEmpty) 'args': e.args},
+          ],
       });
 
   static Map<String, Object?> _periodJson(FelgaPeriod p) => {
@@ -483,6 +528,16 @@ class FelgaLedger {
         ],
         history: days,
         periods: periods,
+        log: [
+          for (final e in (data['log'] as List<Object?>? ?? const []).cast<Map<String, Object?>>())
+            FelgaLogEntry(
+              id: e['id'] as String,
+              at: DateTime.fromMillisecondsSinceEpoch((e['at'] as num).toInt()),
+              who: e['who'] as String? ?? '',
+              what: e['what'] as String? ?? '',
+              args: (e['args'] as Map<String, Object?>?)?.map((k, v) => MapEntry(k, '$v')),
+            ),
+        ],
       );
     } on Object {
       return FelgaLedger();

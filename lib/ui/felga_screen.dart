@@ -151,7 +151,11 @@ Future<void> _sync(FelgaEntry entry) async {
       ready = true;
     }
     // ... and, going online the first time, its maker's name is their account's.
-    if (before.rev == 0 && start.claimByName(_playerName, await remote.me())) ready = true;
+    _myUid ??= await remote.me();
+    if (before.rev == 0 && start.claimByName(_playerName, _myUid!)) {
+      start.note(_playerName, 'claim', {'member': start.memberOf(_myUid!)!.name});
+      ready = true;
+    }
     if (ready) {
       before = before.withNow(book: start.toJson());
       _write(entry.storageKey, before.book);
@@ -240,6 +244,18 @@ Future<void> _checkTakenOut(ViewContext ctx, bool Function() stillShown) async {
   }
 }
 
+/// The open page's "Log change", drawn again (a line written from the top
+/// of the page: the password copied or changed, a new name).
+void Function()? _redrawLog;
+
+/// This phone's account, once it is known (signed in).
+String? _myUid;
+
+/// Who does something here, as the log writes it: this phone's name in
+/// [book] - or the player's name, before it has one.
+String _who(FelgaLedger book) =>
+    (_myUid == null ? null : book.memberOf(_myUid!)?.name) ?? (_playerName.isEmpty ? '?' : _playerName);
+
 /// The player's name (for "that is me"), set when a page is built.
 String _playerName = '';
 
@@ -278,8 +294,10 @@ Future<void> _joinOnline(ViewContext ctx, String password) async {
   final at = found.at == felgaKey(password) ? null : found.at;
   final book = FelgaLedger.fromJson(online.book);
 
-  void join(void Function() change) {
+  void join(void Function() change, String what) {
     change();
+    _myUid = me;
+    book.note(ctx.game.playerName, what, {'member': book.memberOf(me)?.name ?? ctx.game.playerName});
     final entry = FelgaEntry('${DateTime.now().millisecondsSinceEpoch}', online.name, password);
     _saveList([...felgaList(), entry]);
     final copy = FelgaCopy(
@@ -294,15 +312,15 @@ Future<void> _joinOnline(ViewContext ctx, String password) async {
   void asNew() => book.add(ctx.game.playerName, uid: me);
   final names = book.unsynced;
   if (book.memberOf(me) != null) {
-    join(() {});
+    join(() {}, 'back');
   } else if (names.isEmpty) {
-    join(asNew);
+    join(asNew, 'joinNew');
   } else {
     _choose(
       tr('Are you one of the members of the Felgalizacija?'),
       [
-        for (final m in names) (m.name, () => join(() => m.uid = me)),
-        (tr('No'), () => join(asNew)),
+        for (final m in names) (m.name, () => join(() => m.uid = me, 'joinAs')),
+        (tr('No'), () => join(asNew, 'joinNew')),
       ],
       secondLast: true,
       stacked: true,
@@ -341,6 +359,15 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     refresh();
   }
 
+  // "Log change": what was done, by whom, by date.
+  final logPart = el('div', cls: 'felga-part felga-log-part');
+  void note(String what, [Map<String, String> args = const {}]) {
+    ledger.note(_who(ledger), what, args);
+    _drawLog(logPart, ledger);
+  }
+
+  _redrawLog = () => _drawLog(logPart, ledger);
+
   // The box for a new name: 10 letters wide, wider as a longer name is typed,
   // in the middle of the screen, its tick to the right of it; Enter or the
   // tick adds the name and the box is empty and ready for the next one.
@@ -361,6 +388,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
       if (input.value.trim().isNotEmpty) {
         final before = input.getBoundingClientRect().top;
         ledger.add(input.value);
+        note('add', {'member': input.value.trim()});
         input.value = '';
         fit();
         changed();
@@ -407,6 +435,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
               : tr('{name}: one point less', {'name': member.name}),
           onPressed: (_) {
             if (!ledger.step(member, by, DateTime.now())) return;
+            note(by > 0 ? 'plus' : 'minus', {'member': member.name});
             _flashes.add(_Flash(member, by));
             changed();
           }),
@@ -498,7 +527,9 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
         input.value = member.name;
         return;
       }
+      final was = member.name;
       ledger.rename(member, typed);
+      note('rename', {'from': was, 'to': member.name});
       changed();
     }
 
@@ -575,6 +606,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   }
 
   refresh = () {
+    _drawLog(logPart, ledger);
     final before = rowTops();
     final anyone = ledger.members.isNotEmpty;
     // The two sums one under the other, at the top on the right ([_topPart]).
@@ -638,6 +670,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
             button('', cls: 'felga-remove', ariaLabel: tr('Throw {name} out', {'name': member.name}), onPressed: (_) {
               _ask(tr('Do you want to throw {name} out of the Felgalizacija?', {'name': member.name}), () {
                 ledger.remove(member);
+                note('remove', {'member': member.name});
                 _flashes.removeWhere((f) => f.member == member);
                 changed();
                 // Someone thrown out: a new password, so the old one lets
@@ -669,6 +702,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
             el('span', cls: 'felga-cell name', text: member.name, attrs: {'data-row': 'p:${member.name}'}),
             moneyBox(tr('{name} paid', {'name': member.name}), (cents) {
               member.paidCents += cents;
+              note('paid', {'member': member.name, 'cents': '$cents'});
               changed();
             })
               ..setAttribute('data-row', 'p:${member.name}'),
@@ -695,6 +729,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
                   'reset: the felgas in the history are not deleted.'), () {
             void reset(FelgaResetKeep keep) {
               ledger.reset(DateTime.now(), keep: keep);
+              note('reset');
               _flashes.clear(); // no flash goes on over the zeros
               changed();
             }
@@ -743,6 +778,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
               for (final MapEntry(key: date, value: names) in earlier)
                 _dayLine(date, names, ledger.priceCents, onDelete: () {
                   ledger.deleteDay(date);
+                  note('deleteDay', {'date': date});
                   gone();
                 }),
             ]),
@@ -752,6 +788,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
               for (final reset in resets)
                 _resetLine(reset, onDelete: () {
                   ledger.deletePeriod(reset);
+                  note('deletePeriod', {'from': reset.from, 'to': reset.to});
                   gone();
                 }),
             ]),
@@ -810,6 +847,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
   return screen = el('main', cls: 'screen felga', children: [
     _topPart(ctx, moneyPart, _open, price: () => ledger.priceCents, onPrice: (cents, all) {
       ledger.setPrice(cents, applyToAll: all);
+      note(all ? 'priceAll' : 'price', {'cents': '$cents'});
       changed();
     }),
     owesPart,
@@ -819,6 +857,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     paidPart,
     resetPart,
     historyPart,
+    logPart,
     // At the very foot, on the right: the Felgalizacija off this phone only,
     // asked once.
     button(tr('Leave Felgalizacija'), cls: 'felga-delete', focusKey: 'felga-delete', onPressed: (_) {
@@ -827,6 +866,89 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
           () => _deleteOpen(ctx));
     }),
   ]);
+}
+
+/// Whether each day of the log is open (by its date); a day not in it is open
+/// when it is today.
+final Map<String, bool> _logOpen = {};
+
+/// "Log change": under its arrow and title, a line for each day (the latest
+/// first, today's open) that opens what was done on it - the time, who and
+/// what - the latest first.
+void _drawLog(web.HTMLElement into, FelgaLedger ledger) {
+  into.textContent = '';
+  if (ledger.log.isEmpty) return;
+  final byDay = <String, List<FelgaLogEntry>>{};
+  for (final entry in ledger.log.reversed) {
+    (byDay[felgaDate(entry.at)] ??= []).add(entry);
+  }
+  final today = felgaDate(DateTime.now());
+  String two(int n) => n.toString().padLeft(2, '0');
+  final list = el('div', cls: 'felga-log');
+  for (final MapEntry(key: date, value: lines) in byDay.entries) {
+    final day = el('div', cls: 'felga-log-day');
+    web.HTMLElement body() => el('div', cls: 'felga-log-lines', children: [
+          for (final entry in lines)
+            el('p', cls: 'felga-log-line', children: [
+              el('span', cls: 'felga-log-time', text: '${two(entry.at.hour)}:${two(entry.at.minute)}'),
+              el('span', cls: 'felga-log-text', text: _logText(entry)),
+            ]),
+        ]);
+    web.HTMLElement? shown = (_logOpen[date] ?? date == today) ? body() : null;
+    late final web.HTMLButtonElement head;
+    head = button(date, cls: 'felga-reset-link', attrs: {'aria-expanded': '${shown != null}'}, onPressed: (_) {
+      final was = shown;
+      if (was == null) {
+        _logOpen[date] = true;
+        final opened = body();
+        shown = opened;
+        day.append(opened);
+        _slideOpen(opened);
+      } else {
+        _logOpen[date] = false;
+        shown = null;
+        _slideShut(was);
+      }
+      head.setAttribute('aria-expanded', '${shown != null}');
+    });
+    day.append(head);
+    if (shown case final open?) day.append(open);
+    list.append(day);
+  }
+  into
+    ..append(_arrow())
+    ..append(el('h3', cls: 'felga-title', text: tr('Log change')))
+    ..append(list);
+}
+
+/// One line of the log in words: "Riko: +1 felga to Tin".
+String _logText(FelgaLogEntry entry) {
+  final a = entry.args;
+  final who = entry.who;
+  final member = a['member'] ?? '';
+  String amount() => formatEuro(int.tryParse(a['cents'] ?? '') ?? 0);
+  return switch (entry.what) {
+    'plus' => tr('{who}: +1 felga to {member}', {'who': who, 'member': member}),
+    'minus' => tr('{who}: -1 felga to {member}', {'who': who, 'member': member}),
+    'add' => tr('{who}: added {member}', {'who': who, 'member': member}),
+    'remove' => tr('{who}: threw {member} out', {'who': who, 'member': member}),
+    'rename' => tr('{who}: renamed {from} to {to}', {'who': who, 'from': a['from'] ?? '', 'to': a['to'] ?? ''}),
+    'paid' => tr('{who}: entered {amount} paid by {member}', {'who': who, 'amount': amount(), 'member': member}),
+    'price' => tr('{who}: felga cost set to {amount}', {'who': who, 'amount': amount()}),
+    'priceAll' => tr('{who}: felga cost set to {amount}, for every felga', {'who': who, 'amount': amount()}),
+    'reset' => tr('{who}: reset', {'who': who}),
+    'deleteDay' => tr('{who}: deleted the felgas of {date}', {'who': who, 'date': a['date'] ?? ''}),
+    'deletePeriod' => tr('{who}: deleted the record {from} - {to}', {'who': who, 'from': a['from'] ?? '', 'to': a['to'] ?? ''}),
+    'name' => tr('{who}: renamed the Felgalizacija to {to}', {'who': who, 'to': a['to'] ?? ''}),
+    'password' => tr('{who}: changed the password', {'who': who}),
+    'copy' => tr('{who}: copied the password', {'who': who}),
+    'joinAs' => tr('{who}: joined as {member}', {'who': who, 'member': member}),
+    'joinNew' => tr('{who}: joined as a new member', {'who': who}),
+    'back' => tr('{who}: joined again', {'who': who}),
+    'claim' => tr('{who}: linked to {member}', {'who': who, 'member': member}),
+    'leave' => tr('{who}: left', {'who': who}),
+    _ => '$who: ${entry.what}',
+  };
 }
 
 /// The days of [days] (the latest first), each with its names, the most
@@ -878,6 +1000,7 @@ Future<void> _leaveOnline(FelgaEntry entry, FelgaCopy copy) async {
     if (!await movePassword(remote, at, online.name, entry.password, next)) return;
     final book = FelgaLedger.fromJson(online.book);
     final mine = book.memberOf(me);
+    book.note(mine?.name ?? _playerName, 'leave');
     if (mine != null) book.remove(mine);
     book.password = next;
     await syncFelga(remote, at, online.withNow(book: book.toJson()));
@@ -916,9 +1039,12 @@ Future<String?> _changePassword(ViewContext ctx, String id) async {
   // In its book too: every member's phone learns it.
   if (_open.id == id) {
     final ledger = _book..password = next;
+    ledger.note(_who(ledger), 'password');
     _save(ledger);
+    _redrawLog?.call();
   } else {
     final book = FelgaLedger.fromJson(_read(entry.storageKey))..password = next;
+    book.note(_who(book), 'password');
     _write(entry.storageKey, book.toJson());
   }
   return next;
@@ -1330,6 +1456,10 @@ web.HTMLElement _topPart(ViewContext ctx, web.HTMLElement money, FelgaEntry entr
   final box = el('div', cls: 'felga-pass-box');
   void copyNow() {
     _copy(password);
+    final book = _book;
+    book.note(_who(book), 'copy');
+    _save(book);
+    _redrawLog?.call();
     final note = el('span', cls: 'felga-copied', text: tr('Copied'), attrs: {'role': 'status'});
     box.append(note);
     Timer(const Duration(milliseconds: 1500), () => note.remove());
@@ -1407,7 +1537,10 @@ web.HTMLElement _topPart(ViewContext ctx, web.HTMLElement money, FelgaEntry entr
         room: () => web.window.innerWidth - 140.0,
         onConfirm: (typed) {
           _saveList([for (final e in felgaList()) e.id == entry.id ? FelgaEntry(e.id, typed, e.password) : e]);
-          _syncSoon(); // the new name online too
+          final book = _book;
+          book.note(_who(book), 'name', {'to': typed});
+          _save(book); // the new name online too
+          _redrawLog?.call();
           renamePlus.click(); // closes the line
         },
       );
