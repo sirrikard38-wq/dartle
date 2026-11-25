@@ -80,10 +80,28 @@ void main() {
       expect(optimal.isOptimal(57, r('T17 D3')), isFalse);
     });
 
-    test('127 with three darts is T20, not T19; T17 can go first too', () {
-      expect(optimal.optimalRoutesIn(127, 3).first.notation, 'T20 T17 D8');
-      // S17 still leaves 110 (T20 Bull), as much as S20 leaves (107, T19 Bull).
-      expect(optimal.aimsIn(127, 3), {DartThrow.parse('T20'), DartThrow.parse('T17')});
+    test('120 to 130: only the best first dart - its miss keeps a checkout, the biggest such', () {
+      // 127: S20 leaves 107 (T19 Bull); S17 would leave 110 too, but T20 is bigger.
+      expect(optimal.bestFirstDart(127, 3), DartThrow.parse('T20'));
+      expect(optimal.optimalRoutesIn(127, 3).map((r) => r.notation), ['T20 T17 D8']);
+      expect(optimal.aimsIn(127, 3), {DartThrow.parse('T20')});
+      expect(optimal.isOptimalIn(127, 3, r('T17 T20 D8')), isFalse);
+      // 126: T19 - S19 leaves 107; S20 would leave 106, no checkout.
+      expect(optimal.bestFirstDart(126, 3), DartThrow.parse('T19'));
+      expect(optimal.optimalRoutesIn(126, 3).map((r) => r.notation), ['T19 T19 D6']);
+      for (var t = 120; t <= 130; t++) {
+        final first = optimal.bestFirstDart(t, 3)!;
+        expect(optimal.missesKept(t, 3, first), 1, reason: '$t');
+        for (final route in optimal.optimalRoutesIn(t, 3)) {
+          expect(route.darts.first, first, reason: '$t $route');
+        }
+      }
+      expect(optimal.bestFirstDart(119, 3), isNull);
+      expect(optimal.bestFirstDart(131, 3), isNull);
+      // One optimal route of many ways out: "The best optimal route".
+      expect(optimal.isBestRoute(127, 3), isTrue);
+      expect(optimal.isBestRoute(125, 3), isFalse); // T18 and four finishes
+      expect(optimal.isBestRoute(170, 3), isFalse); // the only possibility
     });
 
     test('the other dart of the table route counts when its miss is no worse: 149, T19', () {
@@ -112,9 +130,8 @@ void main() {
       expect(notations(82, 3), {'Bull D16'});
       expect(optimal.aimsIn(82, 3), {DartThrow.bull});
       // 110: no two-dart route in the three-dart row, so the two-dart row's -
-      // and T20 missed into S20, then 90 with two darts (four ways out, so all
-      // optimal: T18 D18, T20 D15, Bull D20, D20 Bull).
-      expect(notations(110, 3), {'T20 Bull', 'S20 T18 D18', 'S20 T20 D15', 'S20 Bull D20', 'S20 D20 Bull'});
+      // and T20 missed into S20, then 90 with two darts.
+      expect(notations(110, 3), {'T20 Bull', 'S20 T18 D18', 'S20 T20 D15'});
       expect(optimal.isOptimalIn(110, 3, r('T20 S18 D16')), isFalse);
       // A three-dart route starts with the single of a two-dart route's first
       // dart: 92 is T20 D16 - or S20, then 72 with two darts (T18 D9 too).
@@ -138,13 +155,13 @@ void main() {
       expect(notations(61, 2), {'T11 D14'});
     });
 
-    test('a number with five ways out or fewer has every one of them optimal', () {
+    test('a number from 130 up with five ways out or fewer has every one of them optimal', () {
       // 164: T20 T18 Bull and T19 T19 Bull.
       expect(notations(164, 3), {'T20 T18 Bull', 'T19 T19 Bull'});
       expect(optimal.aimsIn(164, 3), containsAll([DartThrow.parse('T20'), DartThrow.parse('T19'), DartThrow.parse('T18')]));
-      // 100 with two darts: T20 D20 and Bull Bull.
-      expect(notations(100, 2), {'T20 D20', 'Bull Bull'});
-      for (var target = 2; target <= 170; target++) {
+      // Under 130 the rule does not hold: 100 with two darts is T20 D20 alone.
+      expect(notations(100, 2), {'T20 D20'});
+      for (var target = OptimalRouteService.fewOptimalFrom; target <= 170; target++) {
         for (var darts = 1; darts <= 3; darts++) {
           for (final route in optimal.fewRoutesIn(target, darts) ?? const <CheckoutRoute>[]) {
             expect(optimal.isOptimalIn(target, darts, route), isTrue, reason: '$target/$darts $route');

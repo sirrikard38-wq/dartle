@@ -428,7 +428,10 @@ web.HTMLElement _learnRoutes(ViewContext ctx, TutorCard card) {
   ]);
   return el('div', cls: 'tutor-card', children: [
     grid,
-    if (tutor.onlyPossibility(target, card.darts)) el('p', cls: 'hint only-one', text: tr('Only possibility')),
+    if (tutor.onlyPossibility(target, card.darts))
+      el('p', cls: 'hint only-one', text: tr('Only possibility'))
+    else if (tutor.isBestRoute(target, card.darts))
+      el('p', cls: 'hint only-one', text: tr('The best optimal route')),
   ]);
 }
 
@@ -719,7 +722,9 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
             ariaLabel: tr('Also optimal: show every optimal way to check out {n}', {'n': target}),
             onPressed: (_) => showAllOptimal(ctx, target, all))
       else if (ctx.game.tutorial.tutor.onlyPossibility(target, card.darts))
-        el('p', cls: 'hint only-one', text: tr('Only possibility')),
+        el('p', cls: 'hint only-one', text: tr('Only possibility'))
+      else if (ctx.game.tutorial.tutor.isBestRoute(target, card.darts))
+        el('p', cls: 'hint only-one', text: tr('The best optimal route')),
     if (card.whyNot case final other?) ...[
       el('p', cls: 'card-why', text: tr('Why not {dart}?', {'dart': other.notation})),
       for (final miss in card.whyNotMisses)

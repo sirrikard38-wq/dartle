@@ -239,6 +239,7 @@ const Map<String, String> croatian = {
       'Također optimalno: prikaži sve optimalne načine za checkout {n}',
   'Also optimal: {route}': 'Također optimalno: {route}',
   'Only possibility': 'Jedina mogućnost',
+  'The best optimal route': 'Najbolja optimalna ruta',
   'Every optimal way to check out': 'Svaki optimalan način za checkout',
   'Every optimal way to check out {n}': 'Svaki optimalan način za checkout {n}',
   'Empty board: no darts used': 'Prazna ploča: nijedna strelica nije iskorištena',

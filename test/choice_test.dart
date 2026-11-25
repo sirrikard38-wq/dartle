@@ -29,8 +29,8 @@ void main() {
       expect(advisor.optimalDarts(40), {d('D20')});
     });
 
-    test('121 lights the table\'s T20, T17 almost as good, and T11 of the route (S11 still leaves T20 Bull)', () {
-      expect(advisor.optimalDarts(121), {d('T20'), d('T17'), d('T11')});
+    test('121 lights T20 only: from 120 to 130 the best first dart alone (S20 leaves 101, T17 Bull)', () {
+      expect(advisor.optimalDarts(121), {d('T20')});
     });
 
     test('55 lights S15, S19 almost as good, and S17 and S5 just as good', () {
@@ -79,8 +79,8 @@ void main() {
         expect(advisor.optimalDarts(58), {d('S18'), d('S20'), d('S8')});
       });
 
-      test('100 lights T20 and Bull (only two ways out: both optimal); 150 T20, T19 and T18 of the route (S20 and S18 both leave no checkout)', () {
-        expect(advisor.optimalDarts(100), {d('T20'), d('Bull')});
+      test('100 lights T20 (the rule of few ways out is from 130 up); 150 T20, T19 and T18 of the route (S20 and S18 both leave no checkout)', () {
+        expect(advisor.optimalDarts(100), {d('T20')});
         expect(advisor.optimalDarts(150), {d('T20'), d('T19'), d('T18')});
       });
 

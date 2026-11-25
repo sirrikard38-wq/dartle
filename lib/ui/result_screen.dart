@@ -108,9 +108,12 @@ List<web.HTMLElement> resultView(
 
   // A number with just one way out at all says so (one optimal route of many
   // does not: 130 is also T20 S20 Bull).
+  // 120 to 130: the one optimal route is the best of many ways out.
   final onlyPossibility = result.onlyPossibility
       ? el('p', cls: 'hint only-one', text: tr('Only possibility'))
-      : null;
+      : result.bestRoute
+          ? el('p', cls: 'hint only-one', text: tr('The best optimal route'))
+          : null;
 
   // "Also optimal" with its boxes (or "Only possibility"): in the middle under
   // the boards - after a miss under both of them, otherwise under the one board.

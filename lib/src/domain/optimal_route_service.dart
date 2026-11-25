@@ -40,7 +40,42 @@ class OptimalRouteService {
     return darts == 3 && minimum != null && minimum <= 2 ? 2 : darts;
   }
 
+  /// From 120 to 130 with three darts in hand the first dart decides it all:
+  /// see [bestFirstDart].
+  static const int bestFirstFrom = 120, bestFirstTo = 130;
+
+  /// From 120 to 130 with three darts in hand: the one first dart to aim at -
+  /// the one whose miss (into its single) still leaves a checkout with the two
+  /// darts after it most often, of those whose hit leaves one; the biggest
+  /// of them when several do (127: T20, as S20 leaves 107 = T19 Bull - T17
+  /// would too, S17 leaving 110, but T20 is bigger; 126: T19, S19 leaving
+  /// 107). Null for every other number and number of darts.
+  DartThrow? bestFirstDart(int target, int darts) {
+    if (darts != 3 || target < bestFirstFrom || target > bestFirstTo) return null;
+    DartThrow? best;
+    var bestKept = -1;
+    for (final dart in _candidates) {
+      final left = target - dart.score;
+      if (left < 2 || optimalRoutesIn(left, 2).isEmpty) continue;
+      final kept = missesKept(target, darts, dart);
+      if (kept > bestKept || (kept == bestKept && dart.score > best!.score)) {
+        best = dart;
+        bestKept = kept;
+      }
+    }
+    return best;
+  }
+
   List<CheckoutRoute> _tableRoutes(int target, int darts) {
+    // 120 to 130: the best first dart, then every optimal finish of what it leaves.
+    if (bestFirstDart(target, darts) case final first?) {
+      final routes = <CheckoutRoute>[];
+      for (final finish in optimalRoutesIn(target - first.score, 2)) {
+        final route = CheckoutRoute([first, ...finish.darts]);
+        if (_engine.isLegalRoute(target, route) && !routes.any(route.isEquivalentTo)) routes.add(route);
+      }
+      return routes;
+    }
     final row = CheckoutTable.row(target, darts);
     if (row == null) return const [];
     final most = _mostDarts(target, darts);
@@ -92,17 +127,24 @@ class OptimalRouteService {
         }
       }
     }
-    // A number with only a few ways out: every one of them is optimal (164:
-    // T20 T18 Bull and T19 T19 Bull).
-    for (final route in fewRoutesIn(target, darts) ?? const <CheckoutRoute>[]) {
+    // A number from 130 up with only a few ways out: every one of them is
+    // optimal (164: T20 T18 Bull and T19 T19 Bull).
+    for (final route in _fewOptimal(target, darts)) {
       if (!routes.any(route.isEquivalentTo)) routes.add(route);
     }
     return routes;
   }
 
   /// A number with this many ways to check it out (or fewer), with the darts
-  /// in hand, has every one of them optimal.
+  /// in hand, has every one of them optimal - from [fewOptimalFrom] up.
   static const int fewRoutes = 5;
+
+  /// The rule of [fewRoutes] holds from this number up (130 included).
+  static const int fewOptimalFrom = 130;
+
+  /// The routes the rule of [fewRoutes] makes optimal: none under 130.
+  List<CheckoutRoute> _fewOptimal(int target, int darts) =>
+      target < fewOptimalFrom ? const [] : fewRoutesIn(target, darts) ?? const [];
 
   final Map<(int, int), List<CheckoutRoute>?> _fewCache = {};
 
@@ -124,6 +166,13 @@ class OptimalRouteService {
   /// darts is T20 T20 D5, but T20 S20 Bull checks it out too).
   bool onlyPossibility(int target, int darts) => fewRoutesIn(target, darts)?.length == 1;
 
+  /// From 120 to 130: one optimal route, the best of the many ways out ("The
+  /// best optimal route" - not "Only possibility"; 127 is T20 T17 D8).
+  bool isBestRoute(int target, int darts) =>
+      bestFirstDart(target, darts) != null &&
+      optimalRoutesIn(target, darts).length == 1 &&
+      !onlyPossibility(target, darts);
+
   /// The darts to aim at on [target] with [darts] darts in hand, all equally
   /// good: the table's target, the first dart of each of its routes (61 with
   /// three darts: the Bull or 25) and the targets almost as good. A setup for
@@ -134,6 +183,8 @@ class OptimalRouteService {
   /// 149 is T20 T19 D16 or T19 T20 D16, as S20 and S19 both leave no checkout.
   /// 127 is T20 first: S20 still leaves T19 Bull.
   Set<DartThrow> aimsIn(int target, int darts) {
+    // 120 to 130: the best first dart and nothing else.
+    if (bestFirstDart(target, darts) case final first?) return {first};
     final row = CheckoutTable.row(target, darts);
     if (row == null) return const {};
     final aims = CheckoutTable.aims(row);
@@ -145,7 +196,7 @@ class OptimalRouteService {
       ..._asGood(target, darts, row),
       // Only a few ways out, all optimal: each of their darts to set up with
       // (any order), or the one double.
-      for (final route in fewRoutesIn(target, darts) ?? const <CheckoutRoute>[])
+      for (final route in _fewOptimal(target, darts))
         ...(route.length == 1 ? route.darts : route.setupDarts),
     };
     // On a number two darts can check out, a target counts only when a
@@ -249,8 +300,12 @@ class OptimalRouteService {
       optimalRoutesIn(target, 3).isNotEmpty;
 
   /// Whether [route] is optimal for [target] with [darts] darts in hand.
+  /// From 120 to 130 the first dart must be the best one ([bestFirstDart]):
+  /// 127 is T20 T17 D8, and T17 T20 D8 is not.
   bool isOptimalIn(int target, int darts, CheckoutRoute route) =>
-      route.length <= darts && optimalRoutesIn(target, darts).any(route.isEquivalentTo);
+      route.length <= darts &&
+      (bestFirstDart(target, darts) == null || route.darts.first == bestFirstDart(target, darts)) &&
+      optimalRoutesIn(target, darts).any(route.isEquivalentTo);
 
   /// The primary optimal route, or null when [target] is not checkoutable.
   CheckoutRoute? optimalRoute(int target) {

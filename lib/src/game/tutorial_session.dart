@@ -244,6 +244,7 @@ class TutorialSession implements NumberParts {
       elapsed: Duration.zero,
       optimalRoutes: practice.hasCheckout ? tutor.optimalRoutes(practice.target, practice.darts) : const [],
       onlyPossibility: practice.hasCheckout && tutor.onlyPossibility(practice.target, practice.darts),
+      bestRoute: practice.hasCheckout && tutor.isBestRoute(practice.target, practice.darts),
       isReplay: true,
       encouragement: validation.outcome == AttemptOutcome.noCheckoutCorrect
           ? Phrases.randomEncouragement(_random)

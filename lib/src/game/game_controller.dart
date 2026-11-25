@@ -37,6 +37,7 @@ class AttemptResult {
     required this.elapsed,
     required this.optimalRoutes,
     this.onlyPossibility = false,
+    this.bestRoute = false,
     this.round,
     this.isReplay = false,
     this.encouragement,
@@ -45,6 +46,10 @@ class AttemptResult {
   /// There is just one way at all to check the number out with these darts
   /// ("Only possibility") - not merely one optimal way.
   final bool onlyPossibility;
+
+  /// One optimal route, the best of many ways out ("The best optimal route",
+  /// 120 to 130).
+  final bool bestRoute;
 
   final Challenge challenge;
   final ValidationResult validation;
@@ -577,6 +582,7 @@ class GameController {
       elapsed: elapsed,
       optimalRoutes: challenge.hasCheckout ? currentOptimalRoutes : const [],
       onlyPossibility: challenge.hasCheckout && _optimal.onlyPossibility(challenge.target, challenge.darts),
+      bestRoute: challenge.hasCheckout && _optimal.isBestRoute(challenge.target, challenge.darts),
       round: round,
       isReplay: replay,
       encouragement: validation.outcome == AttemptOutcome.noCheckoutCorrect
