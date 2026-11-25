@@ -982,32 +982,94 @@ void _deleteOpen(ViewContext ctx) {
   _adding = false;
   ctx.showPage(MenuPage.home);
   ctx.toast(tr('You left the Felgalizacija'));
+  // Kept until it is done online (no connection now: done later).
+  _saveLeaves([..._leaves(), (password: entry.password, name: entry.name, book: copy.book, meta: copy.metaJson())]);
   _leaveOnline(entry, copy);
 }
 
-/// This phone left [entry] (its [copy] as it was): online, its name is taken
-/// out and the password changed - the old one leads nowhere, the members
-/// stay in and see the new one. Never online: nothing to do.
-Future<void> _leaveOnline(FelgaEntry entry, FelgaCopy copy) async {
-  final remote = felgaRemote();
-  if (remote == null || (copy.rev == 0 && copy.at == null)) return;
+/// Where the leavings not yet done online are kept (this phone only).
+const String _leavesKey = 'dartle.felga-leaving';
+
+typedef _Leave = ({String password, String name, String book, String meta});
+
+List<_Leave> _leaves() {
   try {
-    final online = await putOnline(remote, entry.password, copy);
+    return [
+      for (final e in (jsonDecode(_read(_leavesKey) ?? '[]') as List<Object?>).cast<Map<String, Object?>>())
+        (password: e['password'] as String, name: e['name'] as String, book: e['book'] as String, meta: e['meta'] as String),
+    ];
+  } on Object {
+    return const [];
+  }
+}
+
+void _saveLeaves(List<_Leave> leaves) => _write(
+    _leavesKey,
+    leaves.isEmpty
+        ? null
+        : jsonEncode([
+            for (final l in leaves) {'password': l.password, 'name': l.name, 'book': l.book, 'meta': l.meta},
+          ]));
+
+bool _leavingNow = false;
+
+/// The leavings left over (left with no connection, or the app closed too
+/// soon) done again: from the menu, until they are done.
+Future<void> _retryLeaves() async {
+  if (_leavingNow) return;
+  final waiting = _leaves();
+  if (waiting.isEmpty) return;
+  _leavingNow = true;
+  try {
+    for (final l in waiting) {
+      await _leaveOnline(FelgaEntry('leaving', l.name, l.password), FelgaCopy.fromMeta(name: l.name, book: l.book, meta: l.meta));
+    }
+  } finally {
+    _leavingNow = false;
+  }
+}
+
+/// This phone left [entry] (its [copy] as it was): online, its name is taken
+/// out - and with it the name's link to this phone's account - then the
+/// password changed: the old one leads nowhere, the members stay in and see
+/// the new one. Once done (or never online: nothing to do), it is no longer
+/// kept to be done again ([_retryLeaves]).
+Future<void> _leaveOnline(FelgaEntry entry, FelgaCopy copy) async {
+  void done() => _saveLeaves([for (final l in _leaves()) if (l.password != entry.password) l]);
+  final remote = felgaRemote();
+  if (remote == null) return; // not online here: tried again later
+  if (copy.rev == 0 && copy.at == null) return done();
+  if (!_leavingPasswords.add(entry.password)) return; // already on its way
+  try {
+    var online = await putOnline(remote, entry.password, copy);
     final at = online.at;
     if (at == null) return;
     final me = await remote.me();
-    final next = _newPassword();
-    if (!await movePassword(remote, at, online.name, entry.password, next)) return;
+    // First the name out (the link goes with it) ...
     final book = FelgaLedger.fromJson(online.book);
     final mine = book.memberOf(me);
-    book.note(mine?.name ?? _playerName, 'leave');
-    if (mine != null) book.remove(mine);
-    book.password = next;
-    await syncFelga(remote, at, online.withNow(book: book.toJson()));
+    if (mine != null) {
+      book.note(mine.name, 'leave');
+      book.remove(mine);
+      online = await syncFelga(remote, at, online.withNow(book: book.toJson()));
+      if (online.changed) return; // not written yet: again later
+    }
+    // ... then a new password.
+    final next = _newPassword();
+    if (await movePassword(remote, at, online.name, entry.password, next)) {
+      final now = FelgaLedger.fromJson(online.book)..password = next;
+      await syncFelga(remote, at, online.withNow(book: now.toJson()));
+    }
+    done();
   } on Object {
-    // No connection: online it stays as it was.
+    // No connection: done again later.
+  } finally {
+    _leavingPasswords.remove(entry.password);
   }
 }
+
+/// The leavings on their way now (by password): each done once at a time.
+final Set<String> _leavingPasswords = {};
 
 /// A new password for the Felgalizacija [id] (online too: the old one leads
 /// nowhere, the members stay in); the new one, or null when it cannot be
@@ -1414,8 +1476,10 @@ List<web.HTMLElement> buildFelgaButtons(ViewContext ctx) {
     },
   );
   if (_menuAdding) fillPanel(focus: false);
-  // One this phone was taken out of (on another phone) leaves the menu.
+  // One this phone was taken out of (on another phone) leaves the menu; one
+  // it left with no connection is left online now.
   _playerName = ctx.game.playerName;
+  _retryLeaves();
   _checkTakenOut(ctx, () => plus.isConnected);
 
   // Goes down and up (quickly) before its Felgalizacija opens.
