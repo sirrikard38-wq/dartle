@@ -280,7 +280,9 @@ class CheckoutTutor {
   TutorCard? card(int target, int darts) {
     final row = CheckoutTable.row(target, darts);
     if (row == null) return null;
-    final aims = CheckoutTable.aims(row);
+    // 120 to 130: the best first dart is the one aim (125: T18, not the Bull too).
+    final best = _optimal.bestFirstDart(target, darts);
+    final aims = best != null ? [best] : CheckoutTable.aims(row);
     final lit = _optimal.aimsIn(target, darts);
     final routes = _optimal.optimalRoutesIn(target, darts);
     final misses = aims.length == 1

@@ -96,6 +96,11 @@ void main() {
           expect(route.darts.first, first, reason: '$t $route');
         }
       }
+      // Learn's card aims at it alone too (125: T18 - not the Bull of the table).
+      final tutor = CheckoutTutor(optimal);
+      for (var t = 120; t <= 130; t++) {
+        expect(tutor.card(t, 3)!.aims, [optimal.bestFirstDart(t, 3)], reason: '$t');
+      }
       expect(optimal.bestFirstDart(119, 3), isNull);
       expect(optimal.bestFirstDart(131, 3), isNull);
       // One optimal route of many ways out: "The best optimal route".
