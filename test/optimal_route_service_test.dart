@@ -83,12 +83,15 @@ void main() {
     test('120 to 130: only the best first dart - its miss keeps a checkout, the biggest such', () {
       // 127: S20 leaves 107 (T19 Bull); S17 would leave 110 too, but T20 is bigger.
       expect(optimal.bestFirstDart(127, 3), DartThrow.parse('T20'));
-      expect(optimal.optimalRoutesIn(127, 3).map((r) => r.notation), ['T20 T17 D8']);
+      // T20 S17 Bull too: the T17 missed into S17, then the Bull.
+      expect(optimal.optimalRoutesIn(127, 3).map((r) => r.notation), ['T20 T17 D8', 'T20 S17 Bull']);
+      expect(optimal.isMissRoute(127, 3, r('T20 S17 Bull')), isTrue);
+      expect(optimal.isOptimalIn(122, 3, r('T18 S18 Bull')), isTrue);
       expect(optimal.aimsIn(127, 3), {DartThrow.parse('T20')});
       expect(optimal.isOptimalIn(127, 3, r('T17 T20 D8')), isFalse);
       // 126: T19 - S19 leaves 107; S20 would leave 106, no checkout.
       expect(optimal.bestFirstDart(126, 3), DartThrow.parse('T19'));
-      expect(optimal.optimalRoutesIn(126, 3).map((r) => r.notation), ['T19 T19 D6']);
+      expect(optimal.optimalRoutesIn(126, 3).map((r) => r.notation), ['T19 T19 D6', 'T19 S19 Bull']);
       for (var t = 120; t <= 130; t++) {
         final first = optimal.bestFirstDart(t, 3)!;
         expect(optimal.missesKept(t, 3, first), 1, reason: '$t');
@@ -157,7 +160,8 @@ void main() {
       expect(optimal.isOptimalIn(92, 3, r('S20 T16 D12')), isTrue);
       expect(optimal.isOptimalIn(92, 3, r('S19 T19 D9')), isFalse);
       // With two darts it is T11 D14.
-      expect(notations(61, 2), {'T11 D14'});
+      // With two darts it is T11 D14 - or the T11 missed into S11, then the Bull.
+      expect(notations(61, 2), {'T11 D14', 'S11 Bull'});
     });
 
     test('a number from 130 up with five ways out or fewer has every one of them optimal', () {
@@ -175,7 +179,7 @@ void main() {
       }
       // 130 has many ways out: only the table's route is optimal.
       expect(optimal.fewRoutesIn(130, 3), isNull);
-      expect(notations(130, 3), {'T20 T20 D5'});
+      expect(notations(130, 3), {'T20 T20 D5', 'T20 S20 Bull'});
     });
 
     test('a route may use fewer darts than are in hand: 64 with three darts is T16 D8', () {

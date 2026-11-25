@@ -77,12 +77,13 @@ void main() {
           AttemptOutcome.wrongDartCount);
     });
 
-    test('67 with the first box used: the table\'s T17 D8 is optimal, S17 Bull only right', () {
+    test('67 with the first box used: T17 D8 is optimal, and S17 Bull (the T17 missed, then the Bull); T19 D5 only right', () {
       final c = catalog.forTarget(67)!;
       expect(c.dartCount, 2);
       expect(c.layout, BoxLayout.leftUsed);
       expect(validator.validate(c, darts('T17 D8')).isOptimal, isTrue);
-      for (final text in ['S17 Bull', 'T19 D5']) {
+      expect(validator.validate(c, darts('S17 Bull')).isOptimal, isTrue);
+      for (final text in ['T19 D5']) {
         final other = validator.validate(c, darts(text));
         expect(other.isCorrect, isTrue, reason: text);
         expect(other.isOptimal, isFalse, reason: text);

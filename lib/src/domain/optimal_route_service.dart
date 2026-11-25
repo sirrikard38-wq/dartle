@@ -70,9 +70,14 @@ class OptimalRouteService {
     // 120 to 130: the best first dart, then every optimal finish of what it leaves.
     if (bestFirstDart(target, darts) case final first?) {
       final routes = <CheckoutRoute>[];
-      for (final finish in optimalRoutesIn(target - first.score, 2)) {
+      final left = target - first.score;
+      for (final finish in optimalRoutesIn(left, 2)) {
         final route = CheckoutRoute([first, ...finish.darts]);
-        if (_engine.isLegalRoute(target, route) && !routes.any(route.isEquivalentTo)) routes.add(route);
+        if (_engine.isLegalRoute(target, route) && !routes.any(route.isEquivalentTo)) {
+          routes.add(route);
+          // T20 S17 Bull on 127: the T17 missed - right, but not one to aim for.
+          if (isMissRoute(left, 2, finish)) _markMissed(target, darts, route);
+        }
       }
       return routes;
     }
@@ -114,16 +119,22 @@ class OptimalRouteService {
     // any optimal two-dart finish of what that leaves, counts too - the three
     // darts are there for it. 92: T20 D16, or S20 and then 72 with two darts:
     // S20 T18 D9, S20 T16 D12 ... Not the Bull into 25 (82 stays Bull D16).
-    if (darts == 3 && most == 2) {
+    // Two darts in hand the same way: the first missed into its single, then
+    // the one-dart finish of what that leaves (68: T18 D7, or S18 and the
+    // Bull - so 122 is T18 T18 D7 or T18 S18 Bull).
+    if ((darts == 3 && most == 2) || darts == 2) {
       final firsts = {for (final route in List.of(routes)) if (route.length == 2) route.darts.first};
       for (final first in firsts) {
         if (first.number == DartThrow.bullNumber || first.multiplier == Multiplier.single) continue;
         final single = DartThrow(Multiplier.single, first.number);
         final left = target - single.score;
         if (left < 2) continue;
-        for (final route in optimalRoutesIn(left, 2)) {
+        for (final route in optimalRoutesIn(left, darts - 1)) {
           final missed = CheckoutRoute([single, ...route.darts]);
-          if (_engine.isLegalRoute(target, missed) && !routes.any(missed.isEquivalentTo)) routes.add(missed);
+          if (_engine.isLegalRoute(target, missed) && !routes.any(missed.isEquivalentTo)) {
+            routes.add(missed);
+            _markMissed(target, darts, missed);
+          }
         }
       }
     }
@@ -166,11 +177,29 @@ class OptimalRouteService {
   /// darts is T20 T20 D5, but T20 S20 Bull checks it out too).
   bool onlyPossibility(int target, int darts) => fewRoutesIn(target, darts)?.length == 1;
 
+  /// The fewest darts [target] can be checked out with; null for none.
+  int? fewestDarts(int target) => _engine.minimumDarts(target);
+
   /// From 120 to 130: one optimal route, the best of the many ways out ("The
   /// best optimal route" - not "Only possibility"; 127 is T20 T17 D8).
+  /// The routes that are optimal only as a dart aimed right and missed into
+  /// its single, then finished right (68 with two darts: S18 Bull, after T18
+  /// missed) - by number and darts in hand.
+  final Map<(int, int), Set<String>> _missed = {};
+
+  void _markMissed(int target, int darts, CheckoutRoute route) =>
+      (_missed[(target, darts)] ??= {}).add(route.notation);
+
+  /// [route] is optimal on [target] only as an aimed dart missed into its
+  /// single and then finished right - not a route to aim for.
+  bool isMissRoute(int target, int darts, CheckoutRoute route) {
+    optimalRoutesIn(target, darts); // worked out (and marked) first
+    return _missed[(target, darts)]?.contains(route.notation) ?? false;
+  }
+
   bool isBestRoute(int target, int darts) =>
       bestFirstDart(target, darts) != null &&
-      optimalRoutesIn(target, darts).length == 1 &&
+      optimalRoutesIn(target, darts).where((r) => !isMissRoute(target, darts, r)).length == 1 &&
       !onlyPossibility(target, darts);
 
   /// The darts to aim at on [target] with [darts] darts in hand, all equally

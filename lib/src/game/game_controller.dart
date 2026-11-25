@@ -148,10 +148,14 @@ class GameController {
   Map<int, List<CheckoutRoute>> _onlyRoutes() {
     final only = <int, List<CheckoutRoute>>{};
     for (var n = CheckoutEngine.minCheckout; n <= CheckoutEngine.maxCheckout; n++) {
-      for (final routes in [
-        _optimal.optimalRoutes(n),
-        if (_optimal.hasThreeDartOption(n)) _optimal.optimalRoutesIn(n, 3),
-      ]) {
+      final fewest = _optimal.fewestDarts(n);
+      for (final darts in [if (fewest != null) fewest, if (_optimal.hasThreeDartOption(n)) 3]) {
+        // A route right only as a dart missed into its single does not count
+        // (67: T17 D8 alone, S17 Bull is the T17 missed).
+        final routes = [
+          for (final route in _optimal.optimalRoutesIn(n, darts))
+            if (!_optimal.isMissRoute(n, darts, route)) route,
+        ];
         if (routes.length == 1) only.putIfAbsent(n, () => []).add(routes.single);
       }
     }

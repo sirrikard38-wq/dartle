@@ -88,7 +88,7 @@ void main() {
 
     test('61: S11 Bull is next to T11 D14', () {
       expect(RouteOrder.forPopup([r('S11 Bull'), r('T11 D14')]).map((x) => x.notation), ['T11 D14', 'S11 Bull']);
-      expect(popup(61), ['T11 D14']);
+      expect(popup(61), ['T11 D14', 'S11 Bull']);
     });
 
     test('130: T20 S20 Bull is next to T20 T20 D5', () {

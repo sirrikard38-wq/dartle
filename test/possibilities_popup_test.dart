@@ -22,7 +22,7 @@ void main() {
         expect(optimal.onlyPossibility(n, darts), isTrue, reason: '$n');
       }
       // 130: one optimal route (T20 T20 D5), but T20 S20 Bull and more check it out too.
-      expect(optimal.optimalRoutesIn(130, 3), hasLength(1));
+      expect(optimal.optimalRoutesIn(130, 3).where((r) => !optimal.isMissRoute(130, 3, r)), hasLength(1));
       expect(optimal.onlyPossibility(130, 3), isFalse);
       expect(optimal.onlyPossibility(100, 2), isFalse); // T20 D20, Bull Bull
       expect(screen, contains('result.onlyPossibility'));

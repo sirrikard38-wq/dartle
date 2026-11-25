@@ -715,7 +715,7 @@ web.HTMLElement tutorBoards(ViewContext ctx, TutorCard card) {
     // As on the result screen: "Also optimal" opens every optimal route, or
     // the one way there is at all says so.
     if (route != null)
-      if (all.length > 1)
+      if (all.length > 1 && !ctx.game.tutorial.tutor.isBestRoute(target, card.darts))
         button(tr('Also optimal'),
             cls: 'text-link extra-title tutor-all',
             focusKey: 'tutor-all',
