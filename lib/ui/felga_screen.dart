@@ -816,7 +816,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     historyPart,
     // At the very foot, on the right: the Felgalizacija off this phone only,
     // asked once.
-    button(tr('Delete Felgalizacija'), cls: 'felga-delete', focusKey: 'felga-delete', onPressed: (_) {
+    button(tr('Leave Felgalizacija'), cls: 'felga-delete', focusKey: 'felga-delete', onPressed: (_) {
       _ask(
           tr('Are you sure you want to delete the Felgalizacija? You can always join again later with the password.'),
           () => _deleteOpen(ctx));

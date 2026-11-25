@@ -41,7 +41,7 @@ const Map<String, String> croatian = {
   'Felgas {date}': 'Felge {date}',
   'Are you sure you want to delete the felgas of {date}?': 'Jesi li siguran da želiš obrisati felge od {date}?',
   'Are you really 100% million billion percent sure? Only the Felgalizacija\'s numbers of now are reset: the felgas in the history are not deleted.': 'Jesi li stvarno 100% milijun milijardi posto siguran? Resetira se samo trenutna statistika Felgalizacije: povijesne felge se neće izbrisati.',
-  'Delete Felgalizacija': 'Obriši Felgalizaciju',
+  'Leave Felgalizacija': 'Napusti Felgalizaciju',
   'Felgalizacija deleted': 'Felgalizacija obrisana',
   'Checkout calculator': 'Checkout kalkulator',
   'Checkout choice': 'Checkout izbor',
