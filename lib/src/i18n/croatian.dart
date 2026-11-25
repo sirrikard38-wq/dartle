@@ -42,7 +42,7 @@ const Map<String, String> croatian = {
   'Are you sure you want to delete the felgas of {date}?': 'Jesi li siguran da želiš obrisati felge od {date}?',
   'Are you really 100% million billion percent sure? Only the Felgalizacija\'s numbers of now are reset: the felgas in the history are not deleted.': 'Jesi li stvarno 100% milijun milijardi posto siguran? Resetira se samo trenutna statistika Felgalizacije: povijesne felge se neće izbrisati.',
   'Leave Felgalizacija': 'Napusti Felgalizaciju',
-  'Felgalizacija deleted': 'Felgalizacija obrisana',
+  'You left the Felgalizacija': 'Napustio si Felgalizaciju',
   'Checkout calculator': 'Checkout kalkulator',
   'Checkout choice': 'Checkout izbor',
   'Choose': 'Odaberi',
@@ -94,8 +94,8 @@ const Map<String, String> croatian = {
   'Password': 'Šifra',
   'No Felgalizacija has this password.': 'Nijedna Felgalizacija nema tu šifru.',
   'Felgalizacija already added.': 'Felgalizacija već dodana.',
-  'Are you sure you want to delete the Felgalizacija? You can always join again later with the password.':
-      'Jesi li siguran da želiš izbrisati Felgalizaciju? Uvijek se možeš kasnije pridružiti unosom šifre.',
+  'Are you sure you want to leave the Felgalizacija? You can always join again later with the password.':
+      'Jesi li siguran da želiš napustiti Felgalizaciju? Uvijek joj se možeš kasnije pridružiti unosom šifre.',
   'Change password': 'Promijeni šifru',
   'Password changed': 'Šifra promijenjena',
   'Felgalizacija already added, it is {name}': 'Felgalizacija već dodana, to je {name}',

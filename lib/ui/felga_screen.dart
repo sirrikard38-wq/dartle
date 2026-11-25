@@ -640,6 +640,11 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
                 ledger.remove(member);
                 _flashes.removeWhere((f) => f.member == member);
                 changed();
+                // Someone thrown out: a new password, so the old one lets
+                // nobody back in (the others stay in and see the new one).
+                _changePassword(ctx, _open.id).then((next) {
+                  if (next != null) ctx.toast(tr('Password changed'));
+                });
               });
             })
               ..append(svg('svg', attrs: {'viewBox': '0 0 24 24', 'aria-hidden': 'true'}, children: [
@@ -818,7 +823,7 @@ web.HTMLElement buildFelgaScreen(ViewContext ctx) {
     // asked once.
     button(tr('Leave Felgalizacija'), cls: 'felga-delete', focusKey: 'felga-delete', onPressed: (_) {
       _ask(
-          tr('Are you sure you want to delete the Felgalizacija? You can always join again later with the password.'),
+          tr('Are you sure you want to leave the Felgalizacija? You can always join again later with the password.'),
           () => _deleteOpen(ctx));
     }),
   ]);
@@ -838,7 +843,7 @@ Map<String, List<FelgaDay>> _byDate(List<FelgaDay> days) {
 }
 
 /// Deletes the Felgalizacija open from this phone - its book and its place in
-/// the list - and goes to the menu ("Felgalizacija deleted"). Online it stays
+/// the list - and goes to the menu ("You left the Felgalizacija"). Online it stays
 /// for the others: this phone's name is taken out of it and its password
 /// changed (see [_leaveOnline]).
 void _deleteOpen(ViewContext ctx) {
@@ -854,7 +859,7 @@ void _deleteOpen(ViewContext ctx) {
   _openResets.clear();
   _adding = false;
   ctx.showPage(MenuPage.home);
-  ctx.toast(tr('Felgalizacija deleted'));
+  ctx.toast(tr('You left the Felgalizacija'));
   _leaveOnline(entry, copy);
 }
 
